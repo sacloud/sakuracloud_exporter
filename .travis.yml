@@ -1,0 +1,23 @@
+language: go
+go:
+- '1.11'
+env:
+  global:
+  - PATH=/home/travis/gopath/bin:$PATH DEBIAN_FRONTEND=noninteractive
+  - secure: NY2U5Ck1eeQ5BEEHetmVO0D77RpunT5g5ZhTKj+UG1uF8E0JILnGd8cYpnJ+ey0h8tBMoSDylurEJa0/oID7G9GX1bYM3rBfdDbVLONq0Lt/EtQ5ITog4Zmmh/QZJHNql7gKzkPu6Giu+UHrYsLBULsclByrGV7OR1xVd8CegsA06l9CCmnajAnadLphekheNXVLt50VdAxNuEqZZhUNPYGr5ysnE/J/lZy/r5s53e6KJnL/klfHltsbB8E3Ay78/bJcb7AGpYWw4893Uxpf/xK3uaSJvb9i2cGqpQNqh+TLHjNI2vsf1+YCzUzwAopChoOioGuvfURLoLlawaUAR4d37ItzqqgnMUfixs0cgGWhtHA235hgxYliK2ocjgNJw/5L9qP0Q+CmBykDJHgIwA/iVoraYV8wnW+uLy0qSMICwVcGCkNyX3zl9qf2wDGIZIHpgiybjtYp0BjvszwmjliC92BYRCE4hvPNuT/xtKG0eynBw4r7DYxNZUqdFRcaCSnpmRwH/pU27qLEYnhoo1jqz3GerN2HlMP11C+H5kcWZGTelu4oUw5TEFFmMYT/mwXdbxfuS3qwbzvCNb7cFpPT4VTi3d9OztUdqquBsF/b9ppOOQziTC3LeHtRVLPxt2fQeNItFEVe7CQ/aAQjLh5RIEnLj+wMjoV8TJMP+JI=
+script:
+- make fmt vet style build test
+before_deploy:
+- make build-x
+deploy:
+  provider: releases
+  api_key: "$GITHUB_TOKEN"
+  file_glob: true
+  file: bin/*
+  skip_cleanup: true
+  name: "$TRAVIS_TAG"
+  on:
+    tags: true
+notifications:
+  slack:
+    secure: BNxWprYckosLBlaLn7XUt7ozbF5HWZvWMUUSOgw7JA5qWK3PCbwT0fCD/VwM/pKWLaFZeFgSlg1NopZwGKZ6RTX9WrJBXy6Eyurzk/9ZHQ5CAqZhb5HP/MdFWa6DApWmNO7GXJf2J0qYEewEjA+Y7iatADfy5oHg0VN2n1Dyz7gP3iShP9BGt4ewEpStg7qhA2De+in4NGWJEOGiCNCyxhIgQnSX42VYSFfHgipZEv/4dN+P9iBouPQMvP4WjqYLW6Zp4XXTr51HNHhrJuDUgyhRHeR5OTOLJEgSiXYeCNg5j8Au6Y7mAihuMtQGdejYRlMZs2s2ALpwkTYnIV01tqbU5YsmXq4nseiBdzuarJuejoMBya/eatOGesnHQ1CgyT5i5o2xAg3L6BlE7mDAyjFAyJOQFEV6PK2SW8sszkbwdOXnvAoVyV6oU2ze2QeD0dhvMLQhUQQ27DIkjzEnpFVpeFYhcgWUyh3vTzgEyVInBfdvbCpZOVwtJyrqJW2Y+eX06yU8TmTdgVlPMQjuXM2UTC9feWTG+7A2EQpwkRg2ltWr9zKVUPOlLEl3s0vAUlSTDI/ei/JLVV9jkDK3QzxNivLb7Rtg0z2XmJRI6R/1cO9ATD5LlcaobOvLDjQM6kuSu9T7eF03Qq4Kz30IC82dkVIeQA41llW4K3d5GG0=
