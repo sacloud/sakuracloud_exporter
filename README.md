@@ -27,7 +27,7 @@ $ sakuracloud_exporter <flags>
 
 ### Docker
 
-To run the bosh exporter as a Docker container, run:
+To run the SakuraCloud exporter as a Docker container, run:
 
 ```bash
 $ docker run -p 9542:9542 sacloud/sakuracloud_exporter 
