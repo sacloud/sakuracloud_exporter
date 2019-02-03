@@ -2,7 +2,7 @@ NAME     := sakuracloud_exporter
 VERSION  := $(subst /,-,$(shell cat VERSION))
 REVISION := $(shell git rev-parse --short HEAD)
 SRCS     := $(shell find . -type f -name '*.go')
-LDFLAGS  := -ldflags="-s -w -X \"main.Version=$(VERSION)\" -X \"main.Revision=$(REVISION)\""
+LDFLAGS  := -ldflags="-s -w -X \"main.Version=$(VERSION)\" -X \"main.Revision=$(REVISION)\" -extldflags -static"
 
 PREFIX                  ?= $(shell pwd)/bin
 BIN_DIR                 ?= $(shell pwd)/bin
@@ -36,12 +36,12 @@ clean:
 build: $(BIN_DIR)/$(NAME)
 
 $(BIN_DIR)/$(NAME): $(SRCS)
-	$(GO) build $(LDFLAGS) -o $(BIN_DIR)/$(NAME)
+	CGO_ENABLED=0 $(GO) build $(LDFLAGS) -a -tags netgo -installsuffix netgo -o $(BIN_DIR)/$(NAME)
 
 build-x:
 	for os in darwin linux windows; do \
 	    for arch in amd64 386; do \
-	        GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 $(GO)  build $(LDFLAGS) -o $(BIN_DIR)/$(NAME); \
+	        GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 $(GO) build $(LDFLAGS) -a -tags netgo -installsuffix netgo -o $(BIN_DIR)/$(NAME); \
 	        ( cd $(BIN_DIR); zip -r "$(NAME)_$$os-$$arch" $(NAME) ../LICENSE ../README.md ); \
 	        rm -f $(BIN_DIR)/$(NAME); \
 	    done; \

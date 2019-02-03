@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"runtime"
@@ -31,7 +32,8 @@ func main() {
 
 	c, err := config.InitConfig()
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	filterOption := level.AllowInfo()
@@ -103,6 +105,6 @@ func main() {
 	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr)
 	if err := http.ListenAndServe(c.WebAddr, nil); err != nil {
 		level.Error(logger).Log("msg", "http listenandserve error", "err", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 }
