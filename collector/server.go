@@ -20,7 +20,9 @@ type ServerCollector struct {
 
 	Up         *prometheus.Desc
 	ServerInfo *prometheus.Desc
+	CPUs       *prometheus.Desc
 	CPUTime    *prometheus.Desc
+	Memories   *prometheus.Desc
 
 	DiskInfo  *prometheus.Desc
 	DiskRead  *prometheus.Desc
@@ -57,9 +59,19 @@ func NewServerCollector(logger log.Logger, errors *prometheus.CounterVec, client
 			"A metric with a constant '1' value labeled by server information",
 			serverInfoLabels, nil,
 		),
+		CPUs: prometheus.NewDesc(
+			"sakuracloud_server_cpus",
+			"Number of server's vCPU cores",
+			serverLabels, nil,
+		),
 		CPUTime: prometheus.NewDesc(
 			"sakuracloud_server_cpu_time",
 			"Server's CPU time(unit: ms)",
+			serverLabels, nil,
+		),
+		Memories: prometheus.NewDesc(
+			"sakuracloud_server_memories",
+			"Size of server's memories(unit: GB)",
 			serverLabels, nil,
 		),
 		DiskInfo: prometheus.NewDesc(
@@ -105,7 +117,9 @@ func NewServerCollector(logger log.Logger, errors *prometheus.CounterVec, client
 func (c *ServerCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.Up
 	ch <- c.ServerInfo
+	ch <- c.CPUs
 	ch <- c.CPUTime
+	ch <- c.Memories
 
 	ch <- c.DiskInfo
 	ch <- c.DiskRead
@@ -152,6 +166,18 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 				prometheus.GaugeValue,
 				float64(1.0),
 				c.serverInfoLabels(server)...,
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.CPUs,
+				prometheus.GaugeValue,
+				float64(server.GetCPU()),
+				serverLabels...,
+			)
+			ch <- prometheus.MustNewConstMetric(
+				c.Memories,
+				prometheus.GaugeValue,
+				float64(server.GetMemoryGB()),
+				serverLabels...,
 			)
 
 			for i := range server.Disks {
