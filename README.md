@@ -158,7 +158,9 @@ The exporter returns the following metrics:
 | ------ | ----------- | ------ |
 | sakuracloud_server_info | A metric with a constant '1' value labeled by server information | `id`, `name`, `zone`, `cpus`, `disks`, `nics`, `memories`, `host`, `tags`, `description` |
 | sakuracloud_server_up | If 1 the server is up and running, 0 otherwise | `id`, `name`, `zone` |
+| sakuracloud_server_cpus | Number of server's vCPU cores | `id`, `name`, `zone` |
 | sakuracloud_server_cpu_time | Server's CPU time(unit: ms) | `id`, `name`, `zone` |
+| sakuracloud_server_memories | Size of server's memories(unit: GB) | `id`, `name`, `zone` |
 | sakuracloud_server_disk_info | A metric with a constant '1' value labeled by disk information | `id`, `name`, `zone`, `disk_id`, `disk_name`, `index`, `plan`, `interface`, `size`, `tags`, `description` |
 | sakuracloud_server_disk_read | Disk's read bytes(unit: KBps) | `id`, `name`, `zone`, `disk_id`, `disk_name`, `index` |
 | sakuracloud_server_disk_write | Disk's write bytes(unit: KBps) | `id`, `name`, `zone`, `disk_id`, `disk_name`, `index` |
