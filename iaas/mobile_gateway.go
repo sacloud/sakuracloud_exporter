@@ -17,7 +17,7 @@ type MobileGatewayClient interface {
 	Find() ([]*MobileGateway, error)
 	TrafficStatus(zone string, mobileGatewayID int64) (*sacloud.TrafficStatus, error)
 	TrafficControl(zone string, mobileGatewayID int64) (*sacloud.TrafficMonitoringConfig, error)
-	MonitorNIC(zone string, mobileGatewayID int64, index int, end time.Time) (*NICMetrics, error)
+	MonitorNIC(zone string, mobileGatewayID int64, index int, end time.Time) ([]*NICMetrics, error)
 }
 
 func getMobileGatewayClient(client *sakuraAPI.Client, zones []string) MobileGatewayClient {
@@ -59,7 +59,7 @@ func (s *mobileGatewayClient) Find() ([]*MobileGateway, error) {
 	return results, nil
 }
 
-func (s *mobileGatewayClient) MonitorNIC(zone string, mobileGatewayID int64, index int, end time.Time) (*NICMetrics, error) {
+func (s *mobileGatewayClient) MonitorNIC(zone string, mobileGatewayID int64, index int, end time.Time) ([]*NICMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.MobileGateway.MonitorBy(mobileGatewayID, index, param)
 	}

@@ -351,18 +351,22 @@ func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *sa
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	m := prometheus.MustNewConstMetric(
-		c.CPUTime,
-		prometheus.GaugeValue,
-		values.Value*1000,
-		c.serverLabels(server)...,
-	)
+	for _, v := range values {
+		if v.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.CPUTime,
+				prometheus.GaugeValue,
+				v.Value*1000,
+				c.serverLabels(server)...,
+			)
 
-	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+			ch <- prometheus.NewMetricWithTimestamp(v.Time, m)
+		}
+	}
 }
 
 func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server *sacloud.Server, index int, now time.Time) {
@@ -381,27 +385,29 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Read != nil {
-		m := prometheus.MustNewConstMetric(
-			c.DiskRead,
-			prometheus.GaugeValue,
-			values.Read.Value/1024,
-			c.diskLabels(server, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Read.Time, m)
-	}
-	if values.Write != nil {
-		m := prometheus.MustNewConstMetric(
-			c.DiskWrite,
-			prometheus.GaugeValue,
-			values.Write.Value/1024,
-			c.diskLabels(server, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Write.Time, m)
+	for _, v := range values {
+		if v.Read != nil && v.Read.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.DiskRead,
+				prometheus.GaugeValue,
+				v.Read.Value/1024,
+				c.diskLabels(server, index)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Read.Time, m)
+		}
+		if v.Write != nil && v.Write.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.DiskWrite,
+				prometheus.GaugeValue,
+				v.Write.Value/1024,
+				c.diskLabels(server, index)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Write.Time, m)
+		}
 	}
 }
 
@@ -421,26 +427,28 @@ func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server 
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICReceive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.nicLabels(server, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
-	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICSend,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.nicLabels(server, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	for _, v := range values {
+		if v.Receive != nil && v.Receive.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.NICReceive,
+				prometheus.GaugeValue,
+				v.Receive.Value*8/1000,
+				c.nicLabels(server, index)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Receive.Time, m)
+		}
+		if v.Send != nil && v.Send.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.NICSend,
+				prometheus.GaugeValue,
+				v.Send.Value*8/1000,
+				c.nicLabels(server, index)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Send.Time, m)
+		}
 	}
 }

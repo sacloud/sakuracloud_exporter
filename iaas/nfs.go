@@ -15,8 +15,8 @@ type NFS struct {
 
 type NFSClient interface {
 	Find() ([]*NFS, error)
-	MonitorFreeDiskSize(zone string, nfsID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
-	MonitorNIC(zone string, nfsID int64, end time.Time) (*NICMetrics, error)
+	MonitorFreeDiskSize(zone string, nfsID int64, end time.Time) ([]*sacloud.FlatMonitorValue, error)
+	MonitorNIC(zone string, nfsID int64, end time.Time) ([]*NICMetrics, error)
 }
 
 func getNFSClient(client *sakuraAPI.Client, zones []string) NFSClient {
@@ -58,7 +58,7 @@ func (s *nfsClient) Find() ([]*NFS, error) {
 	return results, nil
 }
 
-func (s *nfsClient) MonitorFreeDiskSize(zone string, nfsID int64, end time.Time) (*sacloud.FlatMonitorValue, error) {
+func (s *nfsClient) MonitorFreeDiskSize(zone string, nfsID int64, end time.Time) ([]*sacloud.FlatMonitorValue, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.NFS.MonitorFreeDiskSize(nfsID, param)
 	}
@@ -66,7 +66,7 @@ func (s *nfsClient) MonitorFreeDiskSize(zone string, nfsID int64, end time.Time)
 	return queryFreeDiskSizeMonitorValue(s.rawClient, zone, end, query)
 }
 
-func (s *nfsClient) MonitorNIC(zone string, nfsID int64, end time.Time) (*NICMetrics, error) {
+func (s *nfsClient) MonitorNIC(zone string, nfsID int64, end time.Time) ([]*NICMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.NFS.MonitorInterface(nfsID, param)
 	}

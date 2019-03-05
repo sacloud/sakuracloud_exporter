@@ -15,10 +15,10 @@ type Database struct {
 
 type DatabaseClient interface {
 	Find() ([]*Database, error)
-	MonitorDatabase(zone string, diskID int64, end time.Time) (*DatabaseMetrics, error)
-	MonitorCPU(zone string, databaseID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
-	MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error)
-	MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error)
+	MonitorDatabase(zone string, diskID int64, end time.Time) ([]*DatabaseMetrics, error)
+	MonitorCPU(zone string, databaseID int64, end time.Time) ([]*sacloud.FlatMonitorValue, error)
+	MonitorNIC(zone string, nicID int64, end time.Time) ([]*NICMetrics, error)
+	MonitorDisk(zone string, diskID int64, end time.Time) ([]*DiskMetrics, error)
 }
 
 func getDatabaseClient(client *sakuraAPI.Client, zones []string) DatabaseClient {
@@ -60,7 +60,7 @@ func (s *databaseClient) Find() ([]*Database, error) {
 	return results, nil
 }
 
-func (s *databaseClient) MonitorDatabase(zone string, databaseID int64, end time.Time) (*DatabaseMetrics, error) {
+func (s *databaseClient) MonitorDatabase(zone string, databaseID int64, end time.Time) ([]*DatabaseMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Database.MonitorDatabase(databaseID, param)
 	}
@@ -68,7 +68,7 @@ func (s *databaseClient) MonitorDatabase(zone string, databaseID int64, end time
 	return queryDatabaseMonitorValue(s.rawClient, zone, end, query)
 }
 
-func (s *databaseClient) MonitorCPU(zone string, databaseID int64, end time.Time) (*sacloud.FlatMonitorValue, error) {
+func (s *databaseClient) MonitorCPU(zone string, databaseID int64, end time.Time) ([]*sacloud.FlatMonitorValue, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Database.MonitorCPU(databaseID, param)
 	}
@@ -76,7 +76,7 @@ func (s *databaseClient) MonitorCPU(zone string, databaseID int64, end time.Time
 	return queryCPUTimeMonitorValue(s.rawClient, zone, end, query)
 }
 
-func (s *databaseClient) MonitorDisk(zone string, databaseID int64, end time.Time) (*DiskMetrics, error) {
+func (s *databaseClient) MonitorDisk(zone string, databaseID int64, end time.Time) ([]*DiskMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Database.MonitorSystemDisk(databaseID, param)
 	}
@@ -84,7 +84,7 @@ func (s *databaseClient) MonitorDisk(zone string, databaseID int64, end time.Tim
 	return queryDiskMonitorValue(s.rawClient, zone, end, query)
 }
 
-func (s *databaseClient) MonitorNIC(zone string, databaseID int64, end time.Time) (*NICMetrics, error) {
+func (s *databaseClient) MonitorNIC(zone string, databaseID int64, end time.Time) ([]*NICMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Database.MonitorInterface(databaseID, param)
 	}

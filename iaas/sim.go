@@ -11,7 +11,7 @@ import (
 type SIMClient interface {
 	Find() ([]*sacloud.SIM, error)
 	GetNetworkOperatorConfig(simID int64) (*sacloud.SIMNetworkOperatorConfigs, error)
-	MonitorTraffic(simID int64, end time.Time) (*SIMMetrics, error)
+	MonitorTraffic(simID int64, end time.Time) ([]*SIMMetrics, error)
 }
 
 func getSIMClient(client *sakuraAPI.Client) SIMClient {
@@ -45,7 +45,7 @@ func (s *simClient) GetNetworkOperatorConfig(simID int64) (*sacloud.SIMNetworkOp
 	return client.SIM.GetNetworkOperator(simID)
 }
 
-func (s *simClient) MonitorTraffic(simID int64, end time.Time) (*SIMMetrics, error) {
+func (s *simClient) MonitorTraffic(simID int64, end time.Time) ([]*SIMMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.SIM.Monitor(simID, param)
 	}

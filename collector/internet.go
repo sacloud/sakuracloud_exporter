@@ -127,26 +127,28 @@ func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, in
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.In != nil {
-		m := prometheus.MustNewConstMetric(
-			c.In,
-			prometheus.GaugeValue,
-			values.In.Value/1000,
-			c.internetLabels(internet)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.In.Time, m)
-	}
-	if values.Out != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Out,
-			prometheus.GaugeValue,
-			values.Out.Value/1000,
-			c.internetLabels(internet)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Out.Time, m)
+	for _, v := range values {
+		if v.In != nil && v.In.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.In,
+				prometheus.GaugeValue,
+				v.In.Value/1000,
+				c.internetLabels(internet)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.In.Time, m)
+		}
+		if v.Out != nil && v.Out.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.Out,
+				prometheus.GaugeValue,
+				v.Out.Value/1000,
+				c.internetLabels(internet)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Out.Time, m)
+		}
 	}
 }

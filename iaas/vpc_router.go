@@ -16,7 +16,7 @@ type VPCRouter struct {
 type VPCRouterClient interface {
 	Find() ([]*VPCRouter, error)
 	Status(zone string, vpcRouterID int64) (*sacloud.VPCRouterStatus, error)
-	MonitorNIC(zone string, vpcRouterID int64, index int, end time.Time) (*NICMetrics, error)
+	MonitorNIC(zone string, vpcRouterID int64, index int, end time.Time) ([]*NICMetrics, error)
 }
 
 func getVPCRouterClient(client *sakuraAPI.Client, zones []string) VPCRouterClient {
@@ -58,7 +58,7 @@ func (s *vpcRouterClient) Find() ([]*VPCRouter, error) {
 	return results, nil
 }
 
-func (s *vpcRouterClient) MonitorNIC(zone string, vpcRouterID int64, index int, end time.Time) (*NICMetrics, error) {
+func (s *vpcRouterClient) MonitorNIC(zone string, vpcRouterID int64, index int, end time.Time) ([]*NICMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.VPCRouter.MonitorBy(vpcRouterID, index, param)
 	}

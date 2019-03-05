@@ -10,9 +10,9 @@ import (
 
 type ServerClient interface {
 	Find() ([]*sacloud.Server, error)
-	MonitorCPU(zone string, serverID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
-	MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error)
-	MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error)
+	MonitorCPU(zone string, serverID int64, end time.Time) ([]*sacloud.FlatMonitorValue, error)
+	MonitorDisk(zone string, diskID int64, end time.Time) ([]*DiskMetrics, error)
+	MonitorNIC(zone string, nicID int64, end time.Time) ([]*NICMetrics, error)
 }
 
 func getServerClient(client *sakuraAPI.Client, zones []string) ServerClient {
@@ -51,7 +51,7 @@ func (s *serverClient) Find() ([]*sacloud.Server, error) {
 	return results, nil
 }
 
-func (s *serverClient) MonitorCPU(zone string, serverID int64, end time.Time) (*sacloud.FlatMonitorValue, error) {
+func (s *serverClient) MonitorCPU(zone string, serverID int64, end time.Time) ([]*sacloud.FlatMonitorValue, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Server.Monitor(serverID, param)
 	}
@@ -59,7 +59,7 @@ func (s *serverClient) MonitorCPU(zone string, serverID int64, end time.Time) (*
 	return queryCPUTimeMonitorValue(s.rawClient, zone, end, query)
 }
 
-func (s *serverClient) MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error) {
+func (s *serverClient) MonitorDisk(zone string, diskID int64, end time.Time) ([]*DiskMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Disk.Monitor(diskID, param)
 	}
@@ -67,7 +67,7 @@ func (s *serverClient) MonitorDisk(zone string, diskID int64, end time.Time) (*D
 	return queryDiskMonitorValue(s.rawClient, zone, end, query)
 }
 
-func (s *serverClient) MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error) {
+func (s *serverClient) MonitorNIC(zone string, nicID int64, end time.Time) ([]*NICMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Interface.Monitor(nicID, param)
 	}

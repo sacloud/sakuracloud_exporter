@@ -308,26 +308,28 @@ func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, 
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Receive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.nicLabels(mobileGateway, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
-	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Send,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.nicLabels(mobileGateway, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	for _, v := range values {
+		if v.Receive != nil && v.Receive.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.Receive,
+				prometheus.GaugeValue,
+				v.Receive.Value*8/1000,
+				c.nicLabels(mobileGateway, index)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Receive.Time, m)
+		}
+		if v.Send != nil && v.Send.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.Send,
+				prometheus.GaugeValue,
+				v.Send.Value*8/1000,
+				c.nicLabels(mobileGateway, index)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Send.Time, m)
+		}
 	}
 }

@@ -204,26 +204,28 @@ func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *saclo
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Uplink != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Uplink,
-			prometheus.GaugeValue,
-			values.Uplink.Value/1000,
-			c.simLabels(sim)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Uplink.Time, m)
-	}
-	if values.Downlink != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Downlink,
-			prometheus.GaugeValue,
-			values.Downlink.Value/1000,
-			c.simLabels(sim)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Downlink.Time, m)
+	for _, v := range values {
+		if v.Uplink != nil && v.Uplink.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.Uplink,
+				prometheus.GaugeValue,
+				v.Uplink.Value/1000,
+				c.simLabels(sim)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Uplink.Time, m)
+		}
+		if v.Downlink != nil && v.Downlink.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.Downlink,
+				prometheus.GaugeValue,
+				v.Downlink.Value/1000,
+				c.simLabels(sim)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Downlink.Time, m)
+		}
 	}
 }

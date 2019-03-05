@@ -16,7 +16,7 @@ type LoadBalancer struct {
 type LoadBalancerClient interface {
 	Find() ([]*LoadBalancer, error)
 	Status(zone string, loadBalancerID int64) (*sacloud.LoadBalancerStatusResult, error)
-	MonitorNIC(zone string, loadBalancerID int64, end time.Time) (*NICMetrics, error)
+	MonitorNIC(zone string, loadBalancerID int64, end time.Time) ([]*NICMetrics, error)
 }
 
 func getLoadBalancerClient(client *sakuraAPI.Client, zones []string) LoadBalancerClient {
@@ -58,7 +58,7 @@ func (s *loadBalancerClient) Find() ([]*LoadBalancer, error) {
 	return results, nil
 }
 
-func (s *loadBalancerClient) MonitorNIC(zone string, loadBalancerID int64, end time.Time) (*NICMetrics, error) {
+func (s *loadBalancerClient) MonitorNIC(zone string, loadBalancerID int64, end time.Time) ([]*NICMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.LoadBalancer.Monitor(loadBalancerID, param)
 	}

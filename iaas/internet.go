@@ -15,7 +15,7 @@ type Internet struct {
 
 type InternetClient interface {
 	Find() ([]*Internet, error)
-	MonitorTraffic(zone string, internetID int64, end time.Time) (*RouterMetrics, error)
+	MonitorTraffic(zone string, internetID int64, end time.Time) ([]*RouterMetrics, error)
 }
 
 func getInternetClient(client *sakuraAPI.Client, zones []string) InternetClient {
@@ -57,7 +57,7 @@ func (s *internetClient) Find() ([]*Internet, error) {
 	return results, nil
 }
 
-func (s *internetClient) MonitorTraffic(zone string, internetID int64, end time.Time) (*RouterMetrics, error) {
+func (s *internetClient) MonitorTraffic(zone string, internetID int64, end time.Time) ([]*RouterMetrics, error) {
 	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
 		return client.Internet.Monitor(internetID, param)
 	}

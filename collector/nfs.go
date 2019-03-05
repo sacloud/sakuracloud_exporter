@@ -214,18 +214,22 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaa
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	m := prometheus.MustNewConstMetric(
-		c.DiskFree,
-		prometheus.GaugeValue,
-		values.Value/1024/1024, // unit:GB
-		c.nfsLabels(nfs)...,
-	)
+	for _, v := range values {
+		if v.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.DiskFree,
+				prometheus.GaugeValue,
+				v.Value/1024/1024, // unit:GB
+				c.nfsLabels(nfs)...,
+			)
 
-	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+			ch <- prometheus.NewMetricWithTimestamp(v.Time, m)
+		}
+	}
 }
 
 func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
@@ -239,26 +243,28 @@ func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICReceive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.nfsLabels(nfs)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
-	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICSend,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.nfsLabels(nfs)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	for _, v := range values {
+		if v.Receive != nil && v.Receive.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.NICReceive,
+				prometheus.GaugeValue,
+				v.Receive.Value*8/1000,
+				c.nfsLabels(nfs)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Receive.Time, m)
+		}
+		if v.Send != nil && v.Send.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.NICSend,
+				prometheus.GaugeValue,
+				v.Send.Value*8/1000,
+				c.nfsLabels(nfs)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Send.Time, m)
+		}
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/sacloud/libsacloud/sacloud"
 )
 
+const metricsBatchSize = 1
+
 // NICMetrics represents NIC's receive/send metrics
 type NICMetrics struct {
 	Receive *sacloud.FlatMonitorValue
@@ -49,7 +51,7 @@ type queryMonitorFn func(client *sakuraAPI.Client, param *sacloud.ResourceMonito
 func queryCPUTimeMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*sacloud.FlatMonitorValue, error) {
+	queryFn queryMonitorFn) ([]*sacloud.FlatMonitorValue, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -65,13 +67,19 @@ func queryCPUTimeMonitorValue(
 		return nil, err
 	}
 
-	return getLatestMonitorValue(values), nil
+	var metrics []*sacloud.FlatMonitorValue
+	for i := 0; i < metricsBatchSize; i++ {
+		m := getLatestMonitorValue(values, i)
+		metrics = append(metrics, m)
+	}
+
+	return metrics, nil
 }
 
 func queryFreeDiskSizeMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*sacloud.FlatMonitorValue, error) {
+	queryFn queryMonitorFn) ([]*sacloud.FlatMonitorValue, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -82,18 +90,25 @@ func queryFreeDiskSizeMonitorValue(
 	}
 
 	// find latest value
+
 	values, err := mv.FlattenFreeDiskSizeValue()
 	if err != nil {
 		return nil, err
 	}
 
-	return getLatestMonitorValue(values), nil
+	var metrics []*sacloud.FlatMonitorValue
+	for i := 0; i < metricsBatchSize; i++ {
+		m := getLatestMonitorValue(values, i)
+		metrics = append(metrics, m)
+	}
+
+	return metrics, nil
 }
 
 func queryNICMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*NICMetrics, error) {
+	queryFn queryMonitorFn) ([]*NICMetrics, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -112,12 +127,16 @@ func queryNICMonitorValue(
 		return nil, err
 	}
 
-	metrics := &NICMetrics{
-		Receive: getLatestMonitorValue(receive),
-		Send:    getLatestMonitorValue(send),
-	}
-	if metrics.Receive == nil || metrics.Send == nil {
-		return nil, nil
+	var metrics []*NICMetrics
+	for i := 0; i < metricsBatchSize; i++ {
+		m := &NICMetrics{
+			Receive: getLatestMonitorValue(receive, i),
+			Send:    getLatestMonitorValue(send, i),
+		}
+		if m.Receive == nil || m.Send == nil {
+			return nil, nil
+		}
+		metrics = append(metrics, m)
 	}
 
 	return metrics, nil
@@ -126,7 +145,7 @@ func queryNICMonitorValue(
 func queryRouterMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*RouterMetrics, error) {
+	queryFn queryMonitorFn) ([]*RouterMetrics, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -145,12 +164,16 @@ func queryRouterMonitorValue(
 		return nil, err
 	}
 
-	metrics := &RouterMetrics{
-		In:  getLatestMonitorValue(in),
-		Out: getLatestMonitorValue(out),
-	}
-	if metrics.In == nil || metrics.Out == nil {
-		return nil, nil
+	var metrics []*RouterMetrics
+	for i := 0; i < metricsBatchSize; i++ {
+		m := &RouterMetrics{
+			In:  getLatestMonitorValue(in, i),
+			Out: getLatestMonitorValue(out, i),
+		}
+		if m.In == nil || m.Out == nil {
+			return nil, nil
+		}
+		metrics = append(metrics, m)
 	}
 
 	return metrics, nil
@@ -159,7 +182,7 @@ func queryRouterMonitorValue(
 func querySIMMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*SIMMetrics, error) {
+	queryFn queryMonitorFn) ([]*SIMMetrics, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -178,12 +201,16 @@ func querySIMMonitorValue(
 		return nil, err
 	}
 
-	metrics := &SIMMetrics{
-		Uplink:   getLatestMonitorValue(uplink),
-		Downlink: getLatestMonitorValue(downlink),
-	}
-	if metrics.Uplink == nil || metrics.Downlink == nil {
-		return nil, nil
+	var metrics []*SIMMetrics
+	for i := 0; i < metricsBatchSize; i++ {
+		m := &SIMMetrics{
+			Uplink:   getLatestMonitorValue(uplink, i),
+			Downlink: getLatestMonitorValue(downlink, i),
+		}
+		if m.Uplink == nil || m.Downlink == nil {
+			return nil, nil
+		}
+		metrics = append(metrics, m)
 	}
 
 	return metrics, nil
@@ -192,7 +219,7 @@ func querySIMMonitorValue(
 func queryDiskMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*DiskMetrics, error) {
+	queryFn queryMonitorFn) ([]*DiskMetrics, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -211,21 +238,24 @@ func queryDiskMonitorValue(
 		return nil, err
 	}
 
-	metrics := &DiskMetrics{
-		Read:  getLatestMonitorValue(read),
-		Write: getLatestMonitorValue(write),
+	var metrics []*DiskMetrics
+	for i := 0; i < metricsBatchSize; i++ {
+		m := &DiskMetrics{
+			Read:  getLatestMonitorValue(read, i),
+			Write: getLatestMonitorValue(write, i),
+		}
+		if m.Read == nil || m.Write == nil {
+			return nil, nil
+		}
+		metrics = append(metrics, m)
 	}
-	if metrics.Read == nil || metrics.Write == nil {
-		return nil, nil
-	}
-
 	return metrics, nil
 }
 
 func queryDatabaseMonitorValue(
 	client *sakuraAPI.Client,
 	zone string, end time.Time,
-	queryFn queryMonitorFn) (*DatabaseMetrics, error) {
+	queryFn queryMonitorFn) ([]*DatabaseMetrics, error) {
 
 	mv, err := queryMonitorValues(client, zone, end, queryFn)
 	if err != nil {
@@ -268,26 +298,31 @@ func queryDatabaseMonitorValue(
 		return nil, err
 	}
 
-	metrics := &DatabaseMetrics{
-		TotalMemorySize:   getLatestMonitorValue(totalMemory),
-		UsedMemorySize:    getLatestMonitorValue(usedMemory),
-		TotalDisk1Size:    getLatestMonitorValue(totalDisk1Size),
-		UsedDisk1Size:     getLatestMonitorValue(usedDisk1Size),
-		TotalDisk2Size:    getLatestMonitorValue(totalDisk2Size),
-		UsedDisk2Size:     getLatestMonitorValue(usedDisk2Size),
-		DelayTimeSec:      getLatestMonitorValue(delayTime),
-		BinlogUsedSizeKiB: getLatestMonitorValue(binlogSize),
-	}
+	var metrics []*DatabaseMetrics
+	for i := 0; i < metricsBatchSize; i++ {
+		m := &DatabaseMetrics{
+			TotalMemorySize:   getLatestMonitorValue(totalMemory, i),
+			UsedMemorySize:    getLatestMonitorValue(usedMemory, i),
+			TotalDisk1Size:    getLatestMonitorValue(totalDisk1Size, i),
+			UsedDisk1Size:     getLatestMonitorValue(usedDisk1Size, i),
+			TotalDisk2Size:    getLatestMonitorValue(totalDisk2Size, i),
+			UsedDisk2Size:     getLatestMonitorValue(usedDisk2Size, i),
+			DelayTimeSec:      getLatestMonitorValue(delayTime, i),
+			BinlogUsedSizeKiB: getLatestMonitorValue(binlogSize, i),
+		}
 
-	if metrics.TotalMemorySize == nil &&
-		metrics.UsedMemorySize == nil &&
-		metrics.TotalDisk1Size == nil &&
-		metrics.UsedDisk1Size == nil &&
-		metrics.TotalDisk2Size == nil &&
-		metrics.UsedDisk2Size == nil &&
-		metrics.DelayTimeSec == nil &&
-		metrics.BinlogUsedSizeKiB == nil {
-		return nil, nil
+		if m.TotalMemorySize == nil &&
+			m.UsedMemorySize == nil &&
+			m.TotalDisk1Size == nil &&
+			m.UsedDisk1Size == nil &&
+			m.TotalDisk2Size == nil &&
+			m.UsedDisk2Size == nil &&
+			m.DelayTimeSec == nil &&
+			m.BinlogUsedSizeKiB == nil {
+			return nil, nil
+		}
+
+		metrics = append(metrics, m)
 	}
 	return metrics, nil
 }
@@ -306,15 +341,15 @@ func queryMonitorValues(
 	return queryFn(c, param)
 }
 
-func getLatestMonitorValue(values []sacloud.FlatMonitorValue) *sacloud.FlatMonitorValue {
+func getLatestMonitorValue(values []sacloud.FlatMonitorValue, index int) *sacloud.FlatMonitorValue {
 
 	// Note: Latest value is temporary(this is API spec). so use Latest+1 value
-	if len(values) < 2 {
-		return nil
+	if len(values) <= index+1 {
+		return &sacloud.FlatMonitorValue{}
 	}
 
 	// Descending
 	sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 
-	return &values[1]
+	return &values[index+1]
 }

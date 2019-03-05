@@ -329,18 +329,20 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	m := prometheus.MustNewConstMetric(
-		c.CPUTime,
-		prometheus.GaugeValue,
-		values.Value*1000,
-		c.databaseLabels(database)...,
-	)
+	for _, v := range values {
+		m := prometheus.MustNewConstMetric(
+			c.CPUTime,
+			prometheus.GaugeValue,
+			v.Value*1000,
+			c.databaseLabels(database)...,
+		)
 
-	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+		ch <- prometheus.NewMetricWithTimestamp(v.Time, m)
+	}
 }
 
 func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
@@ -354,27 +356,29 @@ func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, data
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Read != nil {
-		m := prometheus.MustNewConstMetric(
-			c.DiskRead,
-			prometheus.GaugeValue,
-			values.Read.Value/1024,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Read.Time, m)
-	}
-	if values.Write != nil {
-		m := prometheus.MustNewConstMetric(
-			c.DiskWrite,
-			prometheus.GaugeValue,
-			values.Write.Value/1024,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Write.Time, m)
+	for _, v := range values {
+		if v.Read != nil {
+			m := prometheus.MustNewConstMetric(
+				c.DiskRead,
+				prometheus.GaugeValue,
+				v.Read.Value/1024,
+				c.databaseLabels(database)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Read.Time, m)
+		}
+		if v.Write != nil {
+			m := prometheus.MustNewConstMetric(
+				c.DiskWrite,
+				prometheus.GaugeValue,
+				v.Write.Value/1024,
+				c.databaseLabels(database)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Write.Time, m)
+		}
 	}
 }
 
@@ -389,27 +393,29 @@ func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, datab
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICReceive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
-	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICSend,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	for _, v := range values {
+		if v.Receive != nil {
+			m := prometheus.MustNewConstMetric(
+				c.NICReceive,
+				prometheus.GaugeValue,
+				v.Receive.Value*8/1000,
+				c.databaseLabels(database)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Receive.Time, m)
+		}
+		if v.Send != nil {
+			m := prometheus.MustNewConstMetric(
+				c.NICSend,
+				prometheus.GaugeValue,
+				v.Send.Value*8/1000,
+				c.databaseLabels(database)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.Send.Time, m)
+		}
 	}
 }
 
@@ -424,81 +430,83 @@ func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, 
 		)
 		return
 	}
-	if values == nil {
+	if len(values) == 0 {
 		return
 	}
 
 	labels := c.databaseLabels(database)
-	if values.TotalMemorySize != nil {
-		m := prometheus.MustNewConstMetric(
-			c.MemoryTotal,
-			prometheus.GaugeValue,
-			values.TotalMemorySize.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.TotalMemorySize.Time, m)
-	}
-	if values.UsedMemorySize != nil {
-		m := prometheus.MustNewConstMetric(
-			c.MemoryUsed,
-			prometheus.GaugeValue,
-			values.UsedMemorySize.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.UsedMemorySize.Time, m)
-	}
-	if values.TotalDisk1Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.SystemDiskTotal,
-			prometheus.GaugeValue,
-			values.TotalDisk1Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.TotalDisk1Size.Time, m)
-	}
-	if values.UsedDisk1Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.SystemDiskUsed,
-			prometheus.GaugeValue,
-			values.UsedDisk1Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.UsedDisk1Size.Time, m)
-	}
-	if values.TotalDisk2Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.BackupDiskTotal,
-			prometheus.GaugeValue,
-			values.TotalDisk2Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.TotalDisk2Size.Time, m)
-	}
-	if values.TotalDisk2Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.BackupDiskUsed,
-			prometheus.GaugeValue,
-			values.UsedDisk2Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.UsedDisk2Size.Time, m)
-	}
-	if values.BinlogUsedSizeKiB != nil {
-		m := prometheus.MustNewConstMetric(
-			c.BinlogUsed,
-			prometheus.GaugeValue,
-			values.BinlogUsedSizeKiB.Value/1024/1024,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.BinlogUsedSizeKiB.Time, m)
-	}
-	if values.DelayTimeSec != nil {
-		m := prometheus.MustNewConstMetric(
-			c.ReplicationDelay,
-			prometheus.GaugeValue,
-			values.DelayTimeSec.Value,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.DelayTimeSec.Time, m)
+	for _, v := range values {
+		if v.TotalMemorySize != nil && v.TotalMemorySize.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.MemoryTotal,
+				prometheus.GaugeValue,
+				v.TotalMemorySize.Value/1024/1024,
+				labels...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.TotalMemorySize.Time, m)
+		}
+		if v.UsedMemorySize != nil && v.UsedMemorySize.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.MemoryUsed,
+				prometheus.GaugeValue,
+				v.UsedMemorySize.Value/1024/1024,
+				labels...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.UsedMemorySize.Time, m)
+		}
+		if v.TotalDisk1Size != nil && v.TotalDisk1Size.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.SystemDiskTotal,
+				prometheus.GaugeValue,
+				v.TotalDisk1Size.Value/1024/1024,
+				labels...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.TotalDisk1Size.Time, m)
+		}
+		if v.UsedDisk1Size != nil && v.UsedDisk1Size.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.SystemDiskUsed,
+				prometheus.GaugeValue,
+				v.UsedDisk1Size.Value/1024/1024,
+				labels...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.UsedDisk1Size.Time, m)
+		}
+		if v.TotalDisk2Size != nil && v.TotalDisk2Size.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.BackupDiskTotal,
+				prometheus.GaugeValue,
+				v.TotalDisk2Size.Value/1024/1024,
+				labels...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.TotalDisk2Size.Time, m)
+		}
+		if v.UsedDisk2Size != nil && v.UsedDisk2Size.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.BackupDiskUsed,
+				prometheus.GaugeValue,
+				v.UsedDisk2Size.Value/1024/1024,
+				labels...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.UsedDisk2Size.Time, m)
+		}
+		if v.BinlogUsedSizeKiB != nil && v.BinlogUsedSizeKiB.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.BinlogUsed,
+				prometheus.GaugeValue,
+				v.BinlogUsedSizeKiB.Value/1024/1024,
+				c.databaseLabels(database)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.BinlogUsedSizeKiB.Time, m)
+		}
+		if v.DelayTimeSec != nil && v.DelayTimeSec.Time.Unix() > 0 {
+			m := prometheus.MustNewConstMetric(
+				c.ReplicationDelay,
+				prometheus.GaugeValue,
+				v.DelayTimeSec.Value,
+				c.databaseLabels(database)...,
+			)
+			ch <- prometheus.NewMetricWithTimestamp(v.DelayTimeSec.Time, m)
+		}
 	}
 }
