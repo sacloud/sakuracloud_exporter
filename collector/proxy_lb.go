@@ -289,7 +289,7 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 	ch <- prometheus.MustNewConstMetric(
 		c.CertificateExpireDate,
 		prometheus.GaugeValue,
-		float64(cert.CertificateEndDate.Unix()),
+		float64(cert.CertificateEndDate.Unix())*1000,
 		c.proxyLBLabels(proxyLB)...,
 	)
 }
