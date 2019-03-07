@@ -32,6 +32,12 @@ type DiskMetrics struct {
 	Write *sacloud.FlatMonitorValue
 }
 
+// ProxyLBMetrics represents ProxyLB(enhanced load balancer)'s metrics
+type ProxyLBMetrics struct {
+	ActiveConnections *sacloud.FlatMonitorValue
+	ConnectionsPerSec *sacloud.FlatMonitorValue
+}
+
 // DatabaseMetrics represents Database's system metrics
 type DatabaseMetrics struct {
 	TotalMemorySize   *sacloud.FlatMonitorValue
@@ -216,6 +222,39 @@ func queryDiskMonitorValue(
 		Write: getLatestMonitorValue(write),
 	}
 	if metrics.Read == nil || metrics.Write == nil {
+		return nil, nil
+	}
+
+	return metrics, nil
+}
+
+func queryProxyLBMonitorValue(
+	client *sakuraAPI.Client,
+	zone string, end time.Time,
+	queryFn queryMonitorFn) (*ProxyLBMetrics, error) {
+
+	mv, err := queryMonitorValues(client, zone, end, queryFn)
+	if err != nil {
+		return nil, err
+	}
+	if mv == nil {
+		return nil, nil
+	}
+
+	activeConns, err := mv.FlattenActiveConnections()
+	if err != nil {
+		return nil, err
+	}
+	connsPerSec, err := mv.FlattenConnectionsPerSec()
+	if err != nil {
+		return nil, err
+	}
+
+	metrics := &ProxyLBMetrics{
+		ActiveConnections: getLatestMonitorValue(activeConns),
+		ConnectionsPerSec: getLatestMonitorValue(connsPerSec),
+	}
+	if metrics.ActiveConnections == nil || metrics.ConnectionsPerSec == nil {
 		return nil, nil
 	}
 

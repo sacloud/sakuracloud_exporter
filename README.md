@@ -59,6 +59,7 @@ The exporter returns the following metrics:
 | [LoadBalancer](#loadbalancer) | sakuracloud_loadbalancer_* |
 | [MobileGateway](#mobilegateway) | sakuracloud_mobile_gateway_* |
 | [NFS](#nfs) | sakuracloud_nfs_* |
+| [ProxyLB](#proxylb) | sakuracloud_proxylb_* |
 | [Server](#server) | sakuracloud_server_* |
 | [SIM](#sim) | sakuracloud_sim_* |
 | [VPCRouter](#vpcrouter) | sakuracloud_vpc_router_* |
@@ -168,6 +169,19 @@ The exporter returns the following metrics:
 | sakuracloud_server_nic_bandwidth | NIC's Bandwidth(unit: Mbps) | `id`, `name`, `zone`, `interface_id`, `index` |
 | sakuracloud_server_nic_receive | NIC's receive bytes(unit: Kbps) | `id`, `name`, `zone`, `interface_id`, `index` |
 | sakuracloud_server_nic_send | NIC's send bytes(unit: Kbps) | `id`, `name`, `zone`, `interface_id`, `index`|
+
+#### ProxyLB
+
+| Metric | Description | Labels |
+| ------ | ----------- | ------ |
+| sakuracloud_proxylb_info               | A metric with a constant '1' value labeled by proxyLB information | `plan`, `vip`, `proxy_networks`, `sorry_server_ipaddress`, `sorry_server_port`, `tags`, `description` |
+| sakuracloud_proxylb_up                 | If 1 the ProxyLB is available, 0 otherwise | `id`, `name` |
+| sakuracloud_proxylb_bind_port_info     | A metric with a constant '1' value labeled by BindPort information | `id`, `name`, `bind_port_index`, `proxy_mode`, `port` |
+| sakuracloud_proxylb_server_info        | A metric with a constant '1' value labeled by real-server information | `id`, `name`, `server_index`, `ipaddress`, `port`, `enabled`  |
+| sakuracloud_proxylb_cert_info          | A metric with a constant '1' value labeled by certificate information | `id`, `name`, `common_name`, `issuer_name` |
+| sakuracloud_proxylb_cert_expire        | Certificate expiration date in seconds since epoch (1970) | `id`, `name`  |
+| sakuracloud_proxylb_active_connections | Active connection count | `id`, `name` |
+| sakuracloud_proxylb_connection_per_sec | Connection count per second | `id`, `name` |
 
 #### SIM
 

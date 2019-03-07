@@ -17,6 +17,7 @@ type Client struct {
 	LoadBalancer  LoadBalancerClient
 	MobileGateway MobileGatewayClient
 	NFS           NFSClient
+	ProxyLB       ProxyLBClient
 	Server        ServerClient
 	SIM           SIMClient
 	VPCRouter     VPCRouterClient
@@ -40,6 +41,7 @@ func NewSakuraCloucClient(c config.Config, version string) *Client {
 		LoadBalancer:  getLoadBalancerClient(client, c.Zones),
 		MobileGateway: getMobileGatewayClient(client, c.Zones),
 		NFS:           getNFSClient(client, c.Zones),
+		ProxyLB:       getProxyLBClient(client),
 		Server:        getServerClient(client, c.Zones),
 		SIM:           getSIMClient(client),
 		VPCRouter:     getVPCRouterClient(client, c.Zones),
