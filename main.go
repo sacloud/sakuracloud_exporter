@@ -83,6 +83,7 @@ func main() {
 	r.MustRegister(collector.NewLoadBalancerCollector(logger, errors, client.LoadBalancer))
 	r.MustRegister(collector.NewNFSCollector(logger, errors, client.NFS))
 	r.MustRegister(collector.NewMobileGatewayCollector(logger, errors, client.MobileGateway))
+	r.MustRegister(collector.NewProxyLBCollector(logger, errors, client.ProxyLB))
 	r.MustRegister(collector.NewServerCollector(logger, errors, client.Server))
 	r.MustRegister(collector.NewSIMCollector(logger, errors, client.SIM))
 	r.MustRegister(collector.NewVPCRouterCollector(logger, errors, client.VPCRouter))
