@@ -300,7 +300,7 @@ func queryMonitorValues(
 	c := client.Clone()
 	c.Zone = zone
 
-	start := end.Add(-30 * time.Minute)
+	start := end.Add(-time.Hour)
 	param := sacloud.NewResourceMonitorRequest(&start, &end)
 
 	return queryFn(c, param)
