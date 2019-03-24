@@ -343,7 +343,6 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 			c.vipLabels(lb, vipIndex)...,
 		)
 		for serverIndex, server := range vip.Servers {
-			serverStatus := vipStatus.Get(server.IPAddress)
 
 			// ServerInfo
 			ch <- prometheus.MustNewConstMetric(
@@ -353,31 +352,33 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 				c.serverInfoLabels(lb, vipIndex, serverIndex)...,
 			)
 
-			// ServerUp
+			serverStatus := vipStatus.Get(server.IPAddress)
+
 			up := float64(0.0)
-			if serverStatus.Status == "UP" {
+			activeConn := float64(0.0)
+			cps := float64(0.0)
+			if serverStatus != nil && serverStatus.Status == "UP" {
 				up = 1.0
+				activeConn = float64(serverStatus.NumActiveConn())
+				cps = float64(serverStatus.NumCPS())
 			}
+
 			ch <- prometheus.MustNewConstMetric(
 				c.ServerUp,
 				prometheus.GaugeValue,
 				up,
 				c.serverLabels(lb, vipIndex, serverIndex)...,
 			)
-
-			// ServerConnection
 			ch <- prometheus.MustNewConstMetric(
 				c.ServerConnection,
 				prometheus.GaugeValue,
-				float64(serverStatus.NumActiveConn()),
+				activeConn,
 				c.serverLabels(lb, vipIndex, serverIndex)...,
 			)
-
-			// ServerCPS
 			ch <- prometheus.MustNewConstMetric(
 				c.ServerCPS,
 				prometheus.GaugeValue,
-				float64(serverStatus.NumCPS()),
+				cps,
 				c.serverLabels(lb, vipIndex, serverIndex)...,
 			)
 		}
