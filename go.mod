@@ -6,5 +6,5 @@ require (
 	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/prometheus/client_golang v0.9.2
-	github.com/sacloud/libsacloud v1.15.6
+	github.com/sacloud/libsacloud v1.17.3
 )
