@@ -146,7 +146,7 @@ The exporter returns the following metrics:
 
 | Metric                         | Description                                                   | Labels                                                                                      |
 | ------                         | -----------                                                   | ------                                                                                      |
-| sakuracloud_nfs_info           | A metric with a constant '1' value labeled by nfs information | `id`, `name`, `zone`, `plan`, `host`, `tags`, `description`                                 |
+| sakuracloud_nfs_info           | A metric with a constant '1' value labeled by nfs information | `id`, `name`, `zone`, `plan`, `size`, `host`, `tags`, `description`                                 |
 | sakuracloud_nfs_up             | If 1 the nfs is up and running, 0 otherwise                   | `id`, `name`, `zone`                                                                        |
 | sakuracloud_nfs_free_disk_size | NFS's Free Disk Size(unit: GB)                                | `id`, `name`, `zone`                                                                        |
 | sakuracloud_nfs_nic_info       | A metric with a constant '1' value labeled by nic information | `id`, `name`, `zone`, `upstream_id`, `upstream_name`, `ipaddress`, `nw_mask_len`, `gateway` |
