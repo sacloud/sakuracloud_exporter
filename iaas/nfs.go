@@ -10,6 +10,8 @@ import (
 
 type NFS struct {
 	*sacloud.NFS
+	Plan     *sacloud.NFSPlanValue
+	PlanName string
 	ZoneName string
 }
 
@@ -37,8 +39,22 @@ func (s *nfsClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
 	if err != nil {
 		return results, err
 	}
+
+	plans, err := c.NFS.GetNFSPlans()
+	if err != nil {
+		return results, err
+	}
+
 	for i := range res.NFS {
+		var planName string
+		var plan sacloud.NFSPlan
+		var planDetail *sacloud.NFSPlanValue
+		plan, planDetail = plans.FindByPlanID(res.NFS[i].Plan.ID)
+		planName = plan.String()
+
 		results = append(results, &NFS{
+			PlanName: planName,
+			Plan:     planDetail,
 			NFS:      &res.NFS[i],
 			ZoneName: c.Zone,
 		})

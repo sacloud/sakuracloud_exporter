@@ -33,7 +33,7 @@ func NewNFSCollector(logger log.Logger, errors *prometheus.CounterVec, client ia
 	errors.WithLabelValues("nfs").Add(0)
 
 	nfsLabels := []string{"id", "name", "zone"}
-	nfsInfoLabels := append(nfsLabels, "plan", "host", "tags", "description")
+	nfsInfoLabels := append(nfsLabels, "plan", "size", "host", "tags", "description")
 	nicInfoLabels := append(nfsLabels, "upstream_id", "upstream_name", "ipaddress", "nw_mask_len", "gateway")
 
 	return &NFSCollector{
@@ -120,12 +120,6 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 				float64(1.0),
 				c.nfsInfoLabels(nfs)...,
 			)
-			ch <- prometheus.MustNewConstMetric(
-				c.NICInfo,
-				prometheus.GaugeValue,
-				float64(1.0),
-				c.nicInfoLabels(nfs)...,
-			)
 
 			if nfs.IsUp() {
 				now := time.Now()
@@ -159,11 +153,13 @@ func (c *NFSCollector) nfsLabels(nfs *iaas.NFS) []string {
 }
 
 var nfsPlanLabels = map[int64]string{
-	int64(sacloud.NFSPlan100G): "100GB",
-	int64(sacloud.NFSPlan500G): "500GB",
-	int64(sacloud.NFSPlan1T):   "1TB",
-	int64(sacloud.NFSPlan2T):   "2TB",
-	int64(sacloud.NFSPlan4T):   "4TB",
+	int64(sacloud.NFSSize100G): "100GB",
+	int64(sacloud.NFSSize500G): "500GB",
+	int64(sacloud.NFSSize1T):   "1TB",
+	int64(sacloud.NFSSize2T):   "2TB",
+	int64(sacloud.NFSSize4T):   "4TB",
+	int64(sacloud.NFSSize8T):   "8TB",
+	int64(sacloud.NFSSize12T):  "12TB",
 }
 
 func (c *NFSCollector) nfsInfoLabels(nfs *iaas.NFS) []string {
@@ -174,8 +170,18 @@ func (c *NFSCollector) nfsInfoLabels(nfs *iaas.NFS) []string {
 		instanceHost = nfs.Instance.Host.Name
 	}
 
+	var plan string
+	var size string
+	if nfs.Plan != nil {
+		plan = nfs.PlanName
+		if s, ok := nfsPlanLabels[int64(nfs.Plan.Size)]; ok {
+			size = s
+		}
+	}
+
 	return append(labels,
-		nfsPlanLabels[nfs.Plan.ID],
+		plan,
+		size,
 		instanceHost,
 		flattenStringSlice(nfs.Tags),
 		nfs.Description,
