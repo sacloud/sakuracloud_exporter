@@ -45,6 +45,8 @@ type Client struct {
 	RetryMax int
 	// 503エラー時のリトライ待ち時間
 	RetryInterval time.Duration
+	// APIコール時に利用される*http.Client 未指定の場合http.DefaultClientが利用される
+	HTTPClient *http.Client
 }
 
 // NewClient APIクライアント作成
@@ -74,8 +76,11 @@ func (c *Client) Clone() *Client {
 		DefaultTimeoutDuration: c.DefaultTimeoutDuration,
 		UserAgent:              c.UserAgent,
 		AcceptLanguage:         c.AcceptLanguage,
+		RequestTracer:          c.RequestTracer,
+		ResponseTracer:         c.ResponseTracer,
 		RetryMax:               c.RetryMax,
 		RetryInterval:          c.RetryInterval,
+		HTTPClient:             c.HTTPClient,
 	}
 	n.API = newAPI(n)
 	return n
@@ -112,6 +117,7 @@ func (c *Client) isOkStatus(code int) bool {
 func (c *Client) newRequest(method, uri string, body interface{}) ([]byte, error) {
 	var (
 		client = &retryableHTTPClient{
+			Client:        c.HTTPClient,
 			retryMax:      c.RetryMax,
 			retryInterval: c.RetryInterval,
 		}
@@ -233,12 +239,15 @@ func newRequest(method, url string, body io.ReadSeeker) (*request, error) {
 }
 
 type retryableHTTPClient struct {
-	http.Client
+	*http.Client
 	retryInterval time.Duration
 	retryMax      int
 }
 
 func (c *retryableHTTPClient) Do(req *request) (*http.Response, error) {
+	if c.Client == nil {
+		c.Client = http.DefaultClient
+	}
 	for i := 0; ; i++ {
 
 		if req.body != nil {
