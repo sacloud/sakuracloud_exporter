@@ -39,12 +39,13 @@ func NewProxyLBCollector(logger log.Logger, errors *prometheus.CounterVec, clien
 	errors.WithLabelValues("proxyLB").Add(0)
 
 	proxyLBLabels := []string{"id", "name"}
-	proxyLBInfoLabels := append(proxyLBLabels, "plan", "vip",
+	proxyLBInfoLabels := append(proxyLBLabels, "plan", "vip", "fqdn",
 		"proxy_networks", "sorry_server_ipaddress", "sorry_server_port", "tags", "description")
 
 	proxyLBBindPortLabels := append(proxyLBLabels, "bind_port_index", "proxy_mode", "port")
 	proxyLBServerLabels := append(proxyLBLabels, "server_index", "ipaddress", "port", "enabled")
-	proxyLBCertificateInfoLabels := append(proxyLBLabels, "common_name", "issuer_name")
+	proxyLBCertificateLabels := append(proxyLBLabels, "cert_index")
+	proxyLBCertificateInfoLabels := append(proxyLBCertificateLabels, "common_name", "issuer_name")
 
 	return &ProxyLBCollector{
 		logger: logger,
@@ -78,7 +79,7 @@ func NewProxyLBCollector(logger log.Logger, errors *prometheus.CounterVec, clien
 		CertificateExpireDate: prometheus.NewDesc(
 			"sakuracloud_proxylb_cert_expire",
 			"Certificate expiration date in seconds since epoch (1970)",
-			proxyLBLabels, nil,
+			proxyLBCertificateLabels, nil,
 		),
 		ActiveConnections: prometheus.NewDesc(
 			"sakuracloud_proxylb_active_connections",
@@ -197,6 +198,7 @@ func (c *ProxyLBCollector) collectProxyLBInfo(ch chan<- prometheus.Metric, proxy
 	labels := append(c.proxyLBLabels(proxyLB),
 		fmt.Sprintf("%d", int(proxyLB.GetPlan())),
 		proxyLB.Status.VirtualIPAddress,
+		proxyLB.Status.FQDN,
 		flattenStringSlice(proxyLB.Status.ProxyNetworks),
 		proxyLB.Settings.ProxyLB.SorryServer.IPAddress,
 		sorryServerPort,
@@ -273,10 +275,8 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 		}
 	}
 
-	infoLabels := append(c.proxyLBLabels(proxyLB),
-		commonName,
-		issuerName,
-	)
+	certLabels := append(c.proxyLBLabels(proxyLB), "0")
+	infoLabels := append(certLabels, commonName, issuerName)
 
 	ch <- prometheus.MustNewConstMetric(
 		c.CertificateInfo,
@@ -290,8 +290,38 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 		c.CertificateExpireDate,
 		prometheus.GaugeValue,
 		float64(cert.CertificateEndDate.Unix())*1000,
-		c.proxyLBLabels(proxyLB)...,
+		certLabels...,
 	)
+
+	for i, cert := range cert.AdditionalCerts {
+		var commonName, issuerName string
+		block, _ := pem.Decode([]byte(cert.ServerCertificate))
+		if block != nil {
+			c, err := x509.ParseCertificate(block.Bytes) // ignore err
+			if err == nil {
+				commonName = c.Subject.CommonName
+				issuerName = c.Issuer.CommonName
+			}
+		}
+
+		certLabels := append(c.proxyLBLabels(proxyLB), fmt.Sprintf("%d", i+1))
+		infoLabels := append(certLabels, commonName, issuerName)
+
+		ch <- prometheus.MustNewConstMetric(
+			c.CertificateInfo,
+			prometheus.GaugeValue,
+			float64(1.0),
+			infoLabels...,
+		)
+
+		// expire date
+		ch <- prometheus.MustNewConstMetric(
+			c.CertificateExpireDate,
+			prometheus.GaugeValue,
+			float64(cert.CertificateEndDate.Unix())*1000,
+			certLabels...,
+		)
+	}
 }
 
 func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, now time.Time) {
