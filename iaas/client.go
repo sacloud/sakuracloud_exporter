@@ -1,11 +1,16 @@
 package iaas
 
 import (
+	"log"
+	"net/http"
+	"sync"
+	"time"
+
 	sakuraAPI "github.com/sacloud/libsacloud/api"
 	"github.com/sacloud/sakuracloud_exporter/config"
+	"go.uber.org/ratelimit"
 
 	"fmt"
-	"time"
 )
 
 type Client struct {
@@ -27,6 +32,13 @@ type Client struct {
 func NewSakuraCloucClient(c config.Config, version string) *Client {
 	client := sakuraAPI.NewClient(c.Token, c.Secret, "is1a")
 	client.UserAgent = fmt.Sprintf("sakuracloud_exporter/%s", version)
+	client.TraceMode = c.Trace
+
+	transport := &rateLimitRoundTripper{rateLimitPerSec: c.RateLimit}
+	if c.Debug {
+		transport.transport = &loggingRoundTripper{}
+	}
+	client.HTTPClient = &http.Client{Transport: transport}
 
 	// TODO make configurable
 	client.RetryMax = 9
@@ -52,4 +64,36 @@ func NewSakuraCloucClient(c config.Config, version string) *Client {
 func (c *Client) HasValidAPIKeys() bool {
 	res, err := c.authStatus.Read()
 	return res != nil && err == nil
+}
+
+type rateLimitRoundTripper struct {
+	transport       http.RoundTripper
+	rateLimitPerSec int
+
+	once      sync.Once
+	rateLimit ratelimit.Limiter
+}
+
+func (r *rateLimitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.once.Do(func() {
+		r.rateLimit = ratelimit.New(r.rateLimitPerSec)
+	})
+	if r.transport == nil {
+		r.transport = http.DefaultTransport
+	}
+
+	r.rateLimit.Take()
+	return r.transport.RoundTrip(req)
+}
+
+type loggingRoundTripper struct {
+	transport http.RoundTripper
+}
+
+func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if l.transport == nil {
+		l.transport = http.DefaultTransport
+	}
+	log.Printf("request: %s", req.URL.Path)
+	return l.transport.RoundTrip(req)
 }
