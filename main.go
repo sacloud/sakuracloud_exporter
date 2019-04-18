@@ -50,6 +50,7 @@ func main() {
 
 	level.Info(logger).Log(
 		"msg", "starting sakuracloud_exporter",
+		"rate-limit", c.RateLimit,
 		"version", Version,
 		"revision", Revision,
 		"goVersion", GoVersion,
