@@ -37,12 +37,13 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 
 ### Flags
 
-| Flag / Environment Variable                  | Required | Default    | Description               |
-| -------------------------------------------- | -------- | ---------- | ------------------------- |
-| `token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯        |            | API Key(Token)            |
-| `secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯        |            | API Key(Secret)           |
-| `webaddr` / `WEBADDR`                        |          | `:9542`    | Exporter's listen address |
-| `webpath`/ `WEBPATH`                         |          | `/metrics` | Metrics request path      |
+| Flag / Environment Variable                  | Required | Default    | Description                        |
+| -------------------------------------------- | -------- | ---------- | -------------------------          |
+| `token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯        |            | API Key(Token)                     |
+| `secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯        |            | API Key(Secret)                    |
+| `ratelimit`/ `SAKURACLOUD_RATE_LIMIT`        |          | `5`        | API request rate limit(maximum:10) |
+| `webaddr` / `WEBADDR`                        |          | `:9542`    | Exporter's listen address          |
+| `webpath`/ `WEBPATH`                         |          | `/metrics` | Metrics request path               |
 
 ### Metrics
 
