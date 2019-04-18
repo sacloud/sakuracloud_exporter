@@ -36,3 +36,6 @@ github.com/sacloud/libsacloud/api
 github.com/sacloud/libsacloud/utils/mutexkv
 github.com/sacloud/libsacloud
 github.com/sacloud/libsacloud/sacloud/ostype
+# go.uber.org/ratelimit v0.0.0-20180316092928-c15da0234277
+go.uber.org/ratelimit
+go.uber.org/ratelimit/internal/clock
