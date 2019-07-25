@@ -134,32 +134,33 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 				float64(1.0),
 				c.mobileGatewayInfoLabels(mobileGateway)...,
 			)
+			if mobileGateway.IsAvailable() {
+				// TrafficControlInfo
+				wg.Add(1)
+				go func() {
+					c.collectTrafficControlInfo(ch, mobileGateway)
+					wg.Done()
+				}()
 
-			// TrafficControlInfo
-			wg.Add(1)
-			go func() {
-				c.collectTrafficControlInfo(ch, mobileGateway)
-				wg.Done()
-			}()
+				// TrafficStatus
+				wg.Add(1)
+				go func() {
+					c.collectTrafficStatus(ch, mobileGateway)
+					wg.Done()
+				}()
 
-			// TrafficStatus
-			wg.Add(1)
-			go func() {
-				c.collectTrafficStatus(ch, mobileGateway)
-				wg.Done()
-			}()
+				if mobileGateway.IsUp() {
+					// collect metrics
+					now := time.Now()
 
-			if mobileGateway.IsUp() {
-				// collect metrics
-				now := time.Now()
-
-				for i := range mobileGateway.Interfaces {
-					// NIC(Receive/Send)
-					wg.Add(1)
-					go func(i int) {
-						c.collectNICMetrics(ch, mobileGateway, i, now)
-						wg.Done()
-					}(i)
+					for i := range mobileGateway.Interfaces {
+						// NIC(Receive/Send)
+						wg.Add(1)
+						go func(i int) {
+							c.collectNICMetrics(ch, mobileGateway, i, now)
+							wg.Done()
+						}(i)
+					}
 				}
 			}
 		}(mobileGateways[i])
