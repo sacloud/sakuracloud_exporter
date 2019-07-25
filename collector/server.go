@@ -32,6 +32,11 @@ type ServerCollector struct {
 	NICBandwidth *prometheus.Desc
 	NICReceive   *prometheus.Desc
 	NICSend      *prometheus.Desc
+
+	MaintenanceScheduled *prometheus.Desc
+	MaintenanceInfo      *prometheus.Desc
+	MaintenanceStartTime *prometheus.Desc
+	MaintenanceEndTime   *prometheus.Desc
 }
 
 // NewServerCollector returns a new ServerCollector.
@@ -44,6 +49,7 @@ func NewServerCollector(logger log.Logger, errors *prometheus.CounterVec, client
 	diskInfoLabels := append(diskLabels, "plan", "interface", "size", "tags", "description")
 	nicLabels := append(serverLabels, "interface_id", "index")
 	nicInfoLabels := append(nicLabels, "upstream_type", "upstream_id", "upstream_name")
+	maintenanceInfoLabel := append(serverLabels, "info_url", "info_title", "description", "start_date", "end_date")
 
 	return &ServerCollector{
 		logger: logger,
@@ -108,6 +114,26 @@ func NewServerCollector(logger log.Logger, errors *prometheus.CounterVec, client
 			"sakuracloud_server_nic_send",
 			"NIC's send bytes(unit: Kbps)",
 			nicLabels, nil,
+		),
+		MaintenanceScheduled: prometheus.NewDesc(
+			"sakuracloud_server_maintenance_scheduled",
+			"If 1 the server has scheduled maintenance info, 0 otherwise",
+			serverLabels, nil,
+		),
+		MaintenanceInfo: prometheus.NewDesc(
+			"sakuracloud_server_maintenance_info",
+			"A metric with a constant '1' value labeled by maintenance information",
+			maintenanceInfoLabel, nil,
+		),
+		MaintenanceStartTime: prometheus.NewDesc(
+			"sakuracloud_server_maintenance_start",
+			"Scheduled maintenance start time in seconds since epoch (1970)",
+			serverLabels, nil,
+		),
+		MaintenanceEndTime: prometheus.NewDesc(
+			"sakuracloud_server_maintenance_end",
+			"Scheduled maintenance end time in seconds since epoch (1970)",
+			serverLabels, nil,
 		),
 	}
 }
@@ -177,6 +203,23 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 				c.Memories,
 				prometheus.GaugeValue,
 				float64(server.GetMemoryGB()),
+				serverLabels...,
+			)
+
+			// maintenance info
+			var maintenanceScheduled float64
+			if server.MaintenanceScheduled() {
+				maintenanceScheduled = 1.0
+				wg.Add(1)
+				go func() {
+					c.collectMaintenanceInfo(ch, server)
+					wg.Done()
+				}()
+			}
+			ch <- prometheus.MustNewConstMetric(
+				c.MaintenanceScheduled,
+				prometheus.GaugeValue,
+				maintenanceScheduled,
 				serverLabels...,
 			)
 
@@ -266,6 +309,18 @@ func (c *ServerCollector) serverInfoLabels(server *sacloud.Server) []string {
 		instanceHost,
 		flattenStringSlice(server.Tags),
 		server.Description,
+	)
+}
+
+func (c *ServerCollector) serverMaintenanceInfoLabels(server *sacloud.Server, info *sacloud.NewsFeed) []string {
+	labels := c.serverLabels(server)
+
+	return append(labels,
+		info.URL,
+		info.Title,
+		info.Description,
+		fmt.Sprintf("%d", info.EventStart().Unix()),
+		fmt.Sprintf("%d", info.EventEnd().Unix()),
 	)
 }
 
@@ -443,4 +498,44 @@ func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server 
 		)
 		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
 	}
+}
+
+func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, server *sacloud.Server) {
+	if !server.MaintenanceScheduled() {
+		return
+	}
+	info, err := c.client.MaintenanceInfo(server.GetMaintenanceInfoURL())
+	if err != nil {
+		c.errors.WithLabelValues("server").Add(1)
+		level.Warn(c.logger).Log(
+			"msg", fmt.Sprintf("can't get server's maintenance info: ServerID=%d", server.ID),
+			"err", err,
+		)
+		return
+	}
+
+	infoLabels := c.serverMaintenanceInfoLabels(server, info)
+
+	// info
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceInfo,
+		prometheus.GaugeValue,
+		1.0,
+		infoLabels...,
+	)
+	// start
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceStartTime,
+		prometheus.GaugeValue,
+		float64(info.EventStart().Unix()),
+		c.serverLabels(server)...,
+	)
+	// end
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceEndTime,
+		prometheus.GaugeValue,
+		float64(info.EventEnd().Unix()),
+		c.serverLabels(server)...,
+	)
+
 }

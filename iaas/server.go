@@ -13,6 +13,7 @@ type ServerClient interface {
 	MonitorCPU(zone string, serverID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
 	MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error)
 	MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error)
+	MaintenanceInfo(infoURL string) (*sacloud.NewsFeed, error)
 }
 
 func getServerClient(client *sakuraAPI.Client, zones []string) ServerClient {
@@ -73,4 +74,8 @@ func (s *serverClient) MonitorNIC(zone string, nicID int64, end time.Time) (*NIC
 	}
 
 	return queryNICMonitorValue(s.rawClient, zone, end, query)
+}
+
+func (s *serverClient) MaintenanceInfo(infoURL string) (*sacloud.NewsFeed, error) {
+	return s.rawClient.NewsFeed.GetFeedByURL(infoURL)
 }
