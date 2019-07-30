@@ -215,10 +215,10 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 				for _, nic := range vpcRouter.Interfaces {
 					// NIC(Receive/Send)
 					wg.Add(1)
-					go func(i int) {
+					go func(nic *sacloud.VPCRouterInterface) {
 						c.collectNICMetrics(ch, vpcRouter, nic.Index, now)
 						wg.Done()
-					}(i)
+					}(nic)
 				}
 			}
 
