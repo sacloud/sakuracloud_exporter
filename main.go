@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -57,7 +58,7 @@ func main() {
 	)
 
 	client := iaas.NewSakuraCloucClient(c, Version)
-	if !client.HasValidAPIKeys() {
+	if !client.HasValidAPIKeys(context.TODO()) {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}
 
@@ -71,24 +72,26 @@ func main() {
 		PidFn: func() (int, error) { return os.Getpid(), nil },
 	}))
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	// collector info
 	r.MustRegister(prometheus.NewGoCollector())
-	r.MustRegister(collector.NewExporterCollector(logger, Version, Revision, GoVersion, StartTime))
+	r.MustRegister(collector.NewExporterCollector(ctx, logger, Version, Revision, GoVersion, StartTime))
 	r.MustRegister(errors)
 
 	// sakuracloud metrics
-	r.MustRegister(collector.NewAutoBackupCollector(logger, errors, client.AutoBackup))
-	r.MustRegister(collector.NewCouponCollector(logger, errors, client.Coupon))
-	r.MustRegister(collector.NewDatabaseCollector(logger, errors, client.Database))
-	r.MustRegister(collector.NewInternetCollector(logger, errors, client.Internet))
-	r.MustRegister(collector.NewLoadBalancerCollector(logger, errors, client.LoadBalancer))
-	r.MustRegister(collector.NewNFSCollector(logger, errors, client.NFS))
-	r.MustRegister(collector.NewMobileGatewayCollector(logger, errors, client.MobileGateway))
-	r.MustRegister(collector.NewProxyLBCollector(logger, errors, client.ProxyLB))
-	r.MustRegister(collector.NewServerCollector(logger, errors, client.Server))
-	r.MustRegister(collector.NewSIMCollector(logger, errors, client.SIM))
-	r.MustRegister(collector.NewVPCRouterCollector(logger, errors, client.VPCRouter))
-	r.MustRegister(collector.NewZoneCollector(logger, errors, client.Zone))
+	r.MustRegister(collector.NewAutoBackupCollector(ctx, logger, errors, client.AutoBackup))
+	r.MustRegister(collector.NewCouponCollector(ctx, logger, errors, client.Coupon))
+	r.MustRegister(collector.NewDatabaseCollector(ctx, logger, errors, client.Database))
+	r.MustRegister(collector.NewInternetCollector(ctx, logger, errors, client.Internet))
+	r.MustRegister(collector.NewLoadBalancerCollector(ctx, logger, errors, client.LoadBalancer))
+	r.MustRegister(collector.NewNFSCollector(ctx, logger, errors, client.NFS))
+	r.MustRegister(collector.NewMobileGatewayCollector(ctx, logger, errors, client.MobileGateway))
+	r.MustRegister(collector.NewProxyLBCollector(ctx, logger, errors, client.ProxyLB))
+	r.MustRegister(collector.NewServerCollector(ctx, logger, errors, client.Server))
+	r.MustRegister(collector.NewSIMCollector(ctx, logger, errors, client.SIM))
+	r.MustRegister(collector.NewVPCRouterCollector(ctx, logger, errors, client.VPCRouter))
+	r.MustRegister(collector.NewZoneCollector(ctx, logger, errors, client.Zone))
 
 	http.Handle(c.WebPath,
 		promhttp.HandlerFor(r, promhttp.HandlerOpts{}),
@@ -106,6 +109,7 @@ func main() {
 
 	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr)
 	if err := http.ListenAndServe(c.WebAddr, nil); err != nil {
+		cancel()
 		level.Error(logger).Log("msg", "http listenandserve error", "err", err)
 		os.Exit(2)
 	}

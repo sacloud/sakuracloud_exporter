@@ -1,14 +1,13 @@
 package iaas
 
 import (
-	"log"
+	"context"
 	"net/http"
-	"sync"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/trace"
 	"github.com/sacloud/sakuracloud_exporter/config"
-	"go.uber.org/ratelimit"
 
 	"fmt"
 )
@@ -30,70 +29,43 @@ type Client struct {
 }
 
 func NewSakuraCloucClient(c config.Config, version string) *Client {
-	client := sakuraAPI.NewClient(c.Token, c.Secret, "is1a")
-	client.UserAgent = fmt.Sprintf("sakuracloud_exporter/%s", version)
-	client.TraceMode = c.Trace
-
-	transport := &rateLimitRoundTripper{rateLimitPerSec: c.RateLimit}
-	if c.Debug {
-		transport.transport = &loggingRoundTripper{}
+	caller := &sacloud.Client{
+		AccessToken:       c.Token,
+		AccessTokenSecret: c.Secret,
+		UserAgent:         fmt.Sprintf("sakuracloud_exporter/%s", version),
+		RetryMax:          9,
+		RetryInterval:     1 * time.Second,
+		HTTPClient: &http.Client{
+			Transport: &sacloud.RateLimitRoundTripper{RateLimitPerSec: c.RateLimit},
+		},
 	}
-	client.HTTPClient = &http.Client{Transport: transport}
-
-	// TODO make configurable
-	client.RetryMax = 9
-	client.RetryInterval = 1 * time.Second
+	if c.Debug {
+		trace.AddClientFactoryHooks()
+	}
+	if c.Trace {
+		caller.HTTPClient.Transport = &sacloud.TracingRoundTripper{
+			Transport: caller.HTTPClient.Transport,
+		}
+	}
 
 	return &Client{
-		authStatus:    getAuthStatusClient(client),
-		AutoBackup:    getAutoBackupClient(client),
-		Coupon:        getCouponClient(client),
-		Database:      getDatabaseClient(client, c.Zones),
-		Internet:      getInternetClient(client, c.Zones),
-		LoadBalancer:  getLoadBalancerClient(client, c.Zones),
-		MobileGateway: getMobileGatewayClient(client, c.Zones),
-		NFS:           getNFSClient(client, c.Zones),
-		ProxyLB:       getProxyLBClient(client),
-		Server:        getServerClient(client, c.Zones),
-		SIM:           getSIMClient(client),
-		VPCRouter:     getVPCRouterClient(client, c.Zones),
-		Zone:          getZoneClient(client),
+		authStatus:    getAuthStatusClient(caller),
+		AutoBackup:    getAutoBackupClient(caller, c.Zones),
+		Coupon:        getCouponClient(caller),
+		Database:      getDatabaseClient(caller, c.Zones),
+		Internet:      getInternetClient(caller, c.Zones),
+		LoadBalancer:  getLoadBalancerClient(caller, c.Zones),
+		MobileGateway: getMobileGatewayClient(caller, c.Zones),
+		NFS:           getNFSClient(caller, c.Zones),
+		ProxyLB:       getProxyLBClient(caller),
+		Server:        getServerClient(caller, c.Zones),
+		SIM:           getSIMClient(caller),
+		VPCRouter:     getVPCRouterClient(caller, c.Zones),
+		Zone:          getZoneClient(caller),
 	}
 }
 
-func (c *Client) HasValidAPIKeys() bool {
-	res, err := c.authStatus.Read()
+func (c *Client) HasValidAPIKeys(ctx context.Context) bool {
+	res, err := c.authStatus.Read(ctx)
 	return res != nil && err == nil
-}
-
-type rateLimitRoundTripper struct {
-	transport       http.RoundTripper
-	rateLimitPerSec int
-
-	once      sync.Once
-	rateLimit ratelimit.Limiter
-}
-
-func (r *rateLimitRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	r.once.Do(func() {
-		r.rateLimit = ratelimit.New(r.rateLimitPerSec)
-	})
-	if r.transport == nil {
-		r.transport = http.DefaultTransport
-	}
-
-	r.rateLimit.Take()
-	return r.transport.RoundTrip(req)
-}
-
-type loggingRoundTripper struct {
-	transport http.RoundTripper
-}
-
-func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	if l.transport == nil {
-		l.transport = http.DefaultTransport
-	}
-	log.Printf("request: %s", req.URL.Path)
-	return l.transport.RoundTrip(req)
 }

@@ -1,11 +1,11 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type MobileGateway struct {
@@ -14,41 +14,43 @@ type MobileGateway struct {
 }
 
 type MobileGatewayClient interface {
-	Find() ([]*MobileGateway, error)
-	TrafficStatus(zone string, mobileGatewayID int64) (*sacloud.TrafficStatus, error)
-	TrafficControl(zone string, mobileGatewayID int64) (*sacloud.TrafficMonitoringConfig, error)
-	MonitorNIC(zone string, mobileGatewayID int64, index int, end time.Time) (*NICMetrics, error)
+	Find(ctx context.Context) ([]*MobileGateway, error)
+	TrafficStatus(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficStatus, error)
+	TrafficControl(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficControl, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error)
 }
 
-func getMobileGatewayClient(client *sakuraAPI.Client, zones []string) MobileGatewayClient {
+func getMobileGatewayClient(caller sacloud.APICaller, zones []string) MobileGatewayClient {
 	return &mobileGatewayClient{
-		rawClient: client,
-		zones:     zones,
+		client: sacloud.NewMobileGatewayOp(caller),
+		zones:  zones,
 	}
 }
 
 type mobileGatewayClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	client sacloud.MobileGatewayAPI
+	zones  []string
 }
 
-func (s *mobileGatewayClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *mobileGatewayClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.MobileGateway.Reset().Limit(10000).Find()
+	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-	for i := range res.MobileGateways {
+	for _, mgw := range res.MobileGateways {
 		results = append(results, &MobileGateway{
-			MobileGateway: &res.MobileGateways[i],
-			ZoneName:      c.Zone,
+			MobileGateway: mgw,
+			ZoneName:      zone,
 		})
 	}
 	return results, err
 }
 
-func (s *mobileGatewayClient) Find() ([]*MobileGateway, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *mobileGatewayClient) Find(ctx context.Context) ([]*MobileGateway, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
@@ -59,24 +61,18 @@ func (s *mobileGatewayClient) Find() ([]*MobileGateway, error) {
 	return results, nil
 }
 
-func (s *mobileGatewayClient) MonitorNIC(zone string, mobileGatewayID int64, index int, end time.Time) (*NICMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.MobileGateway.MonitorBy(mobileGatewayID, index, param)
+func (c *mobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+	mvs, err := c.client.MonitorInterface(ctx, zone, id, index, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryNICMonitorValue(s.rawClient, zone, end, query)
+	return monitorInterfaceValue(mvs.Values), nil
 }
 
-func (s *mobileGatewayClient) TrafficStatus(zone string, mobileGatewayID int64) (*sacloud.TrafficStatus, error) {
-	c := s.rawClient.Clone()
-	c.Zone = zone
-
-	return c.MobileGateway.GetTrafficStatus(mobileGatewayID)
+func (c *mobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficStatus, error) {
+	return c.client.TrafficStatus(ctx, zone, id)
 }
 
-func (s *mobileGatewayClient) TrafficControl(zone string, mobileGatewayID int64) (*sacloud.TrafficMonitoringConfig, error) {
-	c := s.rawClient.Clone()
-	c.Zone = zone
-
-	return c.MobileGateway.GetTrafficMonitoringConfig(mobileGatewayID)
+func (c *mobileGatewayClient) TrafficControl(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficControl, error) {
+	return c.client.GetTrafficConfig(ctx, zone, id)
 }

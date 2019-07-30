@@ -1,61 +1,79 @@
 package iaas
 
 import (
+	"context"
 	"fmt"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/search"
+	"github.com/sacloud/libsacloud/v2/sacloud/search/keys"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type AutoBackupClient interface {
-	Find() ([]*sacloud.AutoBackup, error)
-	ListBackups(zone string, autoBackupID int64) ([]*sacloud.Archive, error)
+	Find(ctx context.Context) ([]*sacloud.AutoBackup, error)
+	ListBackups(ctx context.Context, zone string, autoBackupID types.ID) ([]*sacloud.Archive, error)
 }
 
-func getAutoBackupClient(client *sakuraAPI.Client) AutoBackupClient {
+func getAutoBackupClient(caller sacloud.APICaller, zones []string) AutoBackupClient {
 	return &autoBackupClient{
-		rawClient: client,
+		caller: caller,
+		zones:  zones,
 	}
 }
 
 type autoBackupClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	caller sacloud.APICaller
+	zones  []string
 }
 
-func (s *autoBackupClient) Find() ([]*sacloud.AutoBackup, error) {
-	client := s.rawClient.Clone()
-	client.Zone = "is1a"
+func (c *autoBackupClient) find(ctx context.Context, zone string) ([]interface{}, error) {
+	client := sacloud.NewAutoBackupOp(c.caller)
+	searched, err := client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var res []interface{}
+	for _, v := range searched.AutoBackups {
+		res = append(res, v)
+	}
+	return res, nil
+}
 
-	res, err := client.AutoBackup.Reset().Limit(10000).Find()
+func (c *autoBackupClient) Find(ctx context.Context) ([]*sacloud.AutoBackup, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
 	var results []*sacloud.AutoBackup
-	for i := range res.CommonServiceAutoBackupItems {
-		results = append(results, &res.CommonServiceAutoBackupItems[i])
+	for _, v := range res {
+		results = append(results, v.(*sacloud.AutoBackup))
 	}
 	return results, nil
 }
 
-func (s *autoBackupClient) ListBackups(zone string, autoBackupID int64) ([]*sacloud.Archive, error) {
+func (c *autoBackupClient) ListBackups(ctx context.Context, zone string, autoBackupID types.ID) ([]*sacloud.Archive, error) {
 
-	client := s.rawClient.Clone()
-	client.Zone = zone
-
+	client := sacloud.NewArchiveOp(c.caller)
 	tagName := fmt.Sprintf("autobackup-%d", autoBackupID)
 
-	res, err := client.Archive.Reset().Limit(100).WithTag(tagName).Find()
+	searched, err := client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+		Filter: search.Filter{
+			search.Key(keys.Tags): search.TagsAndEqual(tagName),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	var results []*sacloud.Archive
-	for i := range res.Archives {
-		if res.Archives[i].IsAvailable() {
-			results = append(results, &res.Archives[i])
+	var res []*sacloud.Archive
+	for _, v := range searched.Archives {
+		if v.Availability.IsAvailable() {
+			res = append(res, v)
 		}
 	}
-	return results, err
+	return res, err
 }

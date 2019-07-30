@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -8,12 +9,13 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
 // DatabaseCollector collects metrics about all databases.
 type DatabaseCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.DatabaseClient
@@ -37,7 +39,7 @@ type DatabaseCollector struct {
 }
 
 // NewDatabaseCollector returns a new DatabaseCollector.
-func NewDatabaseCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.DatabaseClient) *DatabaseCollector {
+func NewDatabaseCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.DatabaseClient) *DatabaseCollector {
 	errors.WithLabelValues("database").Add(0)
 
 	databaseLabels := []string{"id", "name", "zone"}
@@ -49,6 +51,7 @@ func NewDatabaseCollector(logger log.Logger, errors *prometheus.CounterVec, clie
 	nicInfoLabels := append(databaseLabels, "upstream_type", "upstream_id", "upstream_name", "ipaddress", "nw_mask_len", "gateway")
 
 	return &DatabaseCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -158,7 +161,7 @@ func (c *DatabaseCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
-	databases, err := c.client.Find()
+	databases, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
 		level.Warn(c.logger).Log(
@@ -177,7 +180,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 			databaseLabels := c.databaseLabels(database)
 
 			var up float64
-			if database.IsUp() {
+			if database.InstanceStatus.IsUp() {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(
@@ -199,7 +202,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 				c.nicInfoLabels(database)...,
 			)
 
-			if database.IsUp() {
+			if database.InstanceStatus.IsUp() {
 				now := time.Now()
 
 				// system info
@@ -239,34 +242,34 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *DatabaseCollector) databaseLabels(database *iaas.Database) []string {
 	return []string{
-		database.GetStrID(),
+		database.ID.String(),
 		database.Name,
 		database.ZoneName,
 	}
 }
 
-var databasePlanLabels = map[int64]string{
-	int64(sacloud.DatabasePlan10G):  "10GB",
-	int64(sacloud.DatabasePlan30G):  "30GB",
-	int64(sacloud.DatabasePlan90G):  "90GB",
-	int64(sacloud.DatabasePlan240G): "240GB",
-	int64(sacloud.DatabasePlan500G): "500GB",
-	int64(sacloud.DatabasePlan1T):   "1TB",
+var databasePlanLabels = map[types.ID]string{
+	types.DatabasePlans.DB10GB:  "10GB",
+	types.DatabasePlans.DB30GB:  "30GB",
+	types.DatabasePlans.DB90GB:  "90GB",
+	types.DatabasePlans.DB240GB: "240GB",
+	types.DatabasePlans.DB500GB: "500GB",
+	types.DatabasePlans.DB1TB:   "1TB",
 }
 
 func (c *DatabaseCollector) databaseInfoLabels(database *iaas.Database) []string {
 	labels := c.databaseLabels(database)
 
 	instanceHost := "-"
-	if database.Instance != nil {
-		instanceHost = database.Instance.Host.Name
+	if database.InstanceHostName != "" {
+		instanceHost = database.InstanceHostName
 	}
 
 	replEnabled := "0"
 	replRole := ""
-	if database.IsReplicationEnabled() {
+	if database.ReplicationSetting != nil {
 		replEnabled = "1"
-		if database.IsReplicationMaster() {
+		if database.ReplicationSetting.Model == types.DatabaseReplicationModels.MasterSlave {
 			replRole = "master"
 		} else {
 			replRole = "slave"
@@ -274,12 +277,12 @@ func (c *DatabaseCollector) databaseInfoLabels(database *iaas.Database) []string
 	}
 
 	return append(labels,
-		databasePlanLabels[database.Plan.ID],
+		databasePlanLabels[database.PlanID],
 		instanceHost,
-		database.DatabaseName(),
-		database.DatabaseRevision(),
-		database.DatabaseVersion(),
-		database.WebUIAddress(),
+		database.Conf.DatabaseName,
+		database.Conf.DatabaseRevision,
+		database.Conf.DatabaseVersion,
+		"", // TODO libsacloud v2 doesn't support WebUI URL
 		replEnabled,
 		replRole,
 		flattenStringSlice(database.Tags),
@@ -293,16 +296,16 @@ func (c *DatabaseCollector) nicInfoLabels(database *iaas.Database) []string {
 	var upstreamType, upstreamID, upstreamName string
 
 	if len(database.Interfaces) > 0 {
-		nic := database.GetFirstInterface()
+		nic := database.Interfaces[0]
 
-		upstreamType = nic.UpstreamType().String()
-		if nic.Switch != nil {
-			upstreamID = nic.Switch.GetStrID()
-			upstreamName = nic.Switch.Name
+		upstreamType = nic.UpstreamType.String()
+		if !nic.SwitchID.IsEmpty() {
+			upstreamID = nic.SwitchID.String()
+			upstreamName = nic.SwitchName
 		}
 	}
 
-	nwMaskLen := database.NetworkMaskLen()
+	nwMaskLen := database.NetworkMaskLen
 	strMaskLen := ""
 	if nwMaskLen > 0 {
 		strMaskLen = fmt.Sprintf("%d", nwMaskLen)
@@ -312,15 +315,15 @@ func (c *DatabaseCollector) nicInfoLabels(database *iaas.Database) []string {
 		upstreamType,
 		upstreamID,
 		upstreamName,
-		database.IPAddress(),
+		database.IPAddresses[0],
 		strMaskLen,
-		database.DefaultRoute(),
+		database.DefaultRoute,
 	)
 }
 
 func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
 
-	values, err := c.client.MonitorCPU(database.ZoneName, database.ID, now)
+	values, err := c.client.MonitorCPU(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
 		level.Warn(c.logger).Log(
@@ -336,7 +339,7 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 	m := prometheus.MustNewConstMetric(
 		c.CPUTime,
 		prometheus.GaugeValue,
-		values.Value*1000,
+		values.CPUTime*1000,
 		c.databaseLabels(database)...,
 	)
 
@@ -345,7 +348,7 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 
 func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
 
-	values, err := c.client.MonitorDisk(database.ZoneName, database.ID, now)
+	values, err := c.client.MonitorDisk(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
 		level.Warn(c.logger).Log(
@@ -358,29 +361,25 @@ func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, data
 		return
 	}
 
-	if values.Read != nil {
-		m := prometheus.MustNewConstMetric(
-			c.DiskRead,
-			prometheus.GaugeValue,
-			values.Read.Value/1024,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Read.Time, m)
-	}
-	if values.Write != nil {
-		m := prometheus.MustNewConstMetric(
-			c.DiskWrite,
-			prometheus.GaugeValue,
-			values.Write.Value/1024,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Write.Time, m)
-	}
+	m := prometheus.MustNewConstMetric(
+		c.DiskRead,
+		prometheus.GaugeValue,
+		values.Read/1024,
+		c.databaseLabels(database)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.DiskWrite,
+		prometheus.GaugeValue,
+		values.Write/1024,
+		c.databaseLabels(database)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
 func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
 
-	values, err := c.client.MonitorNIC(database.ZoneName, database.ID, now)
+	values, err := c.client.MonitorNIC(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
 		level.Warn(c.logger).Log(
@@ -393,29 +392,26 @@ func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, datab
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICReceive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
-	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICSend,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
-	}
+	m := prometheus.MustNewConstMetric(
+		c.NICReceive,
+		prometheus.GaugeValue,
+		values.Receive*8/1000,
+		c.databaseLabels(database)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	m = prometheus.MustNewConstMetric(
+		c.NICSend,
+		prometheus.GaugeValue,
+		values.Send*8/1000,
+		c.databaseLabels(database)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
 func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
 
-	values, err := c.client.MonitorDatabase(database.ZoneName, database.ID, now)
+	values, err := c.client.MonitorDatabase(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
 		level.Warn(c.logger).Log(
@@ -429,76 +425,95 @@ func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, 
 	}
 
 	labels := c.databaseLabels(database)
-	if values.TotalMemorySize != nil {
-		m := prometheus.MustNewConstMetric(
-			c.MemoryTotal,
-			prometheus.GaugeValue,
-			values.TotalMemorySize.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.TotalMemorySize.Time, m)
+	totalMemorySize := values.TotalMemorySize
+	if totalMemorySize > 0 {
+		totalMemorySize = totalMemorySize / 1024 / 1024
 	}
-	if values.UsedMemorySize != nil {
-		m := prometheus.MustNewConstMetric(
-			c.MemoryUsed,
-			prometheus.GaugeValue,
-			values.UsedMemorySize.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.UsedMemorySize.Time, m)
+	m := prometheus.MustNewConstMetric(
+		c.MemoryTotal,
+		prometheus.GaugeValue,
+		totalMemorySize,
+		labels...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	usedMemorySize := values.UsedMemorySize
+	if usedMemorySize > 0 {
+		usedMemorySize = usedMemorySize / 1024 / 1024
 	}
-	if values.TotalDisk1Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.SystemDiskTotal,
-			prometheus.GaugeValue,
-			values.TotalDisk1Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.TotalDisk1Size.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.MemoryUsed,
+		prometheus.GaugeValue,
+		usedMemorySize,
+		labels...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	totalDisk1Size := values.TotalDisk1Size
+	if totalDisk1Size > 0 {
+		totalDisk1Size = totalDisk1Size / 1024 / 1024
 	}
-	if values.UsedDisk1Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.SystemDiskUsed,
-			prometheus.GaugeValue,
-			values.UsedDisk1Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.UsedDisk1Size.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.SystemDiskTotal,
+		prometheus.GaugeValue,
+		totalDisk1Size,
+		labels...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	usedDisk1Size := values.UsedDisk1Size
+	if usedDisk1Size > 0 {
+		usedDisk1Size = usedDisk1Size / 1024 / 1024
 	}
-	if values.TotalDisk2Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.BackupDiskTotal,
-			prometheus.GaugeValue,
-			values.TotalDisk2Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.TotalDisk2Size.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.SystemDiskUsed,
+		prometheus.GaugeValue,
+		usedDisk1Size,
+		labels...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	totalDisk2Size := values.TotalDisk2Size
+	if totalDisk2Size > 0 {
+		totalDisk2Size = totalDisk2Size / 1024 / 1024
 	}
-	if values.TotalDisk2Size != nil {
-		m := prometheus.MustNewConstMetric(
-			c.BackupDiskUsed,
-			prometheus.GaugeValue,
-			values.UsedDisk2Size.Value/1024/1024,
-			labels...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.UsedDisk2Size.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.BackupDiskTotal,
+		prometheus.GaugeValue,
+		totalDisk2Size,
+		labels...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	usedDisk2Size := values.UsedDisk2Size
+	if usedDisk2Size > 0 {
+		usedDisk2Size = usedDisk2Size / 1024 / 1024
 	}
-	if values.BinlogUsedSizeKiB != nil {
-		m := prometheus.MustNewConstMetric(
-			c.BinlogUsed,
-			prometheus.GaugeValue,
-			values.BinlogUsedSizeKiB.Value/1024/1024,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.BinlogUsedSizeKiB.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.BackupDiskUsed,
+		prometheus.GaugeValue,
+		usedDisk2Size,
+		labels...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	binlogUsed := values.BinlogUsedSizeKiB
+	if binlogUsed > 0 {
+		binlogUsed = binlogUsed / 1024 / 1024
 	}
-	if values.DelayTimeSec != nil {
-		m := prometheus.MustNewConstMetric(
-			c.ReplicationDelay,
-			prometheus.GaugeValue,
-			values.DelayTimeSec.Value,
-			c.databaseLabels(database)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.DelayTimeSec.Time, m)
-	}
+	m = prometheus.MustNewConstMetric(
+		c.BinlogUsed,
+		prometheus.GaugeValue,
+		binlogUsed,
+		c.databaseLabels(database)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	m = prometheus.MustNewConstMetric(
+		c.ReplicationDelay,
+		prometheus.GaugeValue,
+		values.DelayTimeSec,
+		c.databaseLabels(database)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

@@ -1,11 +1,11 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type Internet struct {
@@ -14,39 +14,41 @@ type Internet struct {
 }
 
 type InternetClient interface {
-	Find() ([]*Internet, error)
-	MonitorTraffic(zone string, internetID int64, end time.Time) (*RouterMetrics, error)
+	Find(ctx context.Context) ([]*Internet, error)
+	MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*sacloud.MonitorRouterValue, error)
 }
 
-func getInternetClient(client *sakuraAPI.Client, zones []string) InternetClient {
+func getInternetClient(caller sacloud.APICaller, zones []string) InternetClient {
 	return &internetClient{
-		rawClient: client,
-		zones:     zones,
+		client: sacloud.NewInternetOp(caller),
+		zones:  zones,
 	}
 }
 
 type internetClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	client sacloud.InternetAPI
+	zones  []string
 }
 
-func (s *internetClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *internetClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.Internet.Reset().Limit(10000).Find()
+	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-	for i := range res.Internet {
+	for _, router := range res.Internets {
 		results = append(results, &Internet{
-			Internet: &res.Internet[i],
-			ZoneName: c.Zone,
+			Internet: router,
+			ZoneName: zone,
 		})
 	}
 	return results, err
 }
 
-func (s *internetClient) Find() ([]*Internet, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *internetClient) Find(ctx context.Context) ([]*Internet, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +59,10 @@ func (s *internetClient) Find() ([]*Internet, error) {
 	return results, nil
 }
 
-func (s *internetClient) MonitorTraffic(zone string, internetID int64, end time.Time) (*RouterMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Internet.Monitor(internetID, param)
+func (c *internetClient) MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*sacloud.MonitorRouterValue, error) {
+	mvs, err := c.client.Monitor(ctx, zone, internetID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryRouterMonitorValue(s.rawClient, zone, end, query)
+	return monitorRouterValue(mvs.Values), nil
 }

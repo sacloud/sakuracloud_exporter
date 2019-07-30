@@ -1,81 +1,96 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/libsacloud/v2/utils/newsfeed"
 )
 
 type ServerClient interface {
-	Find() ([]*sacloud.Server, error)
-	MonitorCPU(zone string, serverID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
-	MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error)
-	MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error)
-	MaintenanceInfo(infoURL string) (*sacloud.NewsFeed, error)
+	Find(ctx context.Context) ([]*Server, error)
+	MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error)
+	MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error)
+	MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
-func getServerClient(client *sakuraAPI.Client, zones []string) ServerClient {
+type Server struct {
+	*sacloud.Server
+	ZoneName string
+}
+
+func getServerClient(caller sacloud.APICaller, zones []string) ServerClient {
 	return &serverClient{
-		rawClient: client,
-		zones:     zones,
+		serverOp:    sacloud.NewServerOp(caller),
+		diskOp:      sacloud.NewDiskOp(caller),
+		interfaceOp: sacloud.NewInterfaceOp(caller),
+		zones:       zones,
 	}
 }
 
 type serverClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	serverOp    sacloud.ServerAPI
+	diskOp      sacloud.DiskAPI
+	interfaceOp sacloud.InterfaceAPI
+	zones       []string
 }
 
-func (s *serverClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *serverClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.Server.Reset().Limit(10000).Find()
+	res, err := c.serverOp.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-	for i := range res.Servers {
-		results = append(results, &res.Servers[i])
+	for _, s := range res.Servers {
+		results = append(results, &Server{
+			Server:   s,
+			ZoneName: zone,
+		})
 	}
 	return results, err
 }
 
-func (s *serverClient) Find() ([]*sacloud.Server, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *serverClient) Find(ctx context.Context) ([]*Server, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
-	var results []*sacloud.Server
+	var results []*Server
 	for _, s := range res {
-		results = append(results, s.(*sacloud.Server))
+		results = append(results, s.(*Server))
 	}
 	return results, nil
 }
 
-func (s *serverClient) MonitorCPU(zone string, serverID int64, end time.Time) (*sacloud.FlatMonitorValue, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Server.Monitor(serverID, param)
+func (c *serverClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+	mvs, err := c.serverOp.Monitor(ctx, zone, id, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryCPUTimeMonitorValue(s.rawClient, zone, end, query)
+	return monitorCPUTimeValue(mvs.Values), nil
 }
 
-func (s *serverClient) MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Disk.Monitor(diskID, param)
+func (c *serverClient) MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error) {
+	mvs, err := c.diskOp.Monitor(ctx, zone, diskID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryDiskMonitorValue(s.rawClient, zone, end, query)
+	return monitorDiskValue(mvs.Values), nil
 }
 
-func (s *serverClient) MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Interface.Monitor(nicID, param)
+func (c *serverClient) MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+	mvs, err := c.interfaceOp.Monitor(ctx, zone, nicID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryNICMonitorValue(s.rawClient, zone, end, query)
+	return monitorInterfaceValue(mvs.Values), nil
 }
 
-func (s *serverClient) MaintenanceInfo(infoURL string) (*sacloud.NewsFeed, error) {
-	return s.rawClient.NewsFeed.GetFeedByURL(infoURL)
+func (c *serverClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return newsfeed.GetByURL(infoURL)
 }

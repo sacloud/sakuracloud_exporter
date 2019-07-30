@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
@@ -9,12 +10,13 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
 // AutoBackupCollector collects metrics about all auto_backups.
 type AutoBackupCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.AutoBackupClient
@@ -27,7 +29,7 @@ type AutoBackupCollector struct {
 }
 
 // NewAutoBackupCollector returns a new AutoBackupCollector.
-func NewAutoBackupCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.AutoBackupClient) *AutoBackupCollector {
+func NewAutoBackupCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.AutoBackupClient) *AutoBackupCollector {
 	errors.WithLabelValues("auto_backup").Add(0)
 
 	labels := []string{"id", "name", "disk_id"}
@@ -35,6 +37,7 @@ func NewAutoBackupCollector(logger log.Logger, errors *prometheus.CounterVec, cl
 	backupLabels := append(labels, "archive_id", "archive_name", "archive_tags", "archive_description")
 
 	return &AutoBackupCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -72,7 +75,7 @@ func (c *AutoBackupCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
-	autoBackups, err := c.client.Find()
+	autoBackups, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
 		level.Warn(c.logger).Log(
@@ -110,9 +113,9 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *AutoBackupCollector) autoBackupLabels(autoBackup *sacloud.AutoBackup) []string {
 	return []string{
-		autoBackup.GetStrID(),
+		autoBackup.ID.String(),
 		autoBackup.Name,
-		autoBackup.Status.DiskID,
+		autoBackup.DiskID.String(),
 	}
 }
 
@@ -120,8 +123,8 @@ func (c *AutoBackupCollector) autoBackupInfoLabels(autoBackup *sacloud.AutoBacku
 	labels := c.autoBackupLabels(autoBackup)
 
 	return append(labels,
-		fmt.Sprintf("%d", autoBackup.Settings.Autobackup.MaximumNumberOfArchives),
-		flattenStringSlice(autoBackup.Settings.Autobackup.BackupSpanWeekdays),
+		fmt.Sprintf("%d", autoBackup.MaximumNumberOfArchives),
+		flattenBackupSpanWeekdays(autoBackup.BackupSpanWeekdays),
 		flattenStringSlice(autoBackup.Tags),
 		autoBackup.Description,
 	)
@@ -130,7 +133,7 @@ func (c *AutoBackupCollector) autoBackupInfoLabels(autoBackup *sacloud.AutoBacku
 func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *sacloud.AutoBackup, archive *sacloud.Archive) []string {
 	labels := c.autoBackupLabels(autoBackup)
 	return append(labels,
-		archive.GetStrID(),
+		archive.ID.String(),
 		archive.Name,
 		flattenStringSlice(archive.Tags),
 		archive.Description,
@@ -139,7 +142,7 @@ func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *sacloud.AutoBackup, 
 
 func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, autoBackup *sacloud.AutoBackup, now time.Time) {
 
-	archives, err := c.client.ListBackups(autoBackup.Status.ZoneName, autoBackup.ID)
+	archives, err := c.client.ListBackups(c.ctx, autoBackup.ZoneName, autoBackup.ID)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
 		level.Warn(c.logger).Log(
@@ -155,7 +158,7 @@ func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, 
 	if len(archives) > 0 {
 		count = len(archives)
 		// asc by CreatedAt
-		sort.Slice(archives, func(i, j int) bool { return archives[i].CreatedAt.Before(*archives[j].CreatedAt) })
+		sort.Slice(archives, func(i, j int) bool { return archives[i].CreatedAt.Before(archives[j].CreatedAt) })
 		lastTime = archives[count-1].CreatedAt.Unix()
 	}
 

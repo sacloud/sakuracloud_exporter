@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -10,12 +11,13 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
 // ProxyLBCollector collects metrics about all proxyLBs.
 type ProxyLBCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.ProxyLBClient
@@ -35,7 +37,7 @@ type ProxyLBCollector struct {
 }
 
 // NewProxyLBCollector returns a new ProxyLBCollector.
-func NewProxyLBCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.ProxyLBClient) *ProxyLBCollector {
+func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ProxyLBClient) *ProxyLBCollector {
 	errors.WithLabelValues("proxyLB").Add(0)
 
 	proxyLBLabels := []string{"id", "name"}
@@ -48,6 +50,7 @@ func NewProxyLBCollector(logger log.Logger, errors *prometheus.CounterVec, clien
 	proxyLBCertificateInfoLabels := append(proxyLBCertificateLabels, "common_name", "issuer_name")
 
 	return &ProxyLBCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -109,7 +112,7 @@ func (c *ProxyLBCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
-	proxyLBs, err := c.client.Find()
+	proxyLBs, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
 		level.Warn(c.logger).Log(
@@ -128,7 +131,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 			proxyLBLabels := c.proxyLBLabels(proxyLB)
 
 			var up float64
-			if proxyLB.IsAvailable() {
+			if proxyLB.Availability.IsAvailable() {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(
@@ -138,7 +141,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 				proxyLBLabels...,
 			)
 
-			for i := range proxyLB.Settings.ProxyLB.BindPorts {
+			for i := range proxyLB.BindPorts {
 				wg.Add(1)
 				go func(index int) {
 					c.collectProxyLBBindPortInfo(ch, proxyLB, index)
@@ -146,7 +149,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 				}(i)
 			}
 
-			for i := range proxyLB.Settings.ProxyLB.Servers {
+			for i := range proxyLB.Servers {
 				wg.Add(1)
 				go func(index int) {
 					c.collectProxyLBServerInfo(ch, proxyLB, index)
@@ -166,7 +169,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 				wg.Done()
 			}()
 
-			if proxyLB.IsAvailable() {
+			if proxyLB.Availability.IsAvailable() {
 				now := time.Now()
 
 				wg.Add(1)
@@ -184,23 +187,23 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *ProxyLBCollector) proxyLBLabels(proxyLB *sacloud.ProxyLB) []string {
 	return []string{
-		proxyLB.GetStrID(),
+		proxyLB.ID.String(),
 		proxyLB.Name,
 	}
 }
 
 func (c *ProxyLBCollector) collectProxyLBInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB) {
 	sorryServerPort := ""
-	if proxyLB.Settings.ProxyLB.SorryServer.Port != nil {
-		sorryServerPort = fmt.Sprintf("%d", *proxyLB.Settings.ProxyLB.SorryServer.Port)
+	if proxyLB.SorryServer.Port > 0 {
+		sorryServerPort = fmt.Sprintf("%d", proxyLB.SorryServer.Port)
 	}
 
 	labels := append(c.proxyLBLabels(proxyLB),
 		fmt.Sprintf("%d", int(proxyLB.GetPlan())),
-		proxyLB.Status.VirtualIPAddress,
-		proxyLB.Status.FQDN,
-		flattenStringSlice(proxyLB.Status.ProxyNetworks),
-		proxyLB.Settings.ProxyLB.SorryServer.IPAddress,
+		proxyLB.VirtualIPAddress,
+		proxyLB.FQDN,
+		flattenStringSlice(proxyLB.ProxyNetworks),
+		proxyLB.SorryServer.IPAddress,
 		sorryServerPort,
 		flattenStringSlice(proxyLB.Tags),
 		proxyLB.Description,
@@ -215,10 +218,10 @@ func (c *ProxyLBCollector) collectProxyLBInfo(ch chan<- prometheus.Metric, proxy
 }
 
 func (c *ProxyLBCollector) collectProxyLBBindPortInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, index int) {
-	bindPort := proxyLB.Settings.ProxyLB.BindPorts[index]
+	bindPort := proxyLB.BindPorts[index]
 	labels := append(c.proxyLBLabels(proxyLB),
 		fmt.Sprintf("%d", index),
-		bindPort.ProxyMode,
+		string(bindPort.ProxyMode),
 		fmt.Sprintf("%d", bindPort.Port),
 	)
 
@@ -231,7 +234,7 @@ func (c *ProxyLBCollector) collectProxyLBBindPortInfo(ch chan<- prometheus.Metri
 }
 
 func (c *ProxyLBCollector) collectProxyLBServerInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, index int) {
-	server := proxyLB.Settings.ProxyLB.Servers[index]
+	server := proxyLB.Servers[index]
 	var enabled = "0"
 	if server.Enabled {
 		enabled = "1"
@@ -251,7 +254,7 @@ func (c *ProxyLBCollector) collectProxyLBServerInfo(ch chan<- prometheus.Metric,
 }
 
 func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB) {
-	cert, err := c.client.GetCertificate(proxyLB.ID)
+	cert, err := c.client.GetCertificate(c.ctx, proxyLB.ID)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
 		level.Warn(c.logger).Log(
@@ -326,7 +329,7 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 
 func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, now time.Time) {
 
-	values, err := c.client.Monitor(proxyLB.ID, now)
+	values, err := c.client.Monitor(c.ctx, proxyLB.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
 		level.Warn(c.logger).Log(
@@ -339,22 +342,18 @@ func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, pr
 		return
 	}
 
-	if values.ActiveConnections != nil {
-		m := prometheus.MustNewConstMetric(
-			c.ActiveConnections,
-			prometheus.GaugeValue,
-			values.ActiveConnections.Value,
-			c.proxyLBLabels(proxyLB)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.ActiveConnections.Time, m)
-	}
-	if values.ConnectionsPerSec != nil {
-		m := prometheus.MustNewConstMetric(
-			c.ConnectionPerSec,
-			prometheus.GaugeValue,
-			values.ConnectionsPerSec.Value,
-			c.proxyLBLabels(proxyLB)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.ConnectionsPerSec.Time, m)
-	}
+	m := prometheus.MustNewConstMetric(
+		c.ActiveConnections,
+		prometheus.GaugeValue,
+		values.ActiveConnections,
+		c.proxyLBLabels(proxyLB)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+	m = prometheus.MustNewConstMetric(
+		c.ConnectionPerSec,
+		prometheus.GaugeValue,
+		values.ConnectionsPerSec,
+		c.proxyLBLabels(proxyLB)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

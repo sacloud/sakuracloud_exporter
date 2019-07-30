@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 // CouponCollector collects metrics about the account.
 type CouponCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.CouponClient
@@ -23,12 +25,13 @@ type CouponCollector struct {
 }
 
 // NewCouponCollector returns a new CouponCollector.
-func NewCouponCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.CouponClient) *CouponCollector {
+func NewCouponCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.CouponClient) *CouponCollector {
 	errors.WithLabelValues("coupon").Add(0)
 
 	labels := []string{"id", "member_id", "contract_id"}
 
 	return &CouponCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -67,7 +70,7 @@ func (c *CouponCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *CouponCollector) Collect(ch chan<- prometheus.Metric) {
-	coupons, err := c.client.Find()
+	coupons, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("coupon").Add(1)
 		level.Warn(c.logger).Log(
@@ -79,7 +82,7 @@ func (c *CouponCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, coupon := range coupons {
 		labels := []string{
-			coupon.CouponID,
+			coupon.ID.String(),
 			coupon.MemberID,
 			fmt.Sprintf("%d", coupon.ContractID),
 		}

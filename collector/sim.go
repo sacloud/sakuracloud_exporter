@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -8,12 +9,13 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
 // SIMCollector collects metrics about all sims.
 type SIMCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.SIMClient
@@ -27,7 +29,7 @@ type SIMCollector struct {
 }
 
 // NewSIMCollector returns a new SIMCollector.
-func NewSIMCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.SIMClient) *SIMCollector {
+func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.SIMClient) *SIMCollector {
 	errors.WithLabelValues("sim").Add(0)
 
 	simLabels := []string{"id", "name"}
@@ -36,6 +38,7 @@ func NewSIMCollector(logger log.Logger, errors *prometheus.CounterVec, client ia
 		"ipaddress", "simgroup_id", "carriers", "tags", "description")
 
 	return &SIMCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -80,7 +83,7 @@ func (c *SIMCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
-	sims, err := c.client.Find()
+	sims, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
 		level.Warn(c.logger).Log(
@@ -99,7 +102,7 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 			simLabels := c.simLabels(sim)
 
 			var up float64
-			if sim.Status.SIMInfo.SessionStatus == "UP" {
+			if sim.Info.SessionStatus == "UP" {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(
@@ -115,7 +118,7 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 				wg.Done()
 			}()
 
-			if sim.Status.SIMInfo.SessionStatus == "UP" {
+			if sim.Info.SessionStatus == "UP" {
 				now := time.Now()
 
 				wg.Add(1)
@@ -133,13 +136,13 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *SIMCollector) simLabels(sim *sacloud.SIM) []string {
 	return []string{
-		sim.GetStrID(),
+		sim.ID.String(),
 		sim.Name,
 	}
 }
 
 func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.SIM) {
-	simConfig, err := c.client.GetNetworkOperatorConfig(sim.ID)
+	simConfigs, err := c.client.GetNetworkOperatorConfig(c.ctx, sim.ID)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
 		level.Warn(c.logger).Log(
@@ -149,13 +152,13 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 		return
 	}
 	var carriers []string
-	for _, config := range simConfig.NetworkOperatorConfigs {
+	for _, config := range simConfigs {
 		if config.Allow {
 			carriers = append(carriers, config.Name)
 		}
 	}
 
-	simInfo := sim.Status.SIMInfo
+	simInfo := sim.Info
 
 	imeiLock := "0"
 	if simInfo.IMEILock {
@@ -163,13 +166,13 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 	}
 
 	var registerdDate, activatedDate, deactivatedDate int64
-	if simInfo.RegisteredDate != nil {
+	if !simInfo.RegisteredDate.IsZero() {
 		registerdDate = simInfo.RegisteredDate.Unix() * 1000
 	}
-	if simInfo.ActivatedDate != nil {
+	if !simInfo.ActivatedDate.IsZero() {
 		activatedDate = simInfo.ActivatedDate.Unix() * 1000
 	}
-	if simInfo.DeactivatedDate != nil {
+	if !simInfo.DeactivatedDate.IsZero() {
 		deactivatedDate = simInfo.DeactivatedDate.Unix() * 1000
 	}
 
@@ -195,7 +198,7 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 
 func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *sacloud.SIM, now time.Time) {
 
-	values, err := c.client.MonitorTraffic(sim.ID, now)
+	values, err := c.client.MonitorTraffic(c.ctx, sim.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
 		level.Warn(c.logger).Log(
@@ -208,22 +211,27 @@ func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *saclo
 		return
 	}
 
-	if values.Uplink != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Uplink,
-			prometheus.GaugeValue,
-			values.Uplink.Value/1000,
-			c.simLabels(sim)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Uplink.Time, m)
+	uplink := values.UplinkBPS
+	if uplink > 0 {
+		uplink = uplink / 1000
 	}
-	if values.Downlink != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Downlink,
-			prometheus.GaugeValue,
-			values.Downlink.Value/1000,
-			c.simLabels(sim)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Downlink.Time, m)
+	m := prometheus.MustNewConstMetric(
+		c.Uplink,
+		prometheus.GaugeValue,
+		uplink,
+		c.simLabels(sim)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	downlink := values.DownlinkBPS
+	if downlink > 0 {
+		downlink = downlink / 1000
 	}
+	m = prometheus.MustNewConstMetric(
+		c.Downlink,
+		prometheus.GaugeValue,
+		downlink,
+		c.simLabels(sim)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

@@ -14,7 +14,7 @@ const (
 
 // Config gets its content from env and passes it on to different packages
 type Config struct {
-	Trace     bool     `arg:"env:SAKURACLOUD_TRACE_MODE"`
+	Trace     bool     `arg:"env:TRACE"`
 	Debug     bool     `arg:"env:DEBUG"`
 	Token     string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN"`
 	Secret    string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN_SECRET"`
