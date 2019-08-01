@@ -33,7 +33,7 @@ func queryToZones(ctx context.Context, zones []string, query perZoneQueryFunc) (
 	var err error
 	go func() {
 		for res := range resCh {
-			if err != nil {
+			if err == nil {
 				if res.err != nil {
 					err = res.err
 				} else {
