@@ -96,7 +96,7 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(sims))
 
 	for i := range sims {
-		go func(sim *sacloud.SIM) {
+		func(sim *sacloud.SIM) {
 			defer wg.Done()
 
 			simLabels := c.simLabels(sim)

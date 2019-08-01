@@ -116,7 +116,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(mobileGateways))
 
 	for i := range mobileGateways {
-		go func(mobileGateway *iaas.MobileGateway) {
+		func(mobileGateway *iaas.MobileGateway) {
 			defer wg.Done()
 
 			mobileGatewayLabels := c.mobileGatewayLabels(mobileGateway)

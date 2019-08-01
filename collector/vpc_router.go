@@ -124,7 +124,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(vpcRouters))
 
 	for i := range vpcRouters {
-		go func(vpcRouter *iaas.VPCRouter) {
+		func(vpcRouter *iaas.VPCRouter) {
 			defer wg.Done()
 
 			vpcRouterLabels := c.vpcRouterLabels(vpcRouter)

@@ -78,7 +78,7 @@ func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(internets))
 
 	for i := range internets {
-		go func(internet *iaas.Internet) {
+		func(internet *iaas.Internet) {
 			defer wg.Done()
 
 			ch <- prometheus.MustNewConstMetric(

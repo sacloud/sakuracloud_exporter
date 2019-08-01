@@ -101,7 +101,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(nfss))
 
 	for i := range nfss {
-		go func(nfs *iaas.NFS) {
+		func(nfs *iaas.NFS) {
 			defer wg.Done()
 
 			nfsLabels := c.nfsLabels(nfs)

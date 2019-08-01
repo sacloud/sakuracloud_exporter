@@ -174,7 +174,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(databases))
 
 	for i := range databases {
-		go func(database *iaas.Database) {
+		func(database *iaas.Database) {
 			defer wg.Done()
 
 			databaseLabels := c.databaseLabels(database)

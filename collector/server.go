@@ -176,7 +176,7 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(servers))
 
 	for i := range servers {
-		go func(server *iaas.Server) {
+		func(server *iaas.Server) {
 			defer wg.Done()
 
 			serverLabels := c.serverLabels(server)
