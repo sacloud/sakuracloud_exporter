@@ -1,11 +1,11 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type LoadBalancer struct {
@@ -14,40 +14,42 @@ type LoadBalancer struct {
 }
 
 type LoadBalancerClient interface {
-	Find() ([]*LoadBalancer, error)
-	Status(zone string, loadBalancerID int64) (*sacloud.LoadBalancerStatusResult, error)
-	MonitorNIC(zone string, loadBalancerID int64, end time.Time) (*NICMetrics, error)
+	Find(ctx context.Context) ([]*LoadBalancer, error)
+	Status(ctx context.Context, zone string, id types.ID) ([]*sacloud.LoadBalancerStatus, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
 }
 
-func getLoadBalancerClient(client *sakuraAPI.Client, zones []string) LoadBalancerClient {
+func getLoadBalancerClient(caller sacloud.APICaller, zones []string) LoadBalancerClient {
 	return &loadBalancerClient{
-		rawClient: client,
-		zones:     zones,
+		client: sacloud.NewLoadBalancerOp(caller),
+		zones:  zones,
 	}
 }
 
 type loadBalancerClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	client sacloud.LoadBalancerAPI
+	zones  []string
 }
 
-func (s *loadBalancerClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *loadBalancerClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.LoadBalancer.Reset().Limit(10000).Find()
+	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-	for i := range res.LoadBalancers {
+	for _, lb := range res.LoadBalancers {
 		results = append(results, &LoadBalancer{
-			LoadBalancer: &res.LoadBalancers[i],
-			ZoneName:     c.Zone,
+			LoadBalancer: lb,
+			ZoneName:     zone,
 		})
 	}
 	return results, err
 }
 
-func (s *loadBalancerClient) Find() ([]*LoadBalancer, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *loadBalancerClient) Find(ctx context.Context) ([]*LoadBalancer, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
@@ -58,21 +60,18 @@ func (s *loadBalancerClient) Find() ([]*LoadBalancer, error) {
 	return results, nil
 }
 
-func (s *loadBalancerClient) MonitorNIC(zone string, loadBalancerID int64, end time.Time) (*NICMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.LoadBalancer.Monitor(loadBalancerID, param)
-	}
-
-	return queryNICMonitorValue(s.rawClient, zone, end, query)
-}
-
-func (s *loadBalancerClient) Status(zone string, loadBalancerID int64) (*sacloud.LoadBalancerStatusResult, error) {
-	c := s.rawClient.Clone()
-	c.Zone = zone
-
-	res, err := c.LoadBalancer.Status(loadBalancerID)
+func (c *loadBalancerClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+	mvs, err := c.client.MonitorInterface(ctx, zone, id, monitorCondition(end))
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return monitorInterfaceValue(mvs.Values), nil
+}
+
+func (c *loadBalancerClient) Status(ctx context.Context, zone string, id types.ID) ([]*sacloud.LoadBalancerStatus, error) {
+	res, err := c.client.Status(ctx, zone, id)
+	if err != nil {
+		return nil, err
+	}
+	return res.Status, nil
 }

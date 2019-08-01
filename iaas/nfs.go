@@ -1,69 +1,73 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/libsacloud/v2/utils/nfs"
 )
 
 type NFS struct {
 	*sacloud.NFS
-	Plan     *sacloud.NFSPlanValue
+	Plan     *nfs.PlanInfo
 	PlanName string
 	ZoneName string
 }
 
 type NFSClient interface {
-	Find() ([]*NFS, error)
-	MonitorFreeDiskSize(zone string, nfsID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
-	MonitorNIC(zone string, nfsID int64, end time.Time) (*NICMetrics, error)
+	Find(ctx context.Context) ([]*NFS, error)
+	MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorFreeDiskSizeValue, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
 }
 
-func getNFSClient(client *sakuraAPI.Client, zones []string) NFSClient {
+func getNFSClient(caller sacloud.APICaller, zones []string) NFSClient {
 	return &nfsClient{
-		rawClient: client,
-		zones:     zones,
+		noteOp: sacloud.NewNoteOp(caller),
+		nfsOp:  sacloud.NewNFSOp(caller),
+		zones:  zones,
 	}
 }
 
 type nfsClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	noteOp sacloud.NoteAPI
+	nfsOp  sacloud.NFSAPI
+	zones  []string
 }
 
-func (s *nfsClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *nfsClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.NFS.Reset().Limit(10000).Find()
+	res, err := c.nfsOp.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-
-	plans, err := c.NFS.GetNFSPlans()
-	if err != nil {
-		return results, err
-	}
-
-	for i := range res.NFS {
-		var planName string
-		var plan sacloud.NFSPlan
-		var planDetail *sacloud.NFSPlanValue
-		plan, planDetail = plans.FindByPlanID(res.NFS[i].Plan.ID)
-		planName = plan.String()
-
+	for _, v := range res.NFS {
+		planInfo, err := nfs.GetPlanInfo(ctx, c.noteOp, v.PlanID)
+		if err != nil {
+			return nil, err
+		}
+		planName := ""
+		switch planInfo.DiskPlanID {
+		case types.NFSPlans.HDD:
+			planName = "HDD"
+		case types.NFSPlans.SSD:
+			planName = "SSD"
+		}
 		results = append(results, &NFS{
+			NFS:      v,
 			PlanName: planName,
-			Plan:     planDetail,
-			NFS:      &res.NFS[i],
-			ZoneName: c.Zone,
+			Plan:     planInfo,
+			ZoneName: zone,
 		})
 	}
 	return results, err
 }
 
-func (s *nfsClient) Find() ([]*NFS, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *nfsClient) Find(ctx context.Context) ([]*NFS, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
@@ -74,18 +78,18 @@ func (s *nfsClient) Find() ([]*NFS, error) {
 	return results, nil
 }
 
-func (s *nfsClient) MonitorFreeDiskSize(zone string, nfsID int64, end time.Time) (*sacloud.FlatMonitorValue, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.NFS.MonitorFreeDiskSize(nfsID, param)
+func (c *nfsClient) MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorFreeDiskSizeValue, error) {
+	mvs, err := c.nfsOp.MonitorFreeDiskSize(ctx, zone, id, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryFreeDiskSizeMonitorValue(s.rawClient, zone, end, query)
+	return monitorFreeDiskSizeValue(mvs.Values), nil
 }
 
-func (s *nfsClient) MonitorNIC(zone string, nfsID int64, end time.Time) (*NICMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.NFS.MonitorInterface(nfsID, param)
+func (c *nfsClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+	mvs, err := c.nfsOp.MonitorInterface(ctx, zone, id, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryNICMonitorValue(s.rawClient, zone, end, query)
+	return monitorInterfaceValue(mvs.Values), nil
 }

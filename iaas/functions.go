@@ -1,45 +1,44 @@
 package iaas
 
 import (
+	"context"
 	"sync"
-
-	sakuraAPI "github.com/sacloud/libsacloud/api"
 )
 
-func queryToZones(client *sakuraAPI.Client, zones []string, query func(*sakuraAPI.Client) ([]interface{}, error)) ([]interface{}, error) {
+type perZoneQueryFunc func(ctx context.Context, zone string) ([]interface{}, error)
+
+func queryToZones(ctx context.Context, zones []string, query perZoneQueryFunc) ([]interface{}, error) {
 	var wg sync.WaitGroup
 	wg.Add(len(zones))
 
-	resCh := make(chan []interface{})
-	errCh := make(chan error)
+	type result struct {
+		results []interface{}
+		err     error
+	}
+
+	resCh := make(chan *result)
+	defer close(resCh)
 
 	for _, zone := range zones {
-		c := client.Clone()
-		c.Zone = zone
-
-		go func(c *sakuraAPI.Client) {
-			res, err := query(c)
-			if err != nil {
-				errCh <- err
-				return
+		go func(zone string) {
+			res, err := query(ctx, zone)
+			resCh <- &result{
+				results: res,
+				err:     err,
 			}
-			resCh <- res
-		}(c)
+		}(zone)
 	}
 
 	var results []interface{}
 	var err error
 	go func() {
-		for {
+		for res := range resCh {
 			if err != nil {
-				wg.Done()
-				return
-			}
-			select {
-			case res := <-resCh:
-				results = append(results, res...)
-			case e := <-errCh:
-				err = e
+				if res.err != nil {
+					err = res.err
+				} else {
+					results = append(results, res.results...)
+				}
 			}
 			wg.Done()
 		}

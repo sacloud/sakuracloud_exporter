@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -10,6 +11,7 @@ import (
 
 // ExporterCollector collects metrics, mostly runtime, about this exporter in general.
 type ExporterCollector struct {
+	ctx       context.Context
 	logger    log.Logger
 	version   string
 	revision  string
@@ -23,8 +25,9 @@ type ExporterCollector struct {
 //logger, Version, Revision, BuildDate, GoVersion, StartTime
 
 // NewExporterCollector returns a new ExporterCollector.
-func NewExporterCollector(logger log.Logger, version string, revision string, goVersion string, startTime time.Time) *ExporterCollector {
+func NewExporterCollector(ctx context.Context, logger log.Logger, version string, revision string, goVersion string, startTime time.Time) *ExporterCollector {
 	return &ExporterCollector{
+		ctx:    ctx,
 		logger: logger,
 
 		version:   version,

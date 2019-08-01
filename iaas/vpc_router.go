@@ -1,11 +1,11 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type VPCRouter struct {
@@ -14,40 +14,42 @@ type VPCRouter struct {
 }
 
 type VPCRouterClient interface {
-	Find() ([]*VPCRouter, error)
-	Status(zone string, vpcRouterID int64) (*sacloud.VPCRouterStatus, error)
-	MonitorNIC(zone string, vpcRouterID int64, index int, end time.Time) (*NICMetrics, error)
+	Find(ctx context.Context) ([]*VPCRouter, error)
+	Status(ctx context.Context, zone string, id types.ID) (*sacloud.VPCRouterStatus, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error)
 }
 
-func getVPCRouterClient(client *sakuraAPI.Client, zones []string) VPCRouterClient {
+func getVPCRouterClient(caller sacloud.APICaller, zones []string) VPCRouterClient {
 	return &vpcRouterClient{
-		rawClient: client,
-		zones:     zones,
+		client: sacloud.NewVPCRouterOp(caller),
+		zones:  zones,
 	}
 }
 
 type vpcRouterClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	client sacloud.VPCRouterAPI
+	zones  []string
 }
 
-func (s *vpcRouterClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *vpcRouterClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.VPCRouter.Reset().Limit(10000).Find()
+	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-	for i := range res.VPCRouters {
+	for _, v := range res.VPCRouters {
 		results = append(results, &VPCRouter{
-			VPCRouter: &res.VPCRouters[i],
-			ZoneName:  c.Zone,
+			VPCRouter: v,
+			ZoneName:  zone,
 		})
 	}
 	return results, err
 }
 
-func (s *vpcRouterClient) Find() ([]*VPCRouter, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *vpcRouterClient) Find(ctx context.Context) ([]*VPCRouter, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
@@ -58,21 +60,14 @@ func (s *vpcRouterClient) Find() ([]*VPCRouter, error) {
 	return results, nil
 }
 
-func (s *vpcRouterClient) MonitorNIC(zone string, vpcRouterID int64, index int, end time.Time) (*NICMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.VPCRouter.MonitorBy(vpcRouterID, index, param)
-	}
-
-	return queryNICMonitorValue(s.rawClient, zone, end, query)
-}
-
-func (s *vpcRouterClient) Status(zone string, vpcRouterID int64) (*sacloud.VPCRouterStatus, error) {
-	c := s.rawClient.Clone()
-	c.Zone = zone
-
-	res, err := c.VPCRouter.Status(vpcRouterID)
+func (c *vpcRouterClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+	mvs, err := c.client.MonitorInterface(ctx, zone, id, index, monitorCondition(end))
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+	return monitorInterfaceValue(mvs.Values), nil
+}
+
+func (c *vpcRouterClient) Status(ctx context.Context, zone string, id types.ID) (*sacloud.VPCRouterStatus, error) {
+	return c.client.Status(ctx, zone, id)
 }

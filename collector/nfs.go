@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -8,12 +9,12 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/sacloud"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
 // NFSCollector collects metrics about all nfss.
 type NFSCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.NFSClient
@@ -29,7 +30,7 @@ type NFSCollector struct {
 }
 
 // NewNFSCollector returns a new NFSCollector.
-func NewNFSCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.NFSClient) *NFSCollector {
+func NewNFSCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.NFSClient) *NFSCollector {
 	errors.WithLabelValues("nfs").Add(0)
 
 	nfsLabels := []string{"id", "name", "zone"}
@@ -37,6 +38,7 @@ func NewNFSCollector(logger log.Logger, errors *prometheus.CounterVec, client ia
 	nicInfoLabels := append(nfsLabels, "upstream_id", "upstream_name", "ipaddress", "nw_mask_len", "gateway")
 
 	return &NFSCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -86,7 +88,7 @@ func (c *NFSCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
-	nfss, err := c.client.Find()
+	nfss, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
 		level.Warn(c.logger).Log(
@@ -105,7 +107,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 			nfsLabels := c.nfsLabels(nfs)
 
 			var up float64
-			if nfs.IsUp() {
+			if nfs.InstanceStatus.IsUp() {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(
@@ -121,7 +123,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 				c.nfsInfoLabels(nfs)...,
 			)
 
-			if nfs.IsUp() {
+			if nfs.InstanceStatus.IsUp() {
 				now := time.Now()
 				// Free disk size
 				wg.Add(1)
@@ -146,37 +148,25 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *NFSCollector) nfsLabels(nfs *iaas.NFS) []string {
 	return []string{
-		nfs.GetStrID(),
+		nfs.ID.String(),
 		nfs.Name,
 		nfs.ZoneName,
 	}
-}
-
-var nfsPlanLabels = map[int64]string{
-	int64(sacloud.NFSSize100G): "100GB",
-	int64(sacloud.NFSSize500G): "500GB",
-	int64(sacloud.NFSSize1T):   "1TB",
-	int64(sacloud.NFSSize2T):   "2TB",
-	int64(sacloud.NFSSize4T):   "4TB",
-	int64(sacloud.NFSSize8T):   "8TB",
-	int64(sacloud.NFSSize12T):  "12TB",
 }
 
 func (c *NFSCollector) nfsInfoLabels(nfs *iaas.NFS) []string {
 	labels := c.nfsLabels(nfs)
 
 	instanceHost := "-"
-	if nfs.Instance != nil {
-		instanceHost = nfs.Instance.Host.Name
+	if nfs.InstanceHostName != "" {
+		instanceHost = nfs.InstanceHostName
 	}
 
 	var plan string
 	var size string
 	if nfs.Plan != nil {
 		plan = nfs.PlanName
-		if s, ok := nfsPlanLabels[int64(nfs.Plan.Size)]; ok {
-			size = s
-		}
+		size = fmt.Sprintf("%d", nfs.Plan.Size)
 	}
 
 	return append(labels,
@@ -191,10 +181,10 @@ func (c *NFSCollector) nfsInfoLabels(nfs *iaas.NFS) []string {
 func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
 	labels := c.nfsLabels(nfs)
 
-	upstreamID := nfs.Switch.GetStrID()
-	upstreamName := nfs.Switch.Name
+	upstreamID := nfs.SwitchID.String()
+	upstreamName := nfs.SwitchName
 
-	nwMaskLen := nfs.NetworkMaskLen()
+	nwMaskLen := nfs.NetworkMaskLen
 	strMaskLen := ""
 	if nwMaskLen > 0 {
 		strMaskLen = fmt.Sprintf("%d", nwMaskLen)
@@ -203,15 +193,15 @@ func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
 	return append(labels,
 		upstreamID,
 		upstreamName,
-		nfs.IPAddress(),
+		nfs.IPAddresses[0],
 		strMaskLen,
-		nfs.DefaultRoute(),
+		nfs.DefaultRoute,
 	)
 }
 
 func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
 
-	values, err := c.client.MonitorFreeDiskSize(nfs.ZoneName, nfs.ID, now)
+	values, err := c.client.MonitorFreeDiskSize(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
 		level.Warn(c.logger).Log(
@@ -224,10 +214,14 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaa
 		return
 	}
 
+	v := values.FreeDiskSize
+	if v > 0 {
+		v = v / 1024 / 1024
+	}
 	m := prometheus.MustNewConstMetric(
 		c.DiskFree,
 		prometheus.GaugeValue,
-		values.Value/1024/1024, // unit:GB
+		v,
 		c.nfsLabels(nfs)...,
 	)
 
@@ -236,7 +230,7 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaa
 
 func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
 
-	values, err := c.client.MonitorNIC(nfs.ZoneName, nfs.ID, now)
+	values, err := c.client.MonitorNIC(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
 		level.Warn(c.logger).Log(
@@ -249,22 +243,27 @@ func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICReceive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.nfsLabels(nfs)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
+	receive := values.Receive
+	if receive > 0 {
+		receive = receive * 8 / 1000
 	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.NICSend,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.nfsLabels(nfs)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	m := prometheus.MustNewConstMetric(
+		c.NICReceive,
+		prometheus.GaugeValue,
+		receive,
+		c.nfsLabels(nfs)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	send := values.Send
+	if send > 0 {
+		send = send * 8 / 1024
 	}
+	m = prometheus.MustNewConstMetric(
+		c.NICSend,
+		prometheus.GaugeValue,
+		send,
+		c.nfsLabels(nfs)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

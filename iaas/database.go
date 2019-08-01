@@ -1,11 +1,11 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type Database struct {
@@ -14,42 +14,44 @@ type Database struct {
 }
 
 type DatabaseClient interface {
-	Find() ([]*Database, error)
-	MonitorDatabase(zone string, diskID int64, end time.Time) (*DatabaseMetrics, error)
-	MonitorCPU(zone string, databaseID int64, end time.Time) (*sacloud.FlatMonitorValue, error)
-	MonitorNIC(zone string, nicID int64, end time.Time) (*NICMetrics, error)
-	MonitorDisk(zone string, diskID int64, end time.Time) (*DiskMetrics, error)
+	Find(ctx context.Context) ([]*Database, error)
+	MonitorDatabase(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDatabaseValue, error)
+	MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error)
+	MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error)
 }
 
-func getDatabaseClient(client *sakuraAPI.Client, zones []string) DatabaseClient {
+func getDatabaseClient(caller sacloud.APICaller, zones []string) DatabaseClient {
 	return &databaseClient{
-		rawClient: client,
-		zones:     zones,
+		client: sacloud.NewDatabaseOp(caller),
+		zones:  zones,
 	}
 }
 
 type databaseClient struct {
-	rawClient *sakuraAPI.Client
-	zones     []string
+	client sacloud.DatabaseAPI
+	zones  []string
 }
 
-func (s *databaseClient) find(c *sakuraAPI.Client) ([]interface{}, error) {
+func (c *databaseClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.Database.Reset().Limit(10000).Find()
+	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+		Count: 10000,
+	})
 	if err != nil {
 		return results, err
 	}
-	for i := range res.Databases {
+	for _, db := range res.Databases {
 		results = append(results, &Database{
-			Database: &res.Databases[i],
-			ZoneName: c.Zone,
+			Database: db,
+			ZoneName: zone,
 		})
 	}
 	return results, err
 }
 
-func (s *databaseClient) Find() ([]*Database, error) {
-	res, err := queryToZones(s.rawClient, s.zones, s.find)
+func (c *databaseClient) Find(ctx context.Context) ([]*Database, error) {
+	res, err := queryToZones(ctx, c.zones, c.find)
 	if err != nil {
 		return nil, err
 	}
@@ -60,34 +62,34 @@ func (s *databaseClient) Find() ([]*Database, error) {
 	return results, nil
 }
 
-func (s *databaseClient) MonitorDatabase(zone string, databaseID int64, end time.Time) (*DatabaseMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Database.MonitorDatabase(databaseID, param)
+func (c *databaseClient) MonitorDatabase(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDatabaseValue, error) {
+	mvs, err := c.client.MonitorDatabase(ctx, zone, databaseID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryDatabaseMonitorValue(s.rawClient, zone, end, query)
+	return monitorDatabaseValue(mvs.Values), nil
 }
 
-func (s *databaseClient) MonitorCPU(zone string, databaseID int64, end time.Time) (*sacloud.FlatMonitorValue, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Database.MonitorCPU(databaseID, param)
+func (c *databaseClient) MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+	mvs, err := c.client.MonitorCPU(ctx, zone, databaseID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryCPUTimeMonitorValue(s.rawClient, zone, end, query)
+	return monitorCPUTimeValue(mvs.Values), nil
 }
 
-func (s *databaseClient) MonitorDisk(zone string, databaseID int64, end time.Time) (*DiskMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Database.MonitorSystemDisk(databaseID, param)
+func (c *databaseClient) MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error) {
+	mvs, err := c.client.MonitorDisk(ctx, zone, databaseID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryDiskMonitorValue(s.rawClient, zone, end, query)
+	return monitorDiskValue(mvs.Values), nil
 }
 
-func (s *databaseClient) MonitorNIC(zone string, databaseID int64, end time.Time) (*NICMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.Database.MonitorInterface(databaseID, param)
+func (c *databaseClient) MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+	mvs, err := c.client.MonitorInterface(ctx, zone, databaseID, monitorCondition(end))
+	if err != nil {
+		return nil, err
 	}
-
-	return queryNICMonitorValue(s.rawClient, zone, end, query)
+	return monitorInterfaceValue(mvs.Values), nil
 }

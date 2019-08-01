@@ -1,6 +1,6 @@
 language: go
 go:
-- '1.11'
+- '1.12'
 env:
   global:
   - PATH=/home/travis/gopath/bin:$PATH DEBIAN_FRONTEND=noninteractive

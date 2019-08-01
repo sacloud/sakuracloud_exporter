@@ -1,14 +1,15 @@
 package iaas
 
 import (
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-	"github.com/sacloud/libsacloud/sacloud"
+	"context"
+
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
 type authStatusClient interface {
-	Read() (*sacloud.AuthStatus, error)
+	Read(context.Context) (*sacloud.AuthStatus, error)
 }
 
-func getAuthStatusClient(client *sakuraAPI.Client) authStatusClient {
-	return client.AuthStatus
+func getAuthStatusClient(caller sacloud.APICaller) authStatusClient {
+	return sacloud.NewAuthStatusOp(caller)
 }

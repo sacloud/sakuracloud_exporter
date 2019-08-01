@@ -1,35 +1,30 @@
 package iaas
 
 import (
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-	"github.com/sacloud/libsacloud/sacloud"
+	"context"
+
+	"github.com/sacloud/libsacloud/v2/sacloud"
 )
 
-// ZoneClient calls SakuraCloud coupon API
+// ZoneClient calls SakuraCloud zone API
 type ZoneClient interface {
-	Find() ([]*sacloud.Zone, error)
+	Find(ctx context.Context) ([]*sacloud.Zone, error)
 }
 
-func getZoneClient(client *sakuraAPI.Client) ZoneClient {
-	return &zoneClient{rawClient: client}
+func getZoneClient(caller sacloud.APICaller) ZoneClient {
+	return &zoneClient{
+		client: sacloud.NewZoneOp(caller),
+	}
 }
 
 type zoneClient struct {
-	rawClient *sakuraAPI.Client
+	client sacloud.ZoneAPI
 }
 
-func (s *zoneClient) Find() ([]*sacloud.Zone, error) {
-	client := s.rawClient.Clone()
-	client.Zone = "is1a"
-
-	res, err := client.GetZoneAPI().Find()
+func (c *zoneClient) Find(ctx context.Context) ([]*sacloud.Zone, error) {
+	res, err := c.client.Find(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	var results []*sacloud.Zone
-	for i := range res.Zones {
-		results = append(results, &res.Zones[i])
-	}
-	return results, nil
+	return res.Zones, nil
 }

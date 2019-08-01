@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 // MobileGatewayCollector collects metrics about all servers.
 type MobileGatewayCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.MobileGatewayClient
@@ -30,7 +32,7 @@ type MobileGatewayCollector struct {
 }
 
 // NewMobileGatewayCollector returns a new MobileGatewayCollector.
-func NewMobileGatewayCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.MobileGatewayClient) *MobileGatewayCollector {
+func NewMobileGatewayCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.MobileGatewayClient) *MobileGatewayCollector {
 	errors.WithLabelValues("mobile_gateway").Add(0)
 
 	mobileGatewayLabels := []string{"id", "name", "zone"}
@@ -39,6 +41,7 @@ func NewMobileGatewayCollector(logger log.Logger, errors *prometheus.CounterVec,
 	trafficControlInfoLabel := append(mobileGatewayLabels, "traffic_quota_in_mb", "bandwidth_limit_in_kbps", "enable_email", "enable_slack", "slack_url", "auto_traffic_shaping")
 
 	return &MobileGatewayCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -100,7 +103,7 @@ func (c *MobileGatewayCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
-	mobileGateways, err := c.client.Find()
+	mobileGateways, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
 		level.Warn(c.logger).Log(
@@ -119,7 +122,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 			mobileGatewayLabels := c.mobileGatewayLabels(mobileGateway)
 
 			var up float64
-			if mobileGateway.IsUp() {
+			if mobileGateway.InstanceStatus.IsUp() {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(
@@ -134,7 +137,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 				float64(1.0),
 				c.mobileGatewayInfoLabels(mobileGateway)...,
 			)
-			if mobileGateway.IsAvailable() {
+			if mobileGateway.Availability.IsAvailable() {
 				// TrafficControlInfo
 				wg.Add(1)
 				go func() {
@@ -149,7 +152,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 
-				if mobileGateway.IsUp() {
+				if mobileGateway.InstanceStatus.IsUp() {
 					// collect metrics
 					now := time.Now()
 
@@ -171,7 +174,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *MobileGatewayCollector) mobileGatewayLabels(mobileGateway *iaas.MobileGateway) []string {
 	return []string{
-		mobileGateway.GetStrID(),
+		mobileGateway.ID.String(),
 		mobileGateway.Name,
 		mobileGateway.ZoneName,
 	}
@@ -181,12 +184,12 @@ func (c *MobileGatewayCollector) mobileGatewayInfoLabels(mobileGateway *iaas.Mob
 	labels := c.mobileGatewayLabels(mobileGateway)
 
 	internetConnection := "0"
-	if mobileGateway.InternetConnection() {
+	if mobileGateway.Settings.InternetConnectionEnabled {
 		internetConnection = "1"
 	}
 
 	interDeviceCommunication := "0"
-	if mobileGateway.InterDeviceCommunication() {
+	if mobileGateway.Settings.InterDeviceCommunicationEnabled {
 		interDeviceCommunication = "1"
 	}
 
@@ -203,7 +206,7 @@ func (c *MobileGatewayCollector) nicLabels(mobileGateway *iaas.MobileGateway, in
 		return nil
 	}
 
-	maskLen := mobileGateway.NetworkMaskLenAt(index)
+	maskLen := mobileGateway.Interfaces[index].SubnetNetworkMaskLen
 	strMaskLen := ""
 	if maskLen > 0 {
 		strMaskLen = fmt.Sprintf("%d", maskLen)
@@ -212,13 +215,13 @@ func (c *MobileGatewayCollector) nicLabels(mobileGateway *iaas.MobileGateway, in
 	labels := c.mobileGatewayLabels(mobileGateway)
 	return append(labels,
 		fmt.Sprintf("%d", index),
-		mobileGateway.IPAddressAt(index),
+		mobileGateway.Interfaces[index].IPAddress,
 		strMaskLen,
 	)
 }
 
 func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.Metric, mobileGateway *iaas.MobileGateway) {
-	info, err := c.client.TrafficControl(mobileGateway.ZoneName, mobileGateway.ID)
+	info, err := c.client.TrafficControl(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
 		level.Warn(c.logger).Log(
@@ -229,15 +232,15 @@ func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.
 	}
 
 	enableEmail := "0"
-	if info.EMailConfig != nil && info.EMailConfig.Enabled {
+	if info.EmailNotifyEnabled {
 		enableEmail = "1"
 	}
 
 	enableSlack := "0"
 	slackURL := ""
-	if info.SlackConfig != nil && info.SlackConfig.Enabled {
+	if info.SlackNotifyEnabled {
 		enableSlack = "1"
-		slackURL = info.SlackConfig.IncomingWebhooksURL
+		slackURL = info.SlackNotifyWebhooksURL
 	}
 
 	autoTrafficShaping := "0"
@@ -263,7 +266,7 @@ func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.
 }
 
 func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metric, mobileGateway *iaas.MobileGateway) {
-	status, err := c.client.TrafficStatus(mobileGateway.ZoneName, mobileGateway.ID)
+	status, err := c.client.TrafficStatus(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
 		level.Warn(c.logger).Log(
@@ -300,7 +303,7 @@ func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metri
 }
 
 func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, mobileGateway *iaas.MobileGateway, index int, now time.Time) {
-	values, err := c.client.MonitorNIC(mobileGateway.ZoneName, mobileGateway.ID, index, now)
+	values, err := c.client.MonitorNIC(c.ctx, mobileGateway.ZoneName, mobileGateway.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
 		level.Warn(c.logger).Log(
@@ -313,22 +316,27 @@ func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, 
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Receive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.nicLabels(mobileGateway, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
+	receive := values.Receive
+	if receive > 0 {
+		receive = receive * 8 / 1000
 	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Send,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.nicLabels(mobileGateway, index)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	m := prometheus.MustNewConstMetric(
+		c.Receive,
+		prometheus.GaugeValue,
+		receive,
+		c.nicLabels(mobileGateway, index)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	send := values.Send
+	if send > 0 {
+		send = send * 8 / 1000
 	}
+	m = prometheus.MustNewConstMetric(
+		c.Send,
+		prometheus.GaugeValue,
+		send,
+		c.nicLabels(mobileGateway, index)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 // InternetCollector collects metrics about all internets.
 type InternetCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.InternetClient
@@ -24,13 +26,14 @@ type InternetCollector struct {
 }
 
 // NewInternetCollector returns a new InternetCollector.
-func NewInternetCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.InternetClient) *InternetCollector {
+func NewInternetCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.InternetClient) *InternetCollector {
 	errors.WithLabelValues("internet").Add(0)
 
 	labels := []string{"id", "name", "zone", "switch_id"}
 	infoLabels := append(labels, "bandwidth", "tags", "description")
 
 	return &InternetCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -62,7 +65,7 @@ func (c *InternetCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
-	internets, err := c.client.Find()
+	internets, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)
 		level.Warn(c.logger).Log(
@@ -100,10 +103,10 @@ func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *InternetCollector) internetLabels(internet *iaas.Internet) []string {
 	return []string{
-		internet.GetStrID(),
+		internet.ID.String(),
 		internet.Name,
 		internet.ZoneName,
-		internet.Switch.GetStrID(),
+		internet.Switch.ID.String(),
 	}
 }
 
@@ -118,7 +121,7 @@ func (c *InternetCollector) internetInfoLabels(internet *iaas.Internet) []string
 }
 func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, internet *iaas.Internet, now time.Time) {
 
-	values, err := c.client.MonitorTraffic(internet.ZoneName, internet.ID, now)
+	values, err := c.client.MonitorTraffic(c.ctx, internet.ZoneName, internet.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)
 		level.Warn(c.logger).Log(
@@ -131,22 +134,27 @@ func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, in
 		return
 	}
 
-	if values.In != nil {
-		m := prometheus.MustNewConstMetric(
-			c.In,
-			prometheus.GaugeValue,
-			values.In.Value/1000,
-			c.internetLabels(internet)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.In.Time, m)
+	in := values.In
+	if in > 0 {
+		in = in / 1000
 	}
-	if values.Out != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Out,
-			prometheus.GaugeValue,
-			values.Out.Value/1000,
-			c.internetLabels(internet)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Out.Time, m)
+	m := prometheus.MustNewConstMetric(
+		c.In,
+		prometheus.GaugeValue,
+		in,
+		c.internetLabels(internet)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	out := values.Out
+	if out > 0 {
+		out = out / 1000
 	}
+	m = prometheus.MustNewConstMetric(
+		c.Out,
+		prometheus.GaugeValue,
+		out,
+		c.internetLabels(internet)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

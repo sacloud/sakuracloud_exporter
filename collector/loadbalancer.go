@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -8,11 +9,14 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
 // LoadBalancerCollector collects metrics about all servers.
 type LoadBalancerCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.LoadBalancerClient
@@ -32,7 +36,7 @@ type LoadBalancerCollector struct {
 }
 
 // NewLoadBalancerCollector returns a new LoadBalancerCollector.
-func NewLoadBalancerCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.LoadBalancerClient) *LoadBalancerCollector {
+func NewLoadBalancerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.LoadBalancerClient) *LoadBalancerCollector {
 	errors.WithLabelValues("loadbalancer").Add(0)
 
 	lbLabels := []string{"id", "name", "zone"}
@@ -43,6 +47,7 @@ func NewLoadBalancerCollector(logger log.Logger, errors *prometheus.CounterVec, 
 	serverInfoLabels := append(serverLabels, "monitor", "path", "response_code")
 
 	return &LoadBalancerCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -116,7 +121,7 @@ func (c *LoadBalancerCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
-	lbs, err := c.client.Find()
+	lbs, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
 		level.Warn(c.logger).Log(
@@ -135,7 +140,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 			lbLabels := c.lbLabels(lb)
 
 			var up float64
-			if lb.IsUp() {
+			if lb.InstanceStatus.IsUp() {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(
@@ -150,18 +155,16 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 				float64(1.0),
 				c.lbInfoLabels(lb)...,
 			)
-			if lb.Settings != nil && lb.Settings.LoadBalancer != nil {
-				for vipIndex := range lb.Settings.LoadBalancer {
-					ch <- prometheus.MustNewConstMetric(
-						c.VIPInfo,
-						prometheus.GaugeValue,
-						float64(1.0),
-						c.vipInfoLabels(lb, vipIndex)...,
-					)
-				}
+			for vipIndex := range lb.VirtualIPAddresses {
+				ch <- prometheus.MustNewConstMetric(
+					c.VIPInfo,
+					prometheus.GaugeValue,
+					float64(1.0),
+					c.vipInfoLabels(lb, vipIndex)...,
+				)
 			}
 
-			if lb.IsUp() {
+			if lb.InstanceStatus.IsUp() {
 				now := time.Now()
 
 				// NIC(Receive/Send)
@@ -188,68 +191,73 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (c *LoadBalancerCollector) lbLabels(lb *iaas.LoadBalancer) []string {
 	return []string{
-		lb.GetStrID(),
+		lb.ID.String(),
 		lb.Name,
 		lb.ZoneName,
 	}
 }
 
-var loadBalancerPlanMapping = map[int64]string{
-	1: "standard",
-	2: "highspec",
+var loadBalancerPlanMapping = map[types.ID]string{
+	types.LoadBalancerPlans.Standard: "standard",
+	types.LoadBalancerPlans.Premium:  "highspec",
 }
 
 func (c *LoadBalancerCollector) lbInfoLabels(lb *iaas.LoadBalancer) []string {
 	labels := c.lbLabels(lb)
 
 	isHA := "0"
-	if lb.IsHA() {
+	if lb.PlanID == types.LoadBalancerPlans.Premium {
 		isHA = "1"
+	}
+
+	ipaddress2 := ""
+	if len(lb.IPAddresses) > 1 {
+		ipaddress2 = lb.IPAddresses[1]
 	}
 
 	return append(labels,
 		loadBalancerPlanMapping[lb.GetPlanID()],
 		isHA,
-		fmt.Sprintf("%d", lb.Remark.VRRP.VRID),
-		lb.IPAddress1(),
-		lb.IPAddress2(),
-		lb.Remark.Network.DefaultRoute,
-		fmt.Sprintf("%d", lb.Remark.Network.NetworkMaskLen),
+		fmt.Sprintf("%d", lb.VRID),
+		lb.IPAddresses[0],
+		ipaddress2,
+		lb.DefaultRoute,
+		fmt.Sprintf("%d", lb.NetworkMaskLen),
 		flattenStringSlice(lb.Tags),
 		lb.Description,
 	)
 }
 
 func (c *LoadBalancerCollector) vipLabels(lb *iaas.LoadBalancer, index int) []string {
-	if len(lb.Settings.LoadBalancer) <= index {
+	if len(lb.VirtualIPAddresses) <= index {
 		return nil
 	}
 	labels := c.lbLabels(lb)
 	return append(labels,
 		fmt.Sprintf("%d", index),
-		lb.Settings.LoadBalancer[index].VirtualIPAddress,
+		lb.VirtualIPAddresses[index].VirtualIPAddress,
 	)
 }
 
 func (c *LoadBalancerCollector) vipInfoLabels(lb *iaas.LoadBalancer, index int) []string {
-	if len(lb.Settings.LoadBalancer) <= index {
+	if len(lb.VirtualIPAddresses) <= index {
 		return nil
 	}
 	labels := c.vipLabels(lb, index)
-	vip := lb.Settings.LoadBalancer[index]
+	vip := lb.VirtualIPAddresses[index]
 	return append(labels,
-		vip.Port,
-		vip.DelayLoop,
+		vip.Port.String(),
+		vip.DelayLoop.String(),
 		vip.SorryServer,
 		vip.Description,
 	)
 }
 
 func (c *LoadBalancerCollector) serverLabels(lb *iaas.LoadBalancer, vipIndex int, serverIndex int) []string {
-	if len(lb.Settings.LoadBalancer) < vipIndex {
+	if len(lb.VirtualIPAddresses) < vipIndex {
 		return nil
 	}
-	vip := lb.Settings.LoadBalancer[vipIndex]
+	vip := lb.VirtualIPAddresses[vipIndex]
 	if len(vip.Servers) < serverIndex {
 		return nil
 	}
@@ -263,10 +271,10 @@ func (c *LoadBalancerCollector) serverLabels(lb *iaas.LoadBalancer, vipIndex int
 }
 
 func (c *LoadBalancerCollector) serverInfoLabels(lb *iaas.LoadBalancer, vipIndex int, serverIndex int) []string {
-	if len(lb.Settings.LoadBalancer) < vipIndex {
+	if len(lb.VirtualIPAddresses) < vipIndex {
 		return nil
 	}
-	vip := lb.Settings.LoadBalancer[vipIndex]
+	vip := lb.VirtualIPAddresses[vipIndex]
 	if len(vip.Servers) < serverIndex {
 		return nil
 	}
@@ -274,14 +282,14 @@ func (c *LoadBalancerCollector) serverInfoLabels(lb *iaas.LoadBalancer, vipIndex
 
 	labels := c.serverLabels(lb, vipIndex, serverIndex)
 	return append(labels,
-		server.HealthCheck.Protocol,
-		server.HealthCheck.Path,
-		server.HealthCheck.Status,
+		string(server.HealthCheckProtocol),
+		server.HealthCheckPath,
+		server.HealthCheckResponseCode.String(),
 	)
 }
 
 func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, lb *iaas.LoadBalancer, now time.Time) {
-	values, err := c.client.MonitorNIC(lb.ZoneName, lb.ID, now)
+	values, err := c.client.MonitorNIC(c.ctx, lb.ZoneName, lb.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
 		level.Warn(c.logger).Log(
@@ -294,28 +302,51 @@ func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, l
 		return
 	}
 
-	if values.Receive != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Receive,
-			prometheus.GaugeValue,
-			values.Receive.Value*8/1000,
-			c.lbLabels(lb)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Receive.Time, m)
+	receive := values.Receive
+	if receive > 0 {
+		receive = receive * 8 / 1000
 	}
-	if values.Send != nil {
-		m := prometheus.MustNewConstMetric(
-			c.Send,
-			prometheus.GaugeValue,
-			values.Send.Value*8/1000,
-			c.lbLabels(lb)...,
-		)
-		ch <- prometheus.NewMetricWithTimestamp(values.Send.Time, m)
+	m := prometheus.MustNewConstMetric(
+		c.Receive,
+		prometheus.GaugeValue,
+		receive,
+		c.lbLabels(lb)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+
+	send := values.Send
+	if send > 0 {
+		send = send * 8 / 1000
 	}
+	m = prometheus.MustNewConstMetric(
+		c.Send,
+		prometheus.GaugeValue,
+		send,
+		c.lbLabels(lb)...,
+	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+}
+
+func getVIPStatus(status []*sacloud.LoadBalancerStatus, vip string) *sacloud.LoadBalancerStatus {
+	for _, s := range status {
+		if s.VirtualIPAddress == vip {
+			return s
+		}
+	}
+	return nil
+}
+
+func getServerStatus(status []*sacloud.LoadBalancerServerStatus, ip string) *sacloud.LoadBalancerServerStatus {
+	for _, s := range status {
+		if s.IPAddress == ip {
+			return s
+		}
+	}
+	return nil
 }
 
 func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb *iaas.LoadBalancer) {
-	status, err := c.client.Status(lb.ZoneName, lb.ID)
+	status, err := c.client.Status(c.ctx, lb.ZoneName, lb.ID)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
 		level.Warn(c.logger).Log(
@@ -328,18 +359,18 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 		return
 	}
 
-	if lb.Settings == nil || lb.Settings.LoadBalancer == nil {
+	if len(lb.VirtualIPAddresses) == 0 {
 		return
 	}
-	for vipIndex, vip := range lb.Settings.LoadBalancer {
+	for vipIndex, vip := range lb.VirtualIPAddresses {
 		if vip.Servers == nil {
 			return
 		}
-		vipStatus := status.Get(vip.VirtualIPAddress)
+		vipStatus := getVIPStatus(status, vip.VirtualIPAddress)
 		ch <- prometheus.MustNewConstMetric(
 			c.VIPCPS,
 			prometheus.GaugeValue,
-			float64(vipStatus.NumCPS()),
+			float64(vipStatus.CPS),
 			c.vipLabels(lb, vipIndex)...,
 		)
 		for serverIndex, server := range vip.Servers {
@@ -351,16 +382,15 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 				float64(1.0),
 				c.serverInfoLabels(lb, vipIndex, serverIndex)...,
 			)
-
-			serverStatus := vipStatus.Get(server.IPAddress)
+			serverStatus := getServerStatus(vipStatus.Servers, server.IPAddress)
 
 			up := float64(0.0)
 			activeConn := float64(0.0)
 			cps := float64(0.0)
 			if serverStatus != nil && serverStatus.Status == "UP" {
 				up = 1.0
-				activeConn = float64(serverStatus.NumActiveConn())
-				cps = float64(serverStatus.NumCPS())
+				activeConn = float64(serverStatus.ActiveConn)
+				cps = float64(serverStatus.CPS)
 			}
 
 			ch <- prometheus.MustNewConstMetric(

@@ -1,6 +1,8 @@
 package collector
 
 import (
+	"context"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -9,6 +11,7 @@ import (
 
 // ZoneCollector collects metrics about the account.
 type ZoneCollector struct {
+	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
 	client iaas.ZoneClient
@@ -17,12 +20,13 @@ type ZoneCollector struct {
 }
 
 // NewZoneCollector returns a new ZoneCollector.
-func NewZoneCollector(logger log.Logger, errors *prometheus.CounterVec, client iaas.ZoneClient) *ZoneCollector {
+func NewZoneCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ZoneClient) *ZoneCollector {
 	errors.WithLabelValues("zone").Add(0)
 
 	labels := []string{"id", "name", "description", "region_id", "region_name"}
 
 	return &ZoneCollector{
+		ctx:    ctx,
 		logger: logger,
 		errors: errors,
 		client: client,
@@ -42,7 +46,7 @@ func (c *ZoneCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *ZoneCollector) Collect(ch chan<- prometheus.Metric) {
-	zones, err := c.client.Find()
+	zones, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("zone").Add(1)
 		level.Warn(c.logger).Log(
@@ -54,10 +58,10 @@ func (c *ZoneCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, zone := range zones {
 		labels := []string{
-			zone.GetStrID(),
+			zone.ID.String(),
 			zone.Name,
 			zone.Description,
-			zone.Region.GetStrID(),
+			zone.Region.ID.String(),
 			zone.Region.Name,
 		}
 

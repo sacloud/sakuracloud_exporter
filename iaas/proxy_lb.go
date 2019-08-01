@@ -1,52 +1,51 @@
 package iaas
 
 import (
+	"context"
 	"time"
 
-	sakuraAPI "github.com/sacloud/libsacloud/api"
-
-	"github.com/sacloud/libsacloud/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 )
 
 type ProxyLBClient interface {
-	Find() ([]*sacloud.ProxyLB, error)
-	GetCertificate(proxyLBID int64) (*sacloud.ProxyLBCertificates, error)
-	Monitor(proxyLBID int64, end time.Time) (*ProxyLBMetrics, error)
+	Find(ctx context.Context) ([]*sacloud.ProxyLB, error)
+	GetCertificate(ctx context.Context, id types.ID) (*sacloud.ProxyLBCertificates, error)
+	Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorConnectionValue, error)
 }
 
-func getProxyLBClient(client *sakuraAPI.Client) ProxyLBClient {
+func getProxyLBClient(caller sacloud.APICaller) ProxyLBClient {
 	return &proxyLBClient{
-		rawClient: client,
+		client: sacloud.NewProxyLBOp(caller),
 	}
 }
 
 type proxyLBClient struct {
-	rawClient *sakuraAPI.Client
+	client sacloud.ProxyLBAPI
 }
 
-func (s *proxyLBClient) Find() ([]*sacloud.ProxyLB, error) {
-	client := s.rawClient.Clone()
+func (c *proxyLBClient) Find(ctx context.Context) ([]*sacloud.ProxyLB, error) {
+	var results []*sacloud.ProxyLB
+	res, err := c.client.Find(ctx, &sacloud.FindCondition{
+		Count: 10000,
+	})
+	if err != nil {
+		return results, err
+	}
+	for _, lb := range res.ProxyLBs {
+		results = append(results, lb)
+	}
+	return results, err
+}
 
-	res, err := client.ProxyLB.Reset().Limit(10000).Include("*").Find()
+func (c *proxyLBClient) GetCertificate(ctx context.Context, id types.ID) (*sacloud.ProxyLBCertificates, error) {
+	return c.client.GetCertificates(ctx, id)
+}
+
+func (c *proxyLBClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorConnectionValue, error) {
+	mvs, err := c.client.MonitorConnection(ctx, id, monitorCondition(end))
 	if err != nil {
 		return nil, err
 	}
-	var results []*sacloud.ProxyLB
-	for i := range res.CommonServiceProxyLBItems {
-		results = append(results, &res.CommonServiceProxyLBItems[i])
-	}
-	return results, nil
-}
-
-func (s *proxyLBClient) GetCertificate(proxyLBID int64) (*sacloud.ProxyLBCertificates, error) {
-	client := s.rawClient.Clone()
-	return client.ProxyLB.GetCertificates(proxyLBID)
-}
-
-func (s *proxyLBClient) Monitor(proxyLBID int64, end time.Time) (*ProxyLBMetrics, error) {
-	query := func(client *sakuraAPI.Client, param *sacloud.ResourceMonitorRequest) (*sacloud.MonitorValues, error) {
-		return client.ProxyLB.Monitor(proxyLBID, param)
-	}
-
-	return queryProxyLBMonitorValue(s.rawClient, "is1a", end, query)
+	return monitorConnectionValue(mvs.Values), nil
 }
