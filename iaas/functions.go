@@ -19,21 +19,21 @@ func queryToZones(ctx context.Context, zones []string, query perZoneQueryFunc) (
 	resCh := make(chan *result)
 	defer close(resCh)
 
-	for _, zone := range zones {
+	for i := range zones {
 		go func(zone string) {
 			res, err := query(ctx, zone)
 			resCh <- &result{
 				results: res,
 				err:     err,
 			}
-		}(zone)
+		}(zones[i])
 	}
 
 	var results []interface{}
 	var err error
 	go func() {
 		for res := range resCh {
-			if err != nil {
+			if err == nil {
 				if res.err != nil {
 					err = res.err
 				} else {

@@ -125,7 +125,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(proxyLBs))
 
 	for i := range proxyLBs {
-		go func(proxyLB *sacloud.ProxyLB) {
+		func(proxyLB *sacloud.ProxyLB) {
 			defer wg.Done()
 
 			proxyLBLabels := c.proxyLBLabels(proxyLB)

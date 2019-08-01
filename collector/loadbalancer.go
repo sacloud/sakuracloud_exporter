@@ -134,7 +134,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(lbs))
 
 	for i := range lbs {
-		go func(lb *iaas.LoadBalancer) {
+		func(lb *iaas.LoadBalancer) {
 			defer wg.Done()
 
 			lbLabels := c.lbLabels(lb)

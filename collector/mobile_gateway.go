@@ -116,7 +116,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(mobileGateways))
 
 	for i := range mobileGateways {
-		go func(mobileGateway *iaas.MobileGateway) {
+		func(mobileGateway *iaas.MobileGateway) {
 			defer wg.Done()
 
 			mobileGatewayLabels := c.mobileGatewayLabels(mobileGateway)
@@ -184,12 +184,12 @@ func (c *MobileGatewayCollector) mobileGatewayInfoLabels(mobileGateway *iaas.Mob
 	labels := c.mobileGatewayLabels(mobileGateway)
 
 	internetConnection := "0"
-	if mobileGateway.Settings.InternetConnectionEnabled {
+	if mobileGateway.Settings != nil && mobileGateway.Settings.InternetConnectionEnabled {
 		internetConnection = "1"
 	}
 
 	interDeviceCommunication := "0"
-	if mobileGateway.Settings.InterDeviceCommunicationEnabled {
+	if mobileGateway.Settings != nil && mobileGateway.Settings.InterDeviceCommunicationEnabled {
 		interDeviceCommunication = "1"
 	}
 
