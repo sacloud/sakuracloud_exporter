@@ -18,13 +18,11 @@ type AutoBackupClient interface {
 func getAutoBackupClient(caller sacloud.APICaller, zones []string) AutoBackupClient {
 	return &autoBackupClient{
 		caller: caller,
-		zones:  zones,
 	}
 }
 
 type autoBackupClient struct {
 	caller sacloud.APICaller
-	zones  []string
 }
 
 func (c *autoBackupClient) find(ctx context.Context, zone string) ([]interface{}, error) {
@@ -43,7 +41,7 @@ func (c *autoBackupClient) find(ctx context.Context, zone string) ([]interface{}
 }
 
 func (c *autoBackupClient) Find(ctx context.Context) ([]*sacloud.AutoBackup, error) {
-	res, err := queryToZones(ctx, c.zones, c.find)
+	res, err := c.find(ctx, "is1a")
 	if err != nil {
 		return nil, err
 	}

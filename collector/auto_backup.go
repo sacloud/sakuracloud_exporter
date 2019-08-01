@@ -85,12 +85,9 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(len(autoBackups))
 
 	for i := range autoBackups {
-		go func(autoBackup *sacloud.AutoBackup) {
-			defer wg.Done()
-
+		func(autoBackup *sacloud.AutoBackup) {
 			ch <- prometheus.MustNewConstMetric(
 				c.Info,
 				prometheus.GaugeValue,
@@ -101,10 +98,9 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 			now := time.Now()
 			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				c.collectBackupMetrics(ch, autoBackup, now)
-				wg.Done()
 			}()
-
 		}(autoBackups[i])
 	}
 

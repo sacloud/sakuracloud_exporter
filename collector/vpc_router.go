@@ -261,19 +261,27 @@ func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *iaas.VPCRouter) []st
 		strVRID = ""
 	}
 
-	ipaddress2 := ""
-	if len(vpcRouter.Settings.Interfaces[0].IPAddress) > 1 {
-		ipaddress2 = vpcRouter.Settings.Interfaces[0].IPAddress[1]
+	var vip, ipaddress1, ipaddress2 string
+	var nwMaskLen = "-"
+	if len(vpcRouter.Settings.Interfaces) > 0 {
+		vip = vpcRouter.Settings.Interfaces[0].VirtualIPAddress
+		if len(vpcRouter.Settings.Interfaces[0].IPAddress) > 0 {
+			ipaddress1 = vpcRouter.Settings.Interfaces[0].IPAddress[0]
+		}
+		if len(vpcRouter.Settings.Interfaces[0].IPAddress) > 1 {
+			ipaddress2 = vpcRouter.Settings.Interfaces[0].IPAddress[1]
+		}
+		nwMaskLen = fmt.Sprintf("%d", vpcRouter.Interfaces[0].SubnetNetworkMaskLen)
 	}
 
 	return append(labels,
 		vpcRouterPlanMapping[vpcRouter.GetPlanID()],
 		isHA,
 		strVRID,
-		vpcRouter.Settings.Interfaces[0].VirtualIPAddress,
-		vpcRouter.Settings.Interfaces[0].IPAddress[0],
+		vip,
+		ipaddress1,
 		ipaddress2,
-		fmt.Sprintf("%d", vpcRouter.Interfaces[0].SubnetNetworkMaskLen),
+		nwMaskLen,
 		internetConn,
 		flattenStringSlice(vpcRouter.Tags),
 		vpcRouter.Description,
@@ -294,18 +302,28 @@ func (c *VPCRouterCollector) nicLabels(vpcRouter *iaas.VPCRouter, index int) []s
 		return nil
 	}
 
+	var vip, ipaddress1, ipaddress2 string
+	nwMaskLen := ""
+
 	labels := c.vpcRouterLabels(vpcRouter)
 	nic := getInterfaceByIndex(vpcRouter.Settings.Interfaces, index)
-	ipaddress2 := ""
-	if len(nic.IPAddress) > 1 {
-		ipaddress2 = nic.IPAddress[1]
+	if nic != nil {
+
+		vip = nic.VirtualIPAddress
+		if len(nic.IPAddress) > 0 {
+			ipaddress1 = nic.IPAddress[0]
+		}
+		if len(nic.IPAddress) > 1 {
+			ipaddress2 = nic.IPAddress[1]
+		}
+		nwMaskLen = fmt.Sprintf("%d", nic.NetworkMaskLen)
 	}
 	return append(labels,
 		fmt.Sprintf("%d", index),
-		nic.VirtualIPAddress,
-		nic.IPAddress[0],
+		vip,
+		ipaddress1,
 		ipaddress2,
-		fmt.Sprintf("%d", nic.NetworkMaskLen),
+		nwMaskLen,
 	)
 }
 
