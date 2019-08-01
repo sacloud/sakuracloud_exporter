@@ -61,11 +61,6 @@ func collectMetrics(collector prometheus.Collector, errLabel string) (*collectRe
 		}
 		metrics = append(metrics, v)
 	}
-	sort.Slice(metrics, func(i, j int) bool {
-		s1, _ := metrics[i].Descriptor()
-		s2, _ := metrics[j].Descriptor()
-		return string(s1) < string(s2)
-	})
 
 	errs := &dto.Metric{}
 	if err := testErrors.WithLabelValues(errLabel).Write(errs); err != nil {
