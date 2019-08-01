@@ -12,6 +12,7 @@ var testZone string
 var testCaller *sacloud.Client
 
 func TestMain(m *testing.M) {
+	// this is for to use fake driver on libsacloud
 	os.Setenv("TESTACC", "")
 
 	testZone = testutil.TestZone()

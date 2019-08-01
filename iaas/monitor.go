@@ -17,7 +17,7 @@ func monitorCondition(end time.Time) *sacloud.MonitorCondition {
 }
 
 func monitorDatabaseValue(values []*sacloud.MonitorDatabaseValue) *sacloud.MonitorDatabaseValue {
-	if len(values) > 2 {
+	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 		return values[1]
@@ -26,7 +26,7 @@ func monitorDatabaseValue(values []*sacloud.MonitorDatabaseValue) *sacloud.Monit
 }
 
 func monitorCPUTimeValue(values []*sacloud.MonitorCPUTimeValue) *sacloud.MonitorCPUTimeValue {
-	if len(values) > 2 {
+	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 		return values[1]
@@ -35,7 +35,7 @@ func monitorCPUTimeValue(values []*sacloud.MonitorCPUTimeValue) *sacloud.Monitor
 }
 
 func monitorDiskValue(values []*sacloud.MonitorDiskValue) *sacloud.MonitorDiskValue {
-	if len(values) > 2 {
+	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 		return values[1]
@@ -44,7 +44,7 @@ func monitorDiskValue(values []*sacloud.MonitorDiskValue) *sacloud.MonitorDiskVa
 }
 
 func monitorInterfaceValue(values []*sacloud.MonitorInterfaceValue) *sacloud.MonitorInterfaceValue {
-	if len(values) > 2 {
+	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 		return values[1]
@@ -53,7 +53,7 @@ func monitorInterfaceValue(values []*sacloud.MonitorInterfaceValue) *sacloud.Mon
 }
 
 func monitorRouterValue(values []*sacloud.MonitorRouterValue) *sacloud.MonitorRouterValue {
-	if len(values) > 2 {
+	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 		return values[1]
@@ -62,7 +62,7 @@ func monitorRouterValue(values []*sacloud.MonitorRouterValue) *sacloud.MonitorRo
 }
 
 func monitorFreeDiskSizeValue(values []*sacloud.MonitorFreeDiskSizeValue) *sacloud.MonitorFreeDiskSizeValue {
-	if len(values) > 2 {
+	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
 		return values[1]
