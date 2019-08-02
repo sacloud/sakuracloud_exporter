@@ -92,7 +92,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
 		level.Warn(c.logger).Log(
-			"msg", "can't list nfss",
+			"msg", "can't list nfs",
 			"err", err,
 		)
 	}
@@ -121,6 +121,13 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 				prometheus.GaugeValue,
 				float64(1.0),
 				c.nfsInfoLabels(nfs)...,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				c.NICInfo,
+				prometheus.GaugeValue,
+				float64(1.0),
+				c.nicInfoLabels(nfs)...,
 			)
 
 			if nfs.InstanceStatus.IsUp() {
@@ -184,6 +191,11 @@ func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
 	upstreamID := nfs.SwitchID.String()
 	upstreamName := nfs.SwitchName
 
+	ip := ""
+	if len(nfs.IPAddresses) > 0 {
+		ip = nfs.IPAddresses[0]
+	}
+
 	nwMaskLen := nfs.NetworkMaskLen
 	strMaskLen := ""
 	if nwMaskLen > 0 {
@@ -193,7 +205,7 @@ func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
 	return append(labels,
 		upstreamID,
 		upstreamName,
-		nfs.IPAddresses[0],
+		ip,
 		strMaskLen,
 		nfs.DefaultRoute,
 	)
@@ -257,7 +269,7 @@ func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.
 
 	send := values.Send
 	if send > 0 {
-		send = send * 8 / 1024
+		send = send * 8 / 1000
 	}
 	m = prometheus.MustNewConstMetric(
 		c.NICSend,
