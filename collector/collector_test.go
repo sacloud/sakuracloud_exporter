@@ -2,8 +2,10 @@ package collector
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,9 +33,23 @@ func collectDescs(collector prometheus.Collector) []*prometheus.Desc {
 }
 
 type collectResult struct {
-	logged    string
-	errors    *dto.Metric
-	collected []*dto.Metric
+	logged []string
+	errors *dto.Metric
+	//collected []*dto.Metric
+	collected []*collectedMetric
+}
+
+type collectedMetric struct {
+	desc   *prometheus.Desc
+	metric *dto.Metric
+}
+
+func (c *collectedMetric) String() string {
+	var labels string
+	for _, l := range c.metric.Label {
+		labels += fmt.Sprintf(" %s=%s,", *l.Name, *l.Value)
+	}
+	return fmt.Sprintf("Labels:%s Value: %f Desc: %s", labels, *c.metric.Gauge.Value, c.desc.String())
 }
 
 func initLoggerAndErrors() {
@@ -52,14 +68,17 @@ func collectMetrics(collector prometheus.Collector, errLabel string) (*collectRe
 		close(ch)
 	}()
 
-	var metrics []*dto.Metric
+	var metrics []*collectedMetric
 	for metric := range ch {
 		v := &dto.Metric{}
 		err := metric.Write(v)
 		if err != nil {
 			return nil, err
 		}
-		metrics = append(metrics, v)
+		metrics = append(metrics, &collectedMetric{
+			desc:   metric.Desc(),
+			metric: v,
+		})
 	}
 
 	errs := &dto.Metric{}
@@ -67,8 +86,17 @@ func collectMetrics(collector prometheus.Collector, errLabel string) (*collectRe
 		return nil, err
 	}
 
+	logs := strings.Split(logbuf.String(), "\n")
+	sort.Strings(logs)
+	var trimed []string
+	for _, l := range logs {
+		if l != "" {
+			trimed = append(trimed, l)
+		}
+	}
+
 	return &collectResult{
-		logged:    strings.Trim(logbuf.String(), "\n"),
+		logged:    trimed,
 		errors:    errs,
 		collected: metrics,
 	}, nil
@@ -95,5 +123,12 @@ func createGaugeMetric(value float64, labels map[string]string) *dto.Metric {
 		})
 	}
 
+	return metric
+}
+
+func createGaugeWithTimestamp(value float64, labels map[string]string, timestamp time.Time) *dto.Metric {
+	metric := createGaugeMetric(value, labels)
+	ts := timestamp.Unix() * 1000
+	metric.TimestampMs = &ts
 	return metric
 }

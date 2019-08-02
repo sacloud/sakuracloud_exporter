@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 	"github.com/stretchr/testify/require"
@@ -36,22 +35,23 @@ func TestCouponCollector_Describe(t *testing.T) {
 }
 
 func TestCouponCollector_Collect(t *testing.T) {
-
+	initLoggerAndErrors()
+	c := NewCouponCollector(context.Background(), testLogger, testErrors, nil)
 	untilAt := time.Now().Add(time.Hour * 24 * 3)
 
 	cases := []struct {
 		name           string
 		in             iaas.CouponClient
-		wantLog        string
+		wantLogs       []string
 		wantErrCounter float64
-		wantMetrics    []*dto.Metric
+		wantMetrics    []*collectedMetric
 	}{
 		{
 			name: "collector returns error",
 			in: &dummyCouponClient{
 				err: errors.New("dummy"),
 			},
-			wantLog:        `level=warn msg="can't get coupon" err=dummy`,
+			wantLogs:       []string{`level=warn msg="can't get coupon" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -74,41 +74,56 @@ func TestCouponCollector_Collect(t *testing.T) {
 					},
 				},
 			},
-			wantMetrics: []*dto.Metric{
-				// Discount
-				createGaugeMetric(1000, map[string]string{
-					"id":          "101",
-					"contract_id": "201",
-					"member_id":   "memberID",
-				}),
-				// RemainingDays
-				createGaugeMetric(2, map[string]string{
-					"id":          "101",
-					"contract_id": "201",
-					"member_id":   "memberID",
-				}),
-				// ExpirationDate
-				createGaugeMetric(float64(untilAt.Unix()*1000), map[string]string{
-					"id":          "101",
-					"contract_id": "201",
-					"member_id":   "memberID",
-				}),
-				// Usable
-				createGaugeMetric(1, map[string]string{
-					"id":          "101",
-					"contract_id": "201",
-					"member_id":   "memberID",
-				}),
+			wantMetrics: []*collectedMetric{
+				{
+					// Discount
+					desc: c.Discount,
+					metric: createGaugeMetric(1000, map[string]string{
+						"id":          "101",
+						"contract_id": "201",
+						"member_id":   "memberID",
+					}),
+				},
+				{
+					// RemainingDays
+					desc: c.RemainingDays,
+					metric: createGaugeMetric(2, map[string]string{
+						"id":          "101",
+						"contract_id": "201",
+						"member_id":   "memberID",
+					}),
+				},
+				{
+					// ExpirationDate
+					desc: c.ExpDate,
+					metric: createGaugeMetric(float64(untilAt.Unix()*1000), map[string]string{
+						"id":          "101",
+						"contract_id": "201",
+						"member_id":   "memberID",
+					}),
+				},
+				{
+					// Usable
+					desc: c.Usable,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"contract_id": "201",
+						"member_id":   "memberID",
+					}),
+				},
 			},
 		},
 	}
 
 	for _, tc := range cases {
 		initLoggerAndErrors()
-		c := NewCouponCollector(context.Background(), testLogger, testErrors, tc.in)
+		c.logger = testLogger
+		c.errors = testErrors
+		c.client = tc.in
+
 		collected, err := collectMetrics(c, "coupon")
 		require.NoError(t, err)
-		require.Equal(t, tc.wantLog, collected.logged)
+		require.Equal(t, tc.wantLogs, collected.logged)
 		require.Equal(t, tc.wantErrCounter, *collected.errors.Counter.Value)
 		require.Equal(t, tc.wantMetrics, collected.collected)
 	}

@@ -5,8 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	dto "github.com/prometheus/client_model/go"
-
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 	"github.com/stretchr/testify/require"
@@ -22,33 +20,37 @@ func (d *dummyZoneClient) Find(ctx context.Context) ([]*sacloud.Zone, error) {
 }
 
 func TestZoneCollector_Describe(t *testing.T) {
-	zoneCollector := NewZoneCollector(context.Background(), testLogger, testErrors, &dummyZoneClient{})
+	initLoggerAndErrors()
+	c := NewZoneCollector(context.Background(), testLogger, testErrors, &dummyZoneClient{})
 
-	descs := collectDescs(zoneCollector)
+	descs := collectDescs(c)
 	require.Len(t, descs, 1)
 }
 
 func TestZoneCollector_Collect(t *testing.T) {
+	initLoggerAndErrors()
+	c := NewZoneCollector(context.Background(), testLogger, testErrors, nil)
+
 	cases := []struct {
 		name           string
 		in             iaas.ZoneClient
-		wantLog        string
+		wantLogs       []string
 		wantErrCounter float64
-		wantMetrics    []*dto.Metric
+		wantMetrics    []*collectedMetric
 	}{
 		{
 			name: "collector returns error",
 			in: &dummyZoneClient{
 				err: errors.New("dummy"),
 			},
-			wantLog:        `level=warn msg="can't get zone info" err=dummy`,
+			wantLogs:       []string{`level=warn msg="can't get zone info" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
 		{
 			name:           "empty result",
 			in:             &dummyZoneClient{},
-			wantLog:        "",
+			wantLogs:       nil,
 			wantErrCounter: 0,
 			wantMetrics:    nil,
 		},
@@ -67,16 +69,19 @@ func TestZoneCollector_Collect(t *testing.T) {
 					},
 				},
 			},
-			wantLog:        "",
+			wantLogs:       nil,
 			wantErrCounter: 0,
-			wantMetrics: []*dto.Metric{
-				createGaugeMetric(1, map[string]string{
-					"id":          "1",
-					"name":        "zone",
-					"description": "desc",
-					"region_id":   "2",
-					"region_name": "region",
-				}),
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.ZoneInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "1",
+						"name":        "zone",
+						"description": "desc",
+						"region_id":   "2",
+						"region_name": "region",
+					}),
+				},
 			},
 		},
 		{
@@ -103,33 +108,42 @@ func TestZoneCollector_Collect(t *testing.T) {
 					},
 				},
 			},
-			wantLog:        "",
+			wantLogs:       nil,
 			wantErrCounter: 0,
-			wantMetrics: []*dto.Metric{
-				createGaugeMetric(1, map[string]string{
-					"id":          "1",
-					"name":        "zone1",
-					"description": "desc1",
-					"region_id":   "2",
-					"region_name": "region2",
-				}),
-				createGaugeMetric(1, map[string]string{
-					"id":          "3",
-					"name":        "zone3",
-					"description": "desc3",
-					"region_id":   "4",
-					"region_name": "region4",
-				}),
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.ZoneInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "1",
+						"name":        "zone1",
+						"description": "desc1",
+						"region_id":   "2",
+						"region_name": "region2",
+					}),
+				},
+				{
+					desc: c.ZoneInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "3",
+						"name":        "zone3",
+						"description": "desc3",
+						"region_id":   "4",
+						"region_name": "region4",
+					}),
+				},
 			},
 		},
 	}
 
 	for _, tc := range cases {
 		initLoggerAndErrors()
-		collector := NewZoneCollector(context.Background(), testLogger, testErrors, tc.in)
-		collected, err := collectMetrics(collector, "zone")
+		c.logger = testLogger
+		c.errors = testErrors
+		c.client = tc.in
+
+		collected, err := collectMetrics(c, "zone")
 		require.NoError(t, err)
-		require.Equal(t, tc.wantLog, collected.logged)
+		require.Equal(t, tc.wantLogs, collected.logged)
 		require.Equal(t, tc.wantErrCounter, *collected.errors.Counter.Value)
 		require.Equal(t, tc.wantMetrics, collected.collected)
 	}

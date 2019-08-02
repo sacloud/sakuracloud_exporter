@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -44,19 +43,22 @@ func TestAutoBackupCollector_Describe(t *testing.T) {
 }
 
 func TestAutoBackupCollector_Collect(t *testing.T) {
+	initLoggerAndErrors()
+	c := NewAutoBackupCollector(context.Background(), testLogger, testErrors, nil)
+
 	cases := []struct {
 		name           string
 		in             iaas.AutoBackupClient
-		wantLog        string
+		wantLogs       []string
 		wantErrCounter float64
-		wantMetrics    []*dto.Metric
+		wantMetrics    []*collectedMetric
 	}{
 		{
 			name: "collector returns error",
 			in: &dummyAutoBackupClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLog:        `level=warn msg="can't list autoBackups" err=dummy`,
+			wantLogs:       []string{`level=warn msg="can't list autoBackups" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -85,19 +87,21 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 				},
 				listBackupsErr: errors.New("dummy"),
 			},
-			wantMetrics: []*dto.Metric{
-				// Info
-				createGaugeMetric(1, map[string]string{
-					"id":             "101",
-					"name":           "AutoBackup",
-					"disk_id":        "201",
-					"max_backup_num": "3",
-					"weekdays":       ",sun,mon,tue,",
-					"tags":           ",tag1,tag2,",
-					"description":    "desc",
-				}),
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.Info,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":             "101",
+						"name":           "AutoBackup",
+						"disk_id":        "201",
+						"max_backup_num": "3",
+						"weekdays":       ",sun,mon,tue,",
+						"tags":           ",tag1,tag2,",
+						"description":    "desc",
+					}),
+				},
 			},
-			wantLog:        `level=warn msg="can't list backed up archives" err=dummy`,
+			wantLogs:       []string{`level=warn msg="can't list backed up archives" err=dummy`},
 			wantErrCounter: 1,
 		},
 		{
@@ -119,29 +123,35 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 					},
 				},
 			},
-			wantMetrics: []*dto.Metric{
-				// Info
-				createGaugeMetric(1, map[string]string{
-					"id":             "101",
-					"name":           "AutoBackup",
-					"disk_id":        "201",
-					"max_backup_num": "3",
-					"weekdays":       ",sun,mon,tue,",
-					"tags":           ",tag1,tag2,",
-					"description":    "desc",
-				}),
-				// BackupCount
-				createGaugeMetric(0, map[string]string{
-					"id":      "101",
-					"name":    "AutoBackup",
-					"disk_id": "201",
-				}),
-				// LastBackupTime
-				createGaugeMetric(0, map[string]string{
-					"id":      "101",
-					"name":    "AutoBackup",
-					"disk_id": "201",
-				}),
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.Info,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":             "101",
+						"name":           "AutoBackup",
+						"disk_id":        "201",
+						"max_backup_num": "3",
+						"weekdays":       ",sun,mon,tue,",
+						"tags":           ",tag1,tag2,",
+						"description":    "desc",
+					}),
+				},
+				{
+					desc: c.BackupCount,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":      "101",
+						"name":    "AutoBackup",
+						"disk_id": "201",
+					}),
+				},
+				{
+					desc: c.LastBackupTime,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":      "101",
+						"name":    "AutoBackup",
+						"disk_id": "201",
+					}),
+				},
 			},
 		},
 		{
@@ -179,59 +189,76 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 					},
 				},
 			},
-			wantMetrics: []*dto.Metric{
-				// Info
-				createGaugeMetric(1, map[string]string{
-					"id":             "101",
-					"name":           "AutoBackup",
-					"disk_id":        "201",
-					"max_backup_num": "3",
-					"weekdays":       ",sun,mon,tue,",
-					"tags":           ",tag1,tag2,",
-					"description":    "desc",
-				}),
-				// BackupCount
-				createGaugeMetric(2, map[string]string{
-					"id":      "101",
-					"name":    "AutoBackup",
-					"disk_id": "201",
-				}),
-				// LastBackupTime: latest backup is created at time.Unix(2,0), so value is 2000(milli sec)
-				createGaugeMetric(2000, map[string]string{
-					"id":      "101",
-					"name":    "AutoBackup",
-					"disk_id": "201",
-				}),
-				// backup1
-				createGaugeMetric(1, map[string]string{
-					"id":                  "101",
-					"name":                "AutoBackup",
-					"disk_id":             "201",
-					"archive_id":          "301",
-					"archive_name":        "Archive1",
-					"archive_description": "desc1",
-					"archive_tags":        ",tag1-1,tag1-2,",
-				}),
-				// backup2
-				createGaugeMetric(1, map[string]string{
-					"id":                  "101",
-					"name":                "AutoBackup",
-					"disk_id":             "201",
-					"archive_id":          "302",
-					"archive_name":        "Archive2",
-					"archive_description": "desc2",
-					"archive_tags":        ",tag2-1,tag2-2,",
-				}),
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.Info,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":             "101",
+						"name":           "AutoBackup",
+						"disk_id":        "201",
+						"max_backup_num": "3",
+						"weekdays":       ",sun,mon,tue,",
+						"tags":           ",tag1,tag2,",
+						"description":    "desc",
+					}),
+				},
+				{
+					// BackupCount
+					desc: c.BackupCount,
+					metric: createGaugeMetric(2, map[string]string{
+						"id":      "101",
+						"name":    "AutoBackup",
+						"disk_id": "201",
+					}),
+				},
+				{
+					// LastBackupTime: latest backup is created at time.Unix(2,0), so value is 2000(milli sec)
+					desc: c.LastBackupTime,
+					metric: createGaugeMetric(2000, map[string]string{
+						"id":      "101",
+						"name":    "AutoBackup",
+						"disk_id": "201",
+					}),
+				},
+				{
+					// backup1
+					desc: c.BackupInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":                  "101",
+						"name":                "AutoBackup",
+						"disk_id":             "201",
+						"archive_id":          "301",
+						"archive_name":        "Archive1",
+						"archive_description": "desc1",
+						"archive_tags":        ",tag1-1,tag1-2,",
+					}),
+				},
+				{
+					// backup2
+					desc: c.BackupInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":                  "101",
+						"name":                "AutoBackup",
+						"disk_id":             "201",
+						"archive_id":          "302",
+						"archive_name":        "Archive2",
+						"archive_description": "desc2",
+						"archive_tags":        ",tag2-1,tag2-2,",
+					}),
+				},
 			},
 		},
 	}
 
 	for _, tc := range cases {
 		initLoggerAndErrors()
-		collector := NewAutoBackupCollector(context.Background(), testLogger, testErrors, tc.in)
-		collected, err := collectMetrics(collector, "auto_backup")
+		c.logger = testLogger
+		c.errors = testErrors
+		c.client = tc.in
+
+		collected, err := collectMetrics(c, "auto_backup")
 		require.NoError(t, err)
-		require.Equal(t, tc.wantLog, collected.logged)
+		require.Equal(t, tc.wantLogs, collected.logged)
 		require.Equal(t, tc.wantErrCounter, *collected.errors.Counter.Value)
 		require.Equal(t, tc.wantMetrics, collected.collected)
 	}
