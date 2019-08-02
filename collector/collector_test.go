@@ -47,19 +47,34 @@ type collectedMetric struct {
 }
 
 func (c *collectedMetric) String() string {
+	labels := labelToString(c.metric.Label)
+	return fmt.Sprintf("Labels:%s Value: %f Desc: %s", labels, *c.metric.Gauge.Value, c.desc.String())
+}
+
+func labelToString(label []*dto.LabelPair) string {
 	var labels string
-	for _, l := range c.metric.Label {
+	for _, l := range label {
 		labels += fmt.Sprintf(" %s=%s,", *l.Name, *l.Value)
 	}
-	return fmt.Sprintf("Labels:%s Value: %f Desc: %s", labels, *c.metric.Gauge.Value, c.desc.String())
+	return labels
 }
 
 func requireMetricsEqual(t *testing.T, m1, m2 []*collectedMetric) {
 	sort.Slice(m1, func(i, j int) bool {
-		return m1[i].desc.String() < m1[j].desc.String()
+		s1 := m1[i].desc.String()
+		s2 := m1[j].desc.String()
+		if s1 != s2 {
+			return s1 < s2
+		}
+		return labelToString(m1[i].metric.Label) < labelToString(m1[j].metric.Label)
 	})
 	sort.Slice(m2, func(i, j int) bool {
-		return m2[i].desc.String() < m2[j].desc.String()
+		s1 := m2[i].desc.String()
+		s2 := m2[j].desc.String()
+		if s1 != s2 {
+			return s1 < s2
+		}
+		return labelToString(m2[i].metric.Label) < labelToString(m2[j].metric.Label)
 	})
 	require.Equal(t, m1, m2)
 }
