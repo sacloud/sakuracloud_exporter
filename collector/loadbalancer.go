@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -387,7 +388,7 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 			up := float64(0.0)
 			activeConn := float64(0.0)
 			cps := float64(0.0)
-			if serverStatus != nil && serverStatus.Status == "UP" {
+			if serverStatus != nil && strings.ToLower(string(serverStatus.Status)) == "up" {
 				up = 1.0
 				activeConn = float64(serverStatus.ActiveConn)
 				cps = float64(serverStatus.CPS)

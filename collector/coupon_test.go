@@ -125,6 +125,6 @@ func TestCouponCollector_Collect(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.wantLogs, collected.logged)
 		require.Equal(t, tc.wantErrCounter, *collected.errors.Counter.Value)
-		require.Equal(t, tc.wantMetrics, collected.collected)
+		requireMetricsEqual(t, tc.wantMetrics, collected.collected)
 	}
 }

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stretchr/testify/require"
 )
 
 var logbuf *bytes.Buffer
@@ -50,6 +52,16 @@ func (c *collectedMetric) String() string {
 		labels += fmt.Sprintf(" %s=%s,", *l.Name, *l.Value)
 	}
 	return fmt.Sprintf("Labels:%s Value: %f Desc: %s", labels, *c.metric.Gauge.Value, c.desc.String())
+}
+
+func requireMetricsEqual(t *testing.T, m1, m2 []*collectedMetric) {
+	sort.Slice(m1, func(i, j int) bool {
+		return m1[i].desc.String() < m1[j].desc.String()
+	})
+	sort.Slice(m2, func(i, j int) bool {
+		return m2[i].desc.String() < m2[j].desc.String()
+	})
+	require.Equal(t, m1, m2)
 }
 
 func initLoggerAndErrors() {

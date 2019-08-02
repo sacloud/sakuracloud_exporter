@@ -3,7 +3,6 @@ package collector
 import (
 	"context"
 	"errors"
-	"sort"
 	"testing"
 	"time"
 
@@ -324,14 +323,6 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.wantLogs, collected.logged)
 		require.Equal(t, tc.wantErrCounter, *collected.errors.Counter.Value)
-
-		sort.Slice(tc.wantMetrics, func(i, j int) bool {
-			return tc.wantMetrics[i].desc.String() < tc.wantMetrics[j].desc.String()
-		})
-		sort.Slice(collected.collected, func(i, j int) bool {
-			return collected.collected[i].desc.String() < collected.collected[j].desc.String()
-		})
-
-		require.Equal(t, tc.wantMetrics, collected.collected)
+		requireMetricsEqual(t, tc.wantMetrics, collected.collected)
 	}
 }

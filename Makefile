@@ -16,7 +16,7 @@ all: fmt build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short $(PKGS)
+	@$(GO) test -v $(PKGS)
 
 style:
 	@echo ">> checking code style"
