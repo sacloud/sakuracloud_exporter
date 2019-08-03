@@ -292,7 +292,7 @@ func (c *ServerCollector) serverLabels(server *iaas.Server) []string {
 	return []string{
 		server.ID.String(),
 		server.Name,
-		server.Zone.Name,
+		server.ZoneName,
 	}
 }
 
