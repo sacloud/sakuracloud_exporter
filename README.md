@@ -194,7 +194,6 @@ The exporter returns the following metrics:
 | ------                                | -----------                                                   | ------                                                                                                                                           |
 | sakuracloud_sim_info                  | A metric with a constant '1' value labeled by sim information | `id`, `name`, `imei_lock`, `registerd_date`, `activated_date`, `deactivated_date`, `ipaddress`, `simgroup_id`, `carriers`, `tags`, `description` |
 | sakuracloud_sim_session_up            | If 1 the session is up and running, 0 otherwise               | `id`, `name`                                                                                                                                     |
-| sakuracloud_sim_current_month_traffic | Current month traffic (unit: Kbps)                            | `id`, `name`                                                                                                                                     |
 | sakuracloud_sim_uplink                | Uplink traffic (unit: Kbps)                                   | `id`, `name`                                                                                                                                     |
 | sakuracloud_sim_downlink              | Downlink traffic (unit: Kbps)                                 | `id`, `name`                                                                                                                                     |
 
