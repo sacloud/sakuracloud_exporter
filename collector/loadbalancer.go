@@ -283,9 +283,9 @@ func (c *LoadBalancerCollector) serverInfoLabels(lb *iaas.LoadBalancer, vipIndex
 
 	labels := c.serverLabels(lb, vipIndex, serverIndex)
 	return append(labels,
-		string(server.HealthCheckProtocol),
-		server.HealthCheckPath,
-		server.HealthCheckResponseCode.String(),
+		string(server.HealthCheck.Protocol),
+		server.HealthCheck.Path,
+		server.HealthCheck.ResponseCode.String(),
 	)
 }
 

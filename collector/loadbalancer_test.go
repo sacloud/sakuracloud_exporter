@@ -153,12 +153,14 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 									Description:      "vip-desc",
 									Servers: []*sacloud.LoadBalancerServer{
 										{
-											IPAddress:               "192.168.0.201",
-											Port:                    80,
-											Enabled:                 true,
-											HealthCheckProtocol:     types.Protocols.HTTP,
-											HealthCheckResponseCode: http.StatusOK,
-											HealthCheckPath:         "/index.html",
+											IPAddress: "192.168.0.201",
+											Port:      80,
+											Enabled:   true,
+											HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+												Protocol:     types.LoadBalancerHealthCheckProtocols.HTTP,
+												ResponseCode: http.StatusOK,
+												Path:         "/index.html",
+											},
 										},
 									},
 								},
@@ -333,12 +335,14 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 									Description:      "vip-desc",
 									Servers: []*sacloud.LoadBalancerServer{
 										{
-											IPAddress:               "192.168.0.201",
-											Port:                    80,
-											Enabled:                 true,
-											HealthCheckProtocol:     types.Protocols.HTTP,
-											HealthCheckResponseCode: http.StatusOK,
-											HealthCheckPath:         "/index.html",
+											IPAddress: "192.168.0.201",
+											Port:      80,
+											Enabled:   true,
+											HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+												Protocol:     types.LoadBalancerHealthCheckProtocols.HTTP,
+												ResponseCode: http.StatusOK,
+												Path:         "/index.html",
+											},
 										},
 									},
 								},

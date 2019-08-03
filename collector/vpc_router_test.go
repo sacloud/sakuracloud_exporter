@@ -99,8 +99,6 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 									ID:    201,
 								},
 							},
-							SwitchID:    301,
-							IPAddresses: []string{"192.0.2.11", "192.2.0.12"},
 							Settings: &sacloud.VPCRouterSetting{
 								VRID:                      1,
 								InternetConnectionEnabled: true,
@@ -298,8 +296,6 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 							Interfaces: []*sacloud.VPCRouterInterface{
 								{Index: 0, ID: 200},
 							},
-							SwitchID:    301,
-							IPAddresses: []string{"192.0.2.11", "192.2.0.12"},
 							Settings: &sacloud.VPCRouterSetting{
 								VRID:                      1,
 								InternetConnectionEnabled: true,
