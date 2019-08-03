@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,9 +24,8 @@ type SIMCollector struct {
 	Up      *prometheus.Desc
 	SIMInfo *prometheus.Desc
 
-	CurrentMonthTraffic *prometheus.Desc
-	Uplink              *prometheus.Desc
-	Downlink            *prometheus.Desc
+	Uplink   *prometheus.Desc
+	Downlink *prometheus.Desc
 }
 
 // NewSIMCollector returns a new SIMCollector.
@@ -52,11 +52,6 @@ func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.
 			"A metric with a constant '1' value labeled by sim information",
 			simInfoLabels, nil,
 		),
-		CurrentMonthTraffic: prometheus.NewDesc(
-			"sakuracloud_sim_current_month_traffic",
-			"Current month traffic (unit: Kbps)",
-			simLabels, nil,
-		),
 		Uplink: prometheus.NewDesc(
 			"sakuracloud_sim_uplink",
 			"Uplink traffic (unit: Kbps)",
@@ -76,7 +71,6 @@ func (c *SIMCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.Up
 	ch <- c.SIMInfo
 
-	ch <- c.CurrentMonthTraffic
 	ch <- c.Uplink
 	ch <- c.Downlink
 }
@@ -102,7 +96,7 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 			simLabels := c.simLabels(sim)
 
 			var up float64
-			if sim.Info.SessionStatus == "UP" {
+			if strings.ToLower(sim.Info.SessionStatus) == "up" {
 				up = 1.0
 			}
 			ch <- prometheus.MustNewConstMetric(

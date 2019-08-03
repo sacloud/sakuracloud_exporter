@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -115,7 +116,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
 		level.Warn(c.logger).Log(
-			"msg", "can't list vpc_routers",
+			"msg", "can't list vpc routers",
 			"err", err,
 		)
 	}
@@ -192,7 +193,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 					// Site to Site Peer
 					for i, peer := range status.SiteToSiteIPsecVPNPeers {
 						up := float64(0)
-						if peer.Status == "UP" {
+						if strings.ToLower(peer.Status) == "up" {
 							up = float64(1)
 						}
 						labels := append(c.vpcRouterLabels(vpcRouter),
@@ -263,15 +264,15 @@ func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *iaas.VPCRouter) []st
 
 	var vip, ipaddress1, ipaddress2 string
 	var nwMaskLen = "-"
-	if len(vpcRouter.Settings.Interfaces) > 0 {
-		vip = vpcRouter.Settings.Interfaces[0].VirtualIPAddress
-		if len(vpcRouter.Settings.Interfaces[0].IPAddress) > 0 {
-			ipaddress1 = vpcRouter.Settings.Interfaces[0].IPAddress[0]
+	if nicSetting := findVPCRouterInterfaceSettingByIndex(vpcRouter.Settings.Interfaces, 0); nicSetting != nil {
+		vip = nicSetting.VirtualIPAddress
+		if len(nicSetting.IPAddress) > 0 {
+			ipaddress1 = nicSetting.IPAddress[0]
 		}
-		if len(vpcRouter.Settings.Interfaces[0].IPAddress) > 1 {
-			ipaddress2 = vpcRouter.Settings.Interfaces[0].IPAddress[1]
+		if len(nicSetting.IPAddress) > 1 {
+			ipaddress2 = nicSetting.IPAddress[1]
 		}
-		nwMaskLen = fmt.Sprintf("%d", vpcRouter.Interfaces[0].SubnetNetworkMaskLen)
+		nwMaskLen = fmt.Sprintf("%d", nicSetting.NetworkMaskLen)
 	}
 
 	return append(labels,
@@ -286,6 +287,17 @@ func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *iaas.VPCRouter) []st
 		flattenStringSlice(vpcRouter.Tags),
 		vpcRouter.Description,
 	)
+}
+
+func findVPCRouterInterfaceSettingByIndex(settings []*sacloud.VPCRouterInterfaceSetting, index int) *sacloud.VPCRouterInterfaceSetting {
+	if settings != nil {
+		for _, s := range settings {
+			if s.Index == index {
+				return s
+			}
+		}
+	}
+	return nil
 }
 
 func getInterfaceByIndex(interfaces []*sacloud.VPCRouterInterfaceSetting, index int) *sacloud.VPCRouterInterfaceSetting {

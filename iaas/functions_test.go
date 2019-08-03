@@ -37,7 +37,6 @@ func TestFunctions_queryPerZone(t *testing.T) {
 		for _, v := range res.Servers {
 			results = append(results, v)
 		}
-		t.Logf("zone: %s results: %d", zone, len(results))
 		return results, nil
 	}
 

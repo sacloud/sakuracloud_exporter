@@ -142,7 +142,7 @@ func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, 
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
 		level.Warn(c.logger).Log(
-			"msg", "can't list backuped archives",
+			"msg", "can't list backed up archives",
 			"err", err,
 		)
 		return
@@ -167,7 +167,7 @@ func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, 
 	ch <- prometheus.MustNewConstMetric(
 		c.LastBackupTime,
 		prometheus.GaugeValue,
-		float64(lastTime)*1000,
+		float64(lastTime)*1000, // sec to milli-sec
 		c.autoBackupLabels(autoBackup)...,
 	)
 

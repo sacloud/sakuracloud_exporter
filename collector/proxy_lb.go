@@ -38,7 +38,7 @@ type ProxyLBCollector struct {
 
 // NewProxyLBCollector returns a new ProxyLBCollector.
 func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ProxyLBClient) *ProxyLBCollector {
-	errors.WithLabelValues("proxyLB").Add(0)
+	errors.WithLabelValues("proxylb").Add(0)
 
 	proxyLBLabels := []string{"id", "name"}
 	proxyLBInfoLabels := append(proxyLBLabels, "plan", "vip", "fqdn",

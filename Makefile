@@ -13,10 +13,11 @@ GO     := GO111MODULE=on go
 PKGS    = $(shell $(GO) list ./... | grep -v /vendor/)
 
 all: fmt build test
+lint: fmt vet style
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short $(PKGS)
+	@$(GO) test -v $(PKGS)
 
 style:
 	@echo ">> checking code style"
@@ -52,4 +53,4 @@ docker:
 	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
 
 
-.PHONY: all style fmt build build-x test vet docker clean
+.PHONY: all style fmt build build-x test vet docker clean lint
