@@ -31,6 +31,9 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(PKGS)
 
+run:
+	@$(GO) run main.go
+
 clean:
 	rm -Rf $(BIN_DIR)/*
 

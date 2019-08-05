@@ -57,12 +57,17 @@ func (c *ZoneCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	for _, zone := range zones {
+		var regionID, regionName string
+		if zone.Region != nil {
+			regionID = zone.Region.ID.String()
+			regionName = zone.Region.Name
+		}
 		labels := []string{
 			zone.ID.String(),
 			zone.Name,
 			zone.Description,
-			zone.Region.ID.String(),
-			zone.Region.Name,
+			regionID,
+			regionName,
 		}
 
 		ch <- prometheus.MustNewConstMetric(

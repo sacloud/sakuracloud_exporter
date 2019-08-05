@@ -230,6 +230,9 @@ func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.
 		)
 		return
 	}
+	if info == nil {
+		return
+	}
 
 	enableEmail := "0"
 	if info.EmailNotifyEnabled {

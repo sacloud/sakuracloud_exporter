@@ -45,6 +45,14 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 | `webaddr` / `WEBADDR`                        |          | `:9542`    | Exporter's listen address          |
 | `webpath`/ `WEBPATH`                         |          | `/metrics` | Metrics request path               |
 
+#### Flags for debug
+
+| Flag / Environment Variable                  | Required | Default    | Description                 |
+| -------------------------------------------- | -------- | ---------- | -------------------------   |
+| `fakemode` / `FAKE_MODE`                     |          |            | The file path of fake store. If set this, make enabled to fake-store-mode(powered by libsacloud's fake driver) |
+
+Example fake store file(JSON) is here[examples/fake/generate-fake-store-json/example-fake-store.json].
+
 ### Metrics
 
 #### Supported Resource Types

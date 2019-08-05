@@ -263,6 +263,9 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 		)
 		return
 	}
+	if cert == nil {
+		return
+	}
 	if cert.PrivateKey == "" || cert.ServerCertificate == "" {
 		// cert is not registered
 		return
