@@ -23,6 +23,19 @@ type Config struct {
 	WebAddr   string   `arg:"env:WEB_ADDR"`
 	WebPath   string   `arg:"env:WEB_PATH"`
 	RateLimit int      `arg:"env:SAKURACLOUD_RATE_LIMIT"`
+
+	NoCollectorAutoBackup    bool `arg:"--no-collector.auto-backup" help:"Disable the AutoBackup collector"`
+	NoCollectorCoupon        bool `arg:"--no-collector.coupon" help:"Disable the Coupon collector"`
+	NoCollectorDatabase      bool `arg:"--no-collector.database" help:"Disable the Database collector"`
+	NoCollectorInternet      bool `arg:"--no-collector.internet" help:"Disable the Internet(Switch+Router) collector"`
+	NoCollectorLoadBalancer  bool `arg:"--no-collector.load-balancer" help:"Disable the LoadBalancer collector"`
+	NoCollectorMobileGateway bool `arg:"--no-collector.mobile-gateway" help:"Disable the MobileGateway collector"`
+	NoCollectorNFS           bool `arg:"--no-collector.nfs" help:"Disable the NFS collector"`
+	NoCollectorProxyLB       bool `arg:"--no-collector.proxy-lb" help:"Disable the ProxyLB(Enhanced LoadBalancer) collector"`
+	NoCollectorServer        bool `arg:"--no-collector.server" help:"Disable the Server collector"`
+	NoCollectorSIM           bool `arg:"--no-collector.sim" help:"Disable the SIM collector"`
+	NoCollectorVPCRouter     bool `arg:"--no-collector.vpc-router" help:"Disable the VPCRouter collector"`
+	NoCollectorZone          bool `arg:"--no-collector.zone" help:"Disable the Zone collector"`
 }
 
 func InitConfig() (Config, error) {
