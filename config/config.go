@@ -16,6 +16,7 @@ const (
 type Config struct {
 	Trace     bool     `arg:"env:TRACE"`
 	Debug     bool     `arg:"env:DEBUG"`
+	FakeMode  string   `arg:"env:FAKE_MODE"`
 	Token     string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN"`
 	Secret    string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN_SECRET"`
 	Zones     []string // TODO zones parameter is not implements.

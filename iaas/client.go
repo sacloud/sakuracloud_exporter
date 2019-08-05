@@ -2,7 +2,10 @@ package iaas
 
 import (
 	"context"
+	"github.com/sacloud/libsacloud/v2/sacloud/fake"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
@@ -39,6 +42,18 @@ func NewSakuraCloucClient(c config.Config, version string) *Client {
 			Transport: &sacloud.RateLimitRoundTripper{RateLimitPerSec: c.RateLimit},
 		},
 	}
+	if c.FakeMode != "" {
+		fakeStorePath := c.FakeMode
+		if stat, err := os.Stat(fakeStorePath); err == nil {
+			if stat.IsDir() {
+				fakeStorePath = filepath.Join(fakeStorePath, "fake-store.json")
+			}
+		}
+		fake.DataStore = fake.NewJSONFileStore(fakeStorePath)
+		fake.SwitchFactoryFuncToFake()
+		fake.InitDataStore()
+	}
+
 	if c.Debug {
 		trace.AddClientFactoryHooks()
 	}
