@@ -14,15 +14,15 @@ const (
 
 // Config gets its content from env and passes it on to different packages
 type Config struct {
-	Trace     bool     `arg:"env:TRACE"`
-	Debug     bool     `arg:"env:DEBUG"`
-	FakeMode  string   `arg:"env:FAKE_MODE"`
-	Token     string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN"`
-	Secret    string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN_SECRET"`
+	Trace     bool     `arg:"env:TRACE" help:"Enable output of trace log of Sakura cloud API call"`
+	Debug     bool     `arg:"env:DEBUG" help:"Enable output of debug level log"`
+	FakeMode  string   `arg:"--fake-mode,env:FAKE_MODE" help:"File path to fetch/store fake data. If this flag is specified, enable fake-mode"`
+	Token     string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN" help:"Token for using the SakuraCloud API"`
+	Secret    string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN_SECRET" help:"Secret for using the SakuraCloud API"`
 	Zones     []string // TODO zones parameter is not implements.
 	WebAddr   string   `arg:"env:WEB_ADDR"`
 	WebPath   string   `arg:"env:WEB_PATH"`
-	RateLimit int      `arg:"env:SAKURACLOUD_RATE_LIMIT"`
+	RateLimit int      `arg:"env:SAKURACLOUD_RATE_LIMIT" help:"Rate limit per second for SakuraCloud API calls"`
 
 	NoCollectorAutoBackup    bool `arg:"--no-collector.auto-backup" help:"Disable the AutoBackup collector"`
 	NoCollectorCoupon        bool `arg:"--no-collector.coupon" help:"Disable the Coupon collector"`
