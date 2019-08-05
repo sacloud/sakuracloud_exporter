@@ -62,7 +62,7 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 
 | Flag / Environment Variable                  | Required | Default    | Description                 |
 | -------------------------------------------- | -------- | ---------- | -------------------------   |
-| `--fakemode` / `FAKE_MODE`                     |          |            | The file path of fake store. If set this, make enabled to fake-store-mode(powered by libsacloud's fake driver) |
+| `--fake-mode` / `FAKE_MODE`                     |          |            | The file path of fake store. If set this, make enabled to fake-store-mode(powered by libsacloud's fake driver) |
 
 Example fake store file(JSON) is here[examples/fake/generate-fake-store-json/example-fake-store.json].
 
