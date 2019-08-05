@@ -37,19 +37,32 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 
 ### Flags
 
-| Flag / Environment Variable                  | Required | Default    | Description                        |
-| -------------------------------------------- | -------- | ---------- | -------------------------          |
-| `token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯        |            | API Key(Token)                     |
-| `secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯        |            | API Key(Secret)                    |
-| `ratelimit`/ `SAKURACLOUD_RATE_LIMIT`        |          | `5`        | API request rate limit(maximum:10) |
-| `webaddr` / `WEBADDR`                        |          | `:9542`    | Exporter's listen address          |
-| `webpath`/ `WEBPATH`                         |          | `/metrics` | Metrics request path               |
+| Flag / Environment Variable                    | Required | Default    | Description                                          |
+| --------------------------------------------   | -------- | ---------- | -------------------------                            |
+| `--token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯        |            | API Key(Token)                                       |
+| `--secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯        |            | API Key(Secret)                                      |
+| `--ratelimit`/ `SAKURACLOUD_RATE_LIMIT`        |          | `5`        | API request rate limit(maximum:10)                   |
+| `--webaddr` / `WEBADDR`                        |          | `:9542`    | Exporter's listen address                            |
+| `--webpath`/ `WEBPATH`                         |          | `/metrics` | Metrics request path                                 |
+| `--no-collector.auto-backup`                   |          | `false`    | Disable the AutoBackup collector                     |
+| `--no-collector.coupon`                        |          | `false`    | Disable the Coupon collector                         |
+| `--no-collector.database`                      |          | `false`    | Disable the Database collector                       |
+| `--no-collector.internet`                      |          | `false`    | Disable the Internet(Switch+Router) collector        |
+| `--no-collector.load-balancer`                 |          | `false`    | Disable the LoadBalancer collector                   |
+| `--no-collector.mobile-gateway`                |          | `false`    | Disable the MobileGateway collector                  |
+| `--no-collector.nfs`                           |          | `false`    | Disable the NFS collector                            |
+| `--no-collector.proxy-lb`                      |          | `false`    | Disable the ProxyLB(Enhanced LoadBalancer) collector |
+| `--no-collector.server`                        |          | `false`    | Disable the Server collector                         |
+| `--no-collector.sim`                           |          | `false`    | Disable the SIM collector                            |
+| `--no-collector.vpc-router`                    |          | `false`    | Disable the VPCRouter collector                      |
+| `--no-collector.zone`                          |          | `false`    | Disable the Zone collector                           |
+
 
 #### Flags for debug
 
 | Flag / Environment Variable                  | Required | Default    | Description                 |
 | -------------------------------------------- | -------- | ---------- | -------------------------   |
-| `fakemode` / `FAKE_MODE`                     |          |            | The file path of fake store. If set this, make enabled to fake-store-mode(powered by libsacloud's fake driver) |
+| `--fake-mode` / `FAKE_MODE`                     |          |            | The file path of fake store. If set this, make enabled to fake-store-mode(powered by libsacloud's fake driver) |
 
 Example fake store file(JSON) is here[examples/fake/generate-fake-store-json/example-fake-store.json].
 

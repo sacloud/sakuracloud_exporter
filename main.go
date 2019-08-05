@@ -80,18 +80,42 @@ func main() {
 	r.MustRegister(errors)
 
 	// sakuracloud metrics
-	r.MustRegister(collector.NewAutoBackupCollector(ctx, logger, errors, client.AutoBackup))
-	r.MustRegister(collector.NewCouponCollector(ctx, logger, errors, client.Coupon))
-	r.MustRegister(collector.NewDatabaseCollector(ctx, logger, errors, client.Database))
-	r.MustRegister(collector.NewInternetCollector(ctx, logger, errors, client.Internet))
-	r.MustRegister(collector.NewLoadBalancerCollector(ctx, logger, errors, client.LoadBalancer))
-	r.MustRegister(collector.NewNFSCollector(ctx, logger, errors, client.NFS))
-	r.MustRegister(collector.NewMobileGatewayCollector(ctx, logger, errors, client.MobileGateway))
-	r.MustRegister(collector.NewProxyLBCollector(ctx, logger, errors, client.ProxyLB))
-	r.MustRegister(collector.NewServerCollector(ctx, logger, errors, client.Server))
-	r.MustRegister(collector.NewSIMCollector(ctx, logger, errors, client.SIM))
-	r.MustRegister(collector.NewVPCRouterCollector(ctx, logger, errors, client.VPCRouter))
-	r.MustRegister(collector.NewZoneCollector(ctx, logger, errors, client.Zone))
+	if !c.NoCollectorAutoBackup {
+		r.MustRegister(collector.NewAutoBackupCollector(ctx, logger, errors, client.AutoBackup))
+	}
+	if !c.NoCollectorCoupon {
+		r.MustRegister(collector.NewCouponCollector(ctx, logger, errors, client.Coupon))
+	}
+	if !c.NoCollectorDatabase {
+		r.MustRegister(collector.NewDatabaseCollector(ctx, logger, errors, client.Database))
+	}
+	if !c.NoCollectorInternet {
+		r.MustRegister(collector.NewInternetCollector(ctx, logger, errors, client.Internet))
+	}
+	if !c.NoCollectorLoadBalancer {
+		r.MustRegister(collector.NewLoadBalancerCollector(ctx, logger, errors, client.LoadBalancer))
+	}
+	if !c.NoCollectorNFS {
+		r.MustRegister(collector.NewNFSCollector(ctx, logger, errors, client.NFS))
+	}
+	if !c.NoCollectorMobileGateway {
+		r.MustRegister(collector.NewMobileGatewayCollector(ctx, logger, errors, client.MobileGateway))
+	}
+	if !c.NoCollectorProxyLB {
+		r.MustRegister(collector.NewProxyLBCollector(ctx, logger, errors, client.ProxyLB))
+	}
+	if !c.NoCollectorServer {
+		r.MustRegister(collector.NewServerCollector(ctx, logger, errors, client.Server))
+	}
+	if !c.NoCollectorSIM {
+		r.MustRegister(collector.NewSIMCollector(ctx, logger, errors, client.SIM))
+	}
+	if !c.NoCollectorVPCRouter {
+		r.MustRegister(collector.NewVPCRouterCollector(ctx, logger, errors, client.VPCRouter))
+	}
+	if !c.NoCollectorZone {
+		r.MustRegister(collector.NewZoneCollector(ctx, logger, errors, client.Zone))
+	}
 
 	http.Handle(c.WebPath,
 		promhttp.HandlerFor(r, promhttp.HandlerOpts{}),
