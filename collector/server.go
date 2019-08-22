@@ -49,7 +49,7 @@ func NewServerCollector(ctx context.Context, logger log.Logger, errors *promethe
 	serverLabels := []string{"id", "name", "zone"}
 	serverInfoLabels := append(serverLabels, "cpus", "disks", "nics", "memories", "host", "tags", "description")
 	diskLabels := append(serverLabels, "disk_id", "disk_name", "index")
-	diskInfoLabels := append(diskLabels, "plan", "interface", "size", "tags", "description")
+	diskInfoLabels := append(diskLabels, "plan", "interface", "size", "tags", "description", "storage_id", "storage_generation", "storage_class")
 	nicLabels := append(serverLabels, "interface_id", "index")
 	nicInfoLabels := append(nicLabels, "upstream_type", "upstream_id", "upstream_name")
 	maintenanceInfoLabel := append(serverLabels, "info_url", "info_title", "description", "start_date", "end_date")
@@ -356,12 +356,22 @@ func (c *ServerCollector) diskInfoLabels(server *iaas.Server, index int) []strin
 
 	disk := server.Disks[index]
 
+	var storageID, storageGeneration, storageClass string
+	if disk.Storage != nil {
+		storageID = disk.Storage.ID.String()
+		storageGeneration = fmt.Sprintf("%d", disk.Storage.Generation)
+		storageClass = disk.Storage.Class
+	}
+
 	return append(labels,
 		diskPlanLabels[disk.DiskPlanID],
 		string(disk.Connection),
 		fmt.Sprintf("%d", disk.GetSizeGB()),
 		flattenStringSlice(disk.Tags),
 		disk.Description,
+		storageID,
+		storageGeneration,
+		storageClass,
 	)
 
 }
