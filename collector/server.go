@@ -1,3 +1,17 @@
+// Copyright 2019-2020 The sakuracloud_exporter Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package collector
 
 import (
@@ -227,13 +241,12 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 				serverLabels...,
 			)
 
+			wg.Add(len(server.Disks))
 			for i := range server.Disks {
-				ch <- prometheus.MustNewConstMetric(
-					c.DiskInfo,
-					prometheus.GaugeValue,
-					float64(1.0),
-					c.diskInfoLabels(server, i)...,
-				)
+				go func(i int) {
+					c.collectDiskInfo(ch, server, i)
+					wg.Done()
+				}(i)
 			}
 
 			for i := range server.Interfaces {
@@ -348,13 +361,24 @@ func (c *ServerCollector) diskLabels(server *iaas.Server, index int) []string {
 	}
 }
 
-func (c *ServerCollector) diskInfoLabels(server *iaas.Server, index int) []string {
+func (c *ServerCollector) collectDiskInfo(ch chan<- prometheus.Metric, server *iaas.Server, index int) {
 	if len(server.Disks) <= index {
-		return nil
+		return
 	}
 	labels := c.diskLabels(server, index)
 
-	disk := server.Disks[index]
+	disk, err := c.client.ReadDisk(c.ctx, server.ZoneName, server.Disks[index].ID)
+	if err != nil {
+		c.errors.WithLabelValues("server").Add(1)
+		level.Warn(c.logger).Log(
+			"msg", fmt.Sprintf("can't get server connected disk info: ID=%d, DiskID=%d", server.ID, server.Disks[index].ID),
+			"err", err,
+		)
+		return
+	}
+	if disk == nil {
+		return
+	}
 
 	var storageID, storageGeneration, storageClass string
 	if disk.Storage != nil {
@@ -363,7 +387,7 @@ func (c *ServerCollector) diskInfoLabels(server *iaas.Server, index int) []strin
 		storageClass = disk.Storage.Class
 	}
 
-	return append(labels,
+	labels = append(labels,
 		diskPlanLabels[disk.DiskPlanID],
 		string(disk.Connection),
 		fmt.Sprintf("%d", disk.GetSizeGB()),
@@ -374,6 +398,12 @@ func (c *ServerCollector) diskInfoLabels(server *iaas.Server, index int) []strin
 		storageClass,
 	)
 
+	ch <- prometheus.MustNewConstMetric(
+		c.DiskInfo,
+		prometheus.GaugeValue,
+		float64(1.0),
+		labels...,
+	)
 }
 
 func (c *ServerCollector) nicLabels(server *iaas.Server, index int) []string {

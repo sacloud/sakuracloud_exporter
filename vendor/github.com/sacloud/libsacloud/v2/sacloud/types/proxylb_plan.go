@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package types
 
 import (
@@ -13,6 +27,11 @@ import (
 // このままでは扱いにくいためEProxyLBPlan型を設け、この型でjson.Marshaler/Unmarshalerを実装し
 // プラン名とServiceClassでの文字列表現とで相互変換可能とする。
 type EProxyLBPlan int
+
+// Int EProxyLBPlanのint表現
+func (p EProxyLBPlan) Int() int {
+	return int(p)
+}
 
 // ProxyLBPlans エンハンスドロードバランサのプラン
 var ProxyLBPlans = struct {
@@ -31,6 +50,17 @@ var ProxyLBPlans = struct {
 	CPS10000:  EProxyLBPlan(10000),
 	CPS50000:  EProxyLBPlan(50000),
 	CPS100000: EProxyLBPlan(100000),
+}
+
+// ProxyLBPlanValues プランを表すint値
+var ProxyLBPlanValues = []int{
+	int(ProxyLBPlans.CPS100),
+	int(ProxyLBPlans.CPS500),
+	int(ProxyLBPlans.CPS1000),
+	int(ProxyLBPlans.CPS5000),
+	int(ProxyLBPlans.CPS10000),
+	int(ProxyLBPlans.CPS50000),
+	int(ProxyLBPlans.CPS100000),
 }
 
 const (

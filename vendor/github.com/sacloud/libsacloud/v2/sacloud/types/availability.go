@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package types
 
 // EAvailability 有効状態
@@ -15,8 +29,8 @@ var Availabilities = struct {
 	Failed EAvailability // 失敗
 	// Migrating マイグレーション中
 	Migrating EAvailability
-	// Transfering 転送中(他ゾーンからのアーカイブコピー作成など)
-	Transfering EAvailability
+	// Transferring 転送中(他ゾーンからのアーカイブコピー作成など)
+	Transferring EAvailability
 	// Discontinued 切断(ソースアーカイブ/ソースディスクなどで利用される)
 	Discontinued EAvailability
 }{
@@ -25,7 +39,7 @@ var Availabilities = struct {
 	Uploading:    EAvailability("uploading"),
 	Failed:       EAvailability("failed"),
 	Migrating:    EAvailability("migrating"),
-	Transfering:  EAvailability("transfering"),
+	Transferring: EAvailability("transfering"), // nolint : 綴りが違うがさくらのクラウド側に合わせる(transferring)
 	Discontinued: EAvailability("discontinued"),
 }
 
@@ -51,7 +65,7 @@ func (e EAvailability) IsMigrating() bool {
 
 // IsTransfering 有効状態が"転送中"か判定
 func (e EAvailability) IsTransfering() bool {
-	return e == Availabilities.Transfering
+	return e == Availabilities.Transferring
 }
 
 // IsDiscontinued 有効状態が"切断"か判定

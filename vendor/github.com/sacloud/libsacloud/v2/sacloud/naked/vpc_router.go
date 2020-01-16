@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package naked
 
 import (
@@ -27,6 +41,12 @@ type VPCRouter struct {
 	Tags         types.Tags          `yaml:"tags"`
 }
 
+// VPCRouterSettingsUpdate VPCルータ
+type VPCRouterSettingsUpdate struct {
+	Settings     *VPCRouterSettings `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	SettingsHash string             `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+}
+
 // VPCRouterSettings VPCルータ 設定
 type VPCRouterSettings struct {
 	Router *VPCRouterSetting `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
@@ -35,9 +55,10 @@ type VPCRouterSettings struct {
 // VPCRouterSetting VPCルータ 設定
 type VPCRouterSetting struct {
 	InternetConnection *VPCRouterInternetConnection `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
-	Interfaces         []*VPCRouterInterface        `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	Interfaces         VPCRouterInterfaces          `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	VRID               int                          `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	StaticNAT          *VPCRouterStaticNAT          `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	PortForwarding     *VPCRouterPortForwarding     `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	Firewall           *VPCRouterFirewall           `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	DHCPServer         *VPCRouterDHCPServer         `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	DHCPStaticMapping  *VPCRouterDHCPStaticMappings `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
@@ -46,6 +67,7 @@ type VPCRouterSetting struct {
 	RemoteAccessUsers  *VPCRouterRemoteAccessUsers  `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	SiteToSiteIPsecVPN *VPCRouterSiteToSiteIPsecVPN `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 	StaticRoutes       *VPCRouterStaticRoutes       `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	SyslogHost         string                       `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 }
 
 // VPCRouterInternetConnection インターフェース
@@ -62,7 +84,7 @@ type VPCRouterInterface struct {
 	// Index 仮想フィールド、VPCルータなどでInterfaces(実体は[]*Interface)を扱う場合にUnmarshalJSONの中で設定される
 	//
 	// Findした際のAPIからの応答にも同名のフィールドが含まれるが無関係。
-	Index int
+	Index int `json:"-"`
 }
 
 // VPCRouterInterfaces Interface配列
@@ -153,29 +175,113 @@ type VPCRouterStaticNATConfig struct {
 	Description    string `yaml:"description"`
 }
 
-// VPCRouterFirewall ファイアウォール
-type VPCRouterFirewall struct {
-	Config  []*VPCRouterFirewallConfig `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
-	Enabled types.StringFlag           `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+// VPCRouterPortForwarding ポートフォワーディング設定
+type VPCRouterPortForwarding struct {
+	Config  []*VPCRouterPortForwardingConfig `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	Enabled types.StringFlag                 `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
 }
 
 // MarshalJSON Configが一つ以上ある場合にEnabledをtrueに設定する
-func (f *VPCRouterFirewall) MarshalJSON() ([]byte, error) {
-	if f == nil {
+func (f *VPCRouterPortForwarding) MarshalJSON() ([]byte, error) {
+	if f == nil || f.Config == nil {
 		return nil, nil
 	}
 	if len(f.Config) > 0 {
 		f.Enabled = types.StringTrue
 	}
+	type alias VPCRouterPortForwarding
+	a := alias(*f)
+	return json.Marshal(&a)
+}
+
+// VPCRouterPortForwardingConfig ポートフォワーディング設定
+type VPCRouterPortForwardingConfig struct {
+	Protocol       types.EVPCRouterPortForwardingProtocol `json:",omitempty"` // プロトコル(tcp/udp)
+	GlobalPort     types.StringNumber                     `json:",omitempty"` // グローバル側ポート
+	PrivateAddress string                                 `json:",omitempty"` // プライベートIPアドレス
+	PrivatePort    types.StringNumber                     `json:",omitempty"` // プライベート側ポート
+	Description    string                                 `json:",omitempty"` // 説明
+}
+
+// VPCRouterFirewall ファイアウォール
+type VPCRouterFirewall struct {
+	Config  VPCRouterFirewallConfigs `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	Enabled types.StringFlag         `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+}
+
+// MarshalJSON 常にEnabledをtrueに設定する
+func (f *VPCRouterFirewall) MarshalJSON() ([]byte, error) {
+	if f == nil {
+		return nil, nil
+	}
+	f.Enabled = types.StringTrue
 	type alias VPCRouterFirewall
 	a := alias(*f)
 	return json.Marshal(&a)
 }
 
+// VPCRouterFirewallConfigs VPCルータのファイアウォール設定
+//
+// 配列のインデックスで対象インターフェースを表す
+type VPCRouterFirewallConfigs [8]*VPCRouterFirewallConfig
+
+// UnmarshalJSON 配列中にnullが返ってくる(VPCルータなど)への対応
+func (i *VPCRouterFirewallConfigs) UnmarshalJSON(b []byte) error {
+	type alias VPCRouterFirewallConfigs
+	var a alias
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+
+	var dest [8]*VPCRouterFirewallConfig
+	for i, v := range a {
+		if v != nil {
+			if v.Index == 0 {
+				v.Index = i
+			}
+			dest[v.Index] = v
+		}
+	}
+
+	*i = VPCRouterFirewallConfigs(dest)
+	return nil
+}
+
+// MarshalJSON 配列中にnullが入る場合(VPCルータなど)への対応
+func (i *VPCRouterFirewallConfigs) MarshalJSON() ([]byte, error) {
+	var dest [8]*VPCRouterFirewallConfig
+	for _, iface := range *i {
+		if iface != nil {
+			if iface.Receive == nil {
+				iface.Receive = make([]*VPCRouterFirewallRule, 0)
+			}
+			if iface.Send == nil {
+				iface.Send = make([]*VPCRouterFirewallRule, 0)
+			}
+			dest[iface.Index] = iface
+		}
+	}
+
+	for i, v := range dest {
+		if v == nil {
+			dest[i] = &VPCRouterFirewallConfig{
+				Receive: make([]*VPCRouterFirewallRule, 0),
+				Send:    make([]*VPCRouterFirewallRule, 0),
+				Index:   i,
+			}
+		}
+	}
+
+	return json.Marshal(dest)
+}
+
 // VPCRouterFirewallConfig ファイアウォール
 type VPCRouterFirewallConfig struct {
-	Receive []*VPCRouterFirewallRule `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
-	Send    []*VPCRouterFirewallRule `json:",omitempty" yaml:",omitempty" structs:",omitempty"`
+	Receive []*VPCRouterFirewallRule `yaml:"receive"`
+	Send    []*VPCRouterFirewallRule `yaml:"send"`
+
+	// Index 仮想フィールド UnmarshalJSONの中で設定される
+	Index int `json:"-"`
 }
 
 // VPCRouterFirewallRule ファイアウォール ルール

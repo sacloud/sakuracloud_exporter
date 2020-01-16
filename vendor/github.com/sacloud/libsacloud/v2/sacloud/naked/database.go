@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package naked
 
 import (
@@ -32,6 +46,12 @@ type Database struct {
 	Generation interface{}
 }
 
+// DatabaseSettingsUpdate データベース
+type DatabaseSettingsUpdate struct {
+	Settings     *DatabaseSettings `json:",omitempty" yaml:"settings,omitempty" structs:",omitempty"`
+	SettingsHash string            `json:",omitempty" yaml:"settings_hash,omitempty" structs:",omitempty"`
+}
+
 // DatabaseSettings データベース設定
 type DatabaseSettings struct {
 	DBConf *DatabaseSetting `json:",omitempty" yaml:"db_conf,omitempty" structs:",omitempty"`
@@ -50,11 +70,13 @@ type DatabaseSettingCommon struct {
 	//
 	// [HACK] Create時はbool型、Read/Update時は文字列(FQDN or IP)となる。
 	// また、無効にするにはJSONで要素自体を指定しないことで行う。
-	WebUI         interface{} `yaml:"web_ui"`
-	ServicePort   int         `json:",omitempty" yaml:"service_port,omitempty" structs:",omitempty"`
-	SourceNetwork []string    `yaml:"source_network"`
-	DefaultUser   string      `json:",omitempty" yaml:"default_user,omitempty" structs:",omitempty"`
-	UserPassword  string      `json:",omitempty" yaml:"user_password,omitempty" structs:",omitempty"`
+	WebUI           interface{} `yaml:"web_ui"`
+	ServicePort     int         `json:",omitempty" yaml:"service_port,omitempty" structs:",omitempty"`
+	SourceNetwork   []string    `yaml:"source_network"`
+	DefaultUser     string      `json:",omitempty" yaml:"default_user,omitempty" structs:",omitempty"`
+	UserPassword    string      `json:",omitempty" yaml:"user_password,omitempty" structs:",omitempty"`
+	ReplicaUser     string      `json:",omitempty" yaml:"replica_user,omitempty" structs:",omitempty"`
+	ReplicaPassword string      `json:",omitempty" yaml:"replica_password,omitempty" structs:",omitempty"`
 }
 
 // DatabaseSettingBackup データベース設定 バックアップ設定
@@ -62,6 +84,21 @@ type DatabaseSettingBackup struct {
 	Rotate    int                        `json:",omitempty" yaml:"rotate,omitempty" structs:",omitempty"`
 	Time      string                     `json:",omitempty" yaml:"time,omitempty" structs:",omitempty"`
 	DayOfWeek []types.EBackupSpanWeekday `json:",omitempty" yaml:"day_of_week,omitempty" structs:",omitempty"`
+}
+
+// UnmarshalJSON 配列/オブジェクトが混在することへの対応
+func (d *DatabaseSettingBackup) UnmarshalJSON(b []byte) error {
+	if string(b) == "[]" {
+		return nil
+	}
+	type alias DatabaseSettingBackup
+
+	var a alias
+	if err := json.Unmarshal(b, &a); err != nil {
+		return err
+	}
+	*d = DatabaseSettingBackup(a)
+	return nil
 }
 
 // DatabaseSettingReplication レプリケーション設定
@@ -166,7 +203,6 @@ func (h *DatabaseBackupHistory) FormatRecoveredAt(layout string) string {
 
 // UnmarshalJSON JSON復号処理
 func (h *DatabaseBackupHistory) UnmarshalJSON(data []byte) error {
-
 	var tmpMap = map[string]interface{}{}
 	if err := json.Unmarshal(data, &tmpMap); err != nil {
 		return err

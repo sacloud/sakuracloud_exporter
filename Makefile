@@ -9,6 +9,10 @@ BIN_DIR                 ?= $(shell pwd)/bin
 DOCKER_IMAGE_NAME       ?= sacloud/sakuracloud_exporter
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell cat VERSION))
 
+AUTHOR          ?="The sakuracloud_exporter Authors"
+COPYRIGHT_YEAR  ?="2019-2020"
+COPYRIGHT_FILES ?=$$(find . -name "*.go" -print | grep -v "/vendor/")
+
 GO     := GO111MODULE=on go
 PKGS    = $(shell $(GO) list ./... | grep -v /vendor/)
 
@@ -54,6 +58,15 @@ build-x:
 docker:
 	@echo ">> building docker image"
 	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
+
+.PHONY: tools
+tools:
+	GO111MODULE=off go get github.com/sacloud/addlicense
+
+.PHONY: set-license
+set-license:
+	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
+
 
 
 .PHONY: all style fmt build build-x test vet docker clean lint

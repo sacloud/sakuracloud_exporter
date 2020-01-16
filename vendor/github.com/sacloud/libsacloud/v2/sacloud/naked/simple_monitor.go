@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package naked
 
 import (
@@ -23,6 +37,12 @@ type SimpleMonitor struct {
 	Status       *SimpleMonitorStatus   `json:",omitempty" yaml:"status,omitempty" structs:",omitempty"`
 }
 
+// SimpleMonitorSettingsUpdate シンプル監視
+type SimpleMonitorSettingsUpdate struct {
+	Settings     *SimpleMonitorSettings `json:",omitempty" yaml:"settings,omitempty" structs:",omitempty"`
+	SettingsHash string                 `json:",omitempty" yaml:"settings_hash,omitempty" structs:",omitempty"`
+}
+
 // SimpleMonitorSettings シンプル監視セッティング
 type SimpleMonitorSettings struct {
 	SimpleMonitor *SimpleMonitorSetting `json:",omitempty" yaml:"simple_monitor,omitempty" structs:",omitempty"`
@@ -30,11 +50,12 @@ type SimpleMonitorSettings struct {
 
 // SimpleMonitorSetting シンプル監視セッティング
 type SimpleMonitorSetting struct {
-	DelayLoop   int                       `json:",omitempty" yaml:"delay_loop,omitempty" structs:",omitempty"`
-	HealthCheck *SimpleMonitorHealthCheck `json:",omitempty" yaml:"health_check,omitempty" structs:",omitempty"`
-	Enabled     types.StringFlag          `yaml:"enabled"`
-	NotifyEmail *SimpleMonitorNotifyEmail `json:",omitempty" yaml:"notify_email,omitempty" structs:",omitempty"`
-	NotifySlack *SimpleMonitorNotifySlack `json:",omitempty" yaml:"notify_slack,omitempty" structs:",omitempty"`
+	DelayLoop      int                       `json:",omitempty" yaml:"delay_loop,omitempty" structs:",omitempty"`
+	HealthCheck    *SimpleMonitorHealthCheck `json:",omitempty" yaml:"health_check,omitempty" structs:",omitempty"`
+	Enabled        types.StringFlag          `yaml:"enabled"`
+	NotifyEmail    *SimpleMonitorNotifyEmail `json:",omitempty" yaml:"notify_email,omitempty" structs:",omitempty"`
+	NotifySlack    *SimpleMonitorNotifySlack `json:",omitempty" yaml:"notify_slack,omitempty" structs:",omitempty"`
+	NotifyInterval int                       `json:",omitempty" yaml:"notify_interval,omitempty" structs:",omitempty"` // 再通知間隔(秒単位)
 }
 
 // SimpleMonitorHealthCheck シンプル監視 ヘルスチェック
