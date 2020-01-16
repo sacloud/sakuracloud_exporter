@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package naked
 
 import (
@@ -28,6 +42,12 @@ type LoadBalancer struct {
 	Remark       *ApplianceRemark      `json:",omitempty" yaml:"remark,omitempty" structs:",omitempty"`
 }
 
+// LoadBalancerSettingsUpdate ロードバランサ
+type LoadBalancerSettingsUpdate struct {
+	Settings     *LoadBalancerSettings `json:",omitempty" yaml:"settings,omitempty" structs:",omitempty"`
+	SettingsHash string                `json:",omitempty" yaml:"settings_hash,omitempty" structs:",omitempty"`
+}
+
 // LoadBalancerSettings ロードバランサの設定
 type LoadBalancerSettings struct {
 	LoadBalancer []*LoadBalancerSetting `yaml:"load_balancer"`
@@ -50,7 +70,18 @@ type LoadBalancerSetting struct {
 	DelayLoop        types.StringNumber               `json:",omitempty" yaml:"delay_loop,omitempty" structs:",omitempty"`
 	SorryServer      string                           `json:",omitempty" yaml:"sorry_server,omitempty" structs:",omitempty"`
 	Description      string                           `yaml:"description"`
-	Servers          []*LoadBalancerDestinationServer `json:",omitempty" yaml:"servers,omitempty" structs:",omitempty"`
+	Servers          []*LoadBalancerDestinationServer `yaml:"servers"`
+}
+
+// MarshalJSON nullの場合に空配列を出力するための実装
+func (s LoadBalancerSetting) MarshalJSON() ([]byte, error) {
+	if s.Servers == nil {
+		s.Servers = make([]*LoadBalancerDestinationServer, 0)
+	}
+
+	type alias LoadBalancerSetting
+	tmp := alias(s)
+	return json.Marshal(&tmp)
 }
 
 // LoadBalancerDestinationServer ロードバランサ配下の実サーバ

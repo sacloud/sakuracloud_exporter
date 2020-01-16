@@ -1,17 +1,33 @@
+// Copyright 2019-2020 The sakuracloud_exporter Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
 	"context"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/fake"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/utils/nfs"
-	"github.com/sacloud/libsacloud/v2/utils/server"
-	"github.com/sacloud/libsacloud/v2/utils/server/ostype"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/fake"
+	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/libsacloud/v2/utils/builder/disk"
+	"github.com/sacloud/libsacloud/v2/utils/builder/server"
+	"github.com/sacloud/libsacloud/v2/utils/query"
 )
 
 const fakeStoreFileName = "example-fake-store.json"
@@ -306,7 +322,7 @@ func createNFS(caller sacloud.APICaller) {
 	}
 
 	nfsOp := sacloud.NewNFSOp(caller)
-	planID, err := nfs.FindNFSPlanID(context.Background(), sacloud.NewNoteOp(caller), types.NFSPlans.HDD, types.NFSHDDSizes.Size100GB)
+	planID, err := query.FindNFSPlanID(context.Background(), sacloud.NewNoteOp(caller), types.NFSPlans.HDD, types.NFSHDDSizes.Size100GB)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -400,8 +416,6 @@ func createServer(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	client := server.NewBuildersAPIClient(caller)
-
 	builder := &server.Builder{
 		Name:            "example",
 		CPU:             2,
@@ -414,8 +428,8 @@ func createServer(caller sacloud.APICaller) {
 		AdditionalNICs: []server.AdditionalNICSettingHolder{
 			&server.ConnectedNICSetting{SwitchID: sw.ID},
 		},
-		DiskBuilders: []server.DiskBuilder{
-			&server.FromUnixDiskBuilder{
+		DiskBuilders: []disk.Builder{
+			&disk.FromUnixBuilder{
 				OSType:      ostype.Ubuntu,
 				Name:        "example-disk-for-server",
 				SizeGB:      20,
@@ -424,10 +438,12 @@ func createServer(caller sacloud.APICaller) {
 				Connection:  types.DiskConnections.VirtIO,
 				Description: "desc",
 				Tags:        types.Tags{"example", "server"},
+				Client:      disk.NewBuildersAPIClient(caller),
 			},
 		},
+		Client: server.NewBuildersAPIClient(caller),
 	}
-	if _, err := builder.Build(context.Background(), client, "is1a"); err != nil {
+	if _, err := builder.Build(context.Background(), "is1a"); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -464,7 +480,6 @@ func createVPCRouter(caller sacloud.APICaller) {
 			InternetConnectionEnabled: true,
 			Interfaces: []*sacloud.VPCRouterInterfaceSetting{
 				{
-					Enabled:          true,
 					IPAddress:        []string{ipaddresses[1], ipaddresses[2]},
 					VirtualIPAddress: ipaddresses[0],
 					NetworkMaskLen:   router.NetworkMaskLen,

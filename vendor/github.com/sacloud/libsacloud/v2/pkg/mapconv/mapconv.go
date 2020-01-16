@@ -1,3 +1,17 @@
+// Copyright 2016-2020 The Libsacloud Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package mapconv
 
 import (
@@ -40,7 +54,10 @@ func ConvertTo(source interface{}, dest interface{}) error {
 
 			if tags.Squash {
 				d := Map(make(map[string]interface{}))
-				ConvertTo(value, &d)
+				err := ConvertTo(value, &d)
+				if err != nil {
+					return err
+				}
 				for k, v := range d {
 					destMap.Set(k, v)
 				}
@@ -151,7 +168,6 @@ func ConvertFrom(source interface{}, dest interface{}) error {
 
 			destMap.Set(f.Name(), value)
 		}
-
 	}
 	config := &mapstructure.DecoderConfig{
 		WeaklyTypedInput: true,
@@ -207,7 +223,6 @@ func ParseMapConvTag(tagBody string) TagInfo {
 				defaultValue = strings.Join(keyValue[1:], "")
 			}
 		}
-
 	}
 	return TagInfo{
 		SourceFields: keys,

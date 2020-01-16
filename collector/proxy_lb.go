@@ -1,3 +1,17 @@
+// Copyright 2019-2020 The sakuracloud_exporter Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package collector
 
 import (
@@ -266,13 +280,13 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 	if cert == nil {
 		return
 	}
-	if cert.PrivateKey == "" || cert.ServerCertificate == "" {
+	if cert.PrimaryCert.PrivateKey == "" || cert.PrimaryCert.ServerCertificate == "" {
 		// cert is not registered
 		return
 	}
 
 	var commonName, issuerName string
-	block, _ := pem.Decode([]byte(cert.ServerCertificate))
+	block, _ := pem.Decode([]byte(cert.PrimaryCert.ServerCertificate))
 	if block != nil {
 		c, err := x509.ParseCertificate(block.Bytes) // ignore err
 		if err == nil {
@@ -295,7 +309,7 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 	ch <- prometheus.MustNewConstMetric(
 		c.CertificateExpireDate,
 		prometheus.GaugeValue,
-		float64(cert.CertificateEndDate.Unix())*1000,
+		float64(cert.PrimaryCert.CertificateEndDate.Unix())*1000,
 		certLabels...,
 	)
 
