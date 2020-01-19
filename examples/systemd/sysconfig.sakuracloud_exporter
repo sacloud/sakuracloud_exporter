@@ -1,0 +1,22 @@
+#--------------------------------------
+# API Key
+#--------------------------------------
+#SAKURACLOUD_ACCESS_TOKEN=""
+#SAKURACLOUD_ACCESS_TOKEN_SECRET=""
+
+#--------------------------------------
+# Rate limit of SakuraCloud API calling
+#--------------------------------------
+#SAKURACLOUD_RATE_LIMIT=5
+
+#--------------------------------------
+# Listen address/port, path
+#--------------------------------------
+#WEB_ADDR=":9542"
+#WEB_PATH="/metrics"
+
+#--------------------------------------
+# CommandLine options
+#--------------------------------------
+#OPTIONS="--no-collector.auto-backup --no-collector.coupon --no-collector.database --no-collector.internet --no-collector.load-balancer --no-collector.mobile-gateway --no-collector.nfs --no-collector.proxy-lb --no-collector.server --no-collector.sim --no-collector.vpc-router --no-collector.zone"
+

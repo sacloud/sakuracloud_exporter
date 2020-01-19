@@ -1,0 +1,11 @@
+[Unit]
+Description=SakuraCloud Exporter
+
+[Service]
+User=sakuracloud_exporter
+EnvironmentFile=/etc/sysconfig/sakuracloud_exporter
+ExecStart=/usr/sbin/sakuracloud_exporter $OPTIONS
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
