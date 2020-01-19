@@ -15,6 +15,8 @@ Download the already existing [binaries](https://github.com/sacloud/sakuracloud_
 $ ./sakuracloud_exporter <flags> 
 ```
 
+If you want to use sakuracloud_exporter with systemd, see [systemd examples](examples/systemd).
+
 ### From source
 
 Using the standard `go install` (you must have [Go][golang] already installed in your local machine):
@@ -42,8 +44,8 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 | `--token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯        |            | API Key(Token)                                       |
 | `--secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯        |            | API Key(Secret)                                      |
 | `--ratelimit`/ `SAKURACLOUD_RATE_LIMIT`        |          | `5`        | API request rate limit(maximum:10)                   |
-| `--webaddr` / `WEBADDR`                        |          | `:9542`    | Exporter's listen address                            |
-| `--webpath`/ `WEBPATH`                         |          | `/metrics` | Metrics request path                                 |
+| `--webaddr` / `WEB_ADDR`                       |          | `:9542`    | Exporter's listen address                            |
+| `--webpath`/ `WEB_PATH`                        |          | `/metrics` | Metrics request path                                 |
 | `--no-collector.auto-backup`                   |          | `false`    | Disable the AutoBackup collector                     |
 | `--no-collector.coupon`                        |          | `false`    | Disable the Coupon collector                         |
 | `--no-collector.database`                      |          | `false`    | Disable the Database collector                       |
