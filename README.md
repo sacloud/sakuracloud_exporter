@@ -51,6 +51,7 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 | `--no-collector.database`                      |          | `false`    | Disable the Database collector                       |
 | `--no-collector.internet`                      |          | `false`    | Disable the Internet(Switch+Router) collector        |
 | `--no-collector.load-balancer`                 |          | `false`    | Disable the LoadBalancer collector                   |
+| `--no-collector.local-router`                  |          | `false`    | Disable the LocalRouter collector                    |
 | `--no-collector.mobile-gateway`                |          | `false`    | Disable the MobileGateway collector                  |
 | `--no-collector.nfs`                           |          | `false`    | Disable the NFS collector                            |
 | `--no-collector.proxy-lb`                      |          | `false`    | Disable the ProxyLB(Enhanced LoadBalancer) collector |
@@ -81,6 +82,7 @@ The exporter returns the following metrics:
 | [Database](#database)           | sakuracloud_database_*       |
 | [Switch+Router](#switchrouter)  | sakuracloud_internet_*       |
 | [LoadBalancer](#loadbalancer)   | sakuracloud_loadbalancer_*   |
+| [LocalRouter](#localrouter)     | sakuracloud_local_router_*   |
 | [MobileGateway](#mobilegateway) | sakuracloud_mobile_gateway_* |
 | [NFS](#nfs)                     | sakuracloud_nfs_*            |
 | [ProxyLB](#proxylb)             | sakuracloud_proxylb_*        |
@@ -152,6 +154,20 @@ The exporter returns the following metrics:
 | sakuracloud_loadbalancer_server_up         | If 1 the server is up and running, 0 otherwise                         | `id`, `name`, `zone`, `vip_index`, `vip`, `server_index`, `ipaddress`                                                   |
 | sakuracloud_loadbalancer_server_connection | Current connection count                                               | `id`, `name`, `zone`, `vip_index`, `vip`, `server_index`, `ipaddress`                                                   |
 | sakuracloud_loadbalancer_server_cps        | Connection count per second                                            | `id`, `name`, `zone`, `vip_index`, `vip`, `server_index`, `ipaddress`                                                   |
+
+#### LocalRouter
+
+| Metric                                     | Description                                                                            | Labels                                                                 |
+| ------                                     | -----------                                                                            | ------                                                                 |
+| sakuracloud_local_router_info              | A metric with a constant '1' value labeled by localRouter information                  | `id`, `name`, `tags`, `description`                                    |
+| sakuracloud_local_router_up                | If 1 the localRouter is up and running, 0 otherwise                                    | `id`, `name`                                                           |
+| sakuracloud_local_router_switch_info       | A metric with a constant '1' value labeled by localRouter connected switch information | `id`, `name`, `category`, `code`, `zone_id`                            |
+| sakuracloud_local_router_network_info      | A metric with a constant '1' value labeled by network information of the localRouter   | `id`, `name`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`, `vrid` |
+| sakuracloud_local_router_static_route_info | A metric with a constant '1' value labeled by static route information                 | `id`, `name`, `route_index`, `prefix`, `next_hop`                      |
+| sakuracloud_local_router_peer_info         | A metric with a constant '1' value labeled by peer information                         | `id`, `name`, `peer_index`, `peer_id`, `enabled`, `description`        |
+| sakuracloud_local_router_peer_up           | If 1 the Peer is available, 0 otherwise                                                | `id`, `name`, `peer_index`, `peer_id`                                  |
+| sakuracloud_local_router_receive_per_sec   | Receive bytes per seconds                                                              | `id`, `name`                                                           |
+| sakuracloud_local_router_send_per_sec      | Send bytes per seconds                                                                 | `id`, `name`                                                           |
 
 #### MobileGateway
 

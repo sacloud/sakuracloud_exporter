@@ -43,6 +43,7 @@ type Config struct {
 	NoCollectorDatabase      bool `arg:"--no-collector.database" help:"Disable the Database collector"`
 	NoCollectorInternet      bool `arg:"--no-collector.internet" help:"Disable the Internet(Switch+Router) collector"`
 	NoCollectorLoadBalancer  bool `arg:"--no-collector.load-balancer" help:"Disable the LoadBalancer collector"`
+	NoCollectorLocalRouter   bool `arg:"--no-collector.local-router" help:"Disable the LocalRouter collector"`
 	NoCollectorMobileGateway bool `arg:"--no-collector.mobile-gateway" help:"Disable the MobileGateway collector"`
 	NoCollectorNFS           bool `arg:"--no-collector.nfs" help:"Disable the NFS collector"`
 	NoCollectorProxyLB       bool `arg:"--no-collector.proxy-lb" help:"Disable the ProxyLB(Enhanced LoadBalancer) collector"`

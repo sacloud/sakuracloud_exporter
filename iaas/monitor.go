@@ -101,3 +101,12 @@ func monitorLinkValue(values []*sacloud.MonitorLinkValue) *sacloud.MonitorLinkVa
 	}
 	return nil
 }
+
+func monitorLocalRouterValue(values []*sacloud.MonitorLocalRouterValue) *sacloud.MonitorLocalRouterValue {
+	if len(values) > 1 {
+		// Descending
+		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
+		return values[1]
+	}
+	return nil
+}
