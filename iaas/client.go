@@ -36,6 +36,7 @@ type Client struct {
 	Database      DatabaseClient
 	Internet      InternetClient
 	LoadBalancer  LoadBalancerClient
+	LocalRouter   LocalRouterClient
 	MobileGateway MobileGatewayClient
 	NFS           NFSClient
 	ProxyLB       ProxyLBClient
@@ -85,6 +86,7 @@ func NewSakuraCloucClient(c config.Config, version string) *Client {
 		Database:      getDatabaseClient(caller, c.Zones),
 		Internet:      getInternetClient(caller, c.Zones),
 		LoadBalancer:  getLoadBalancerClient(caller, c.Zones),
+		LocalRouter:   getLocalRouterClient(caller),
 		MobileGateway: getMobileGatewayClient(caller, c.Zones),
 		NFS:           getNFSClient(caller, c.Zones),
 		ProxyLB:       getProxyLBClient(caller),

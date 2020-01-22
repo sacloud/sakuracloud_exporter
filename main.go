@@ -109,6 +109,9 @@ func main() {
 	if !c.NoCollectorLoadBalancer {
 		r.MustRegister(collector.NewLoadBalancerCollector(ctx, logger, errors, client.LoadBalancer))
 	}
+	if !c.NoCollectorLoadBalancer {
+		r.MustRegister(collector.NewLocalRouterCollector(ctx, logger, errors, client.LocalRouter))
+	}
 	if !c.NoCollectorNFS {
 		r.MustRegister(collector.NewNFSCollector(ctx, logger, errors, client.NFS))
 	}
