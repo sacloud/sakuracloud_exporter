@@ -31,7 +31,8 @@ COPYRIGHT_FILES ?=$$(find . -name "*.go" -print | grep -v "/vendor/")
 GO     := GO111MODULE=on go
 PKGS    = $(shell $(GO) list ./... | grep -v /vendor/)
 
-all: fmt test build
+default: lint test
+all: lint test build
 lint: fmt goimports
 	@echo ">> running golangci-lint"
 	golangci-lint run ./...
