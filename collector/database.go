@@ -178,7 +178,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 	databases, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list databases",
 			"err", err,
 		)
@@ -247,7 +247,6 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(databases[i])
 	}
 
@@ -336,11 +335,10 @@ func (c *DatabaseCollector) nicInfoLabels(database *iaas.Database) []string {
 }
 
 func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorCPU(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get database's cpu time: DatabaseID=%d", database.ID),
 			"err", err,
 		)
@@ -361,11 +359,10 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 }
 
 func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorDisk(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get disk's metrics: DatabaseID=%d", database.ID),
 			"err", err,
 		)
@@ -392,11 +389,10 @@ func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, data
 }
 
 func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorNIC(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get database's NIC metrics: DatabaseID=%d", database.ID),
 			"err", err,
 		)
@@ -424,11 +420,10 @@ func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, datab
 }
 
 func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorDatabase(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get database's system metrics: DatabaseID=%d", database.ID),
 			"err", err,
 		)

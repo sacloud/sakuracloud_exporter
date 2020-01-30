@@ -6,7 +6,8 @@ env:
   - PATH=/home/travis/gopath/bin:$PATH DEBIAN_FRONTEND=noninteractive
   - secure: NY2U5Ck1eeQ5BEEHetmVO0D77RpunT5g5ZhTKj+UG1uF8E0JILnGd8cYpnJ+ey0h8tBMoSDylurEJa0/oID7G9GX1bYM3rBfdDbVLONq0Lt/EtQ5ITog4Zmmh/QZJHNql7gKzkPu6Giu+UHrYsLBULsclByrGV7OR1xVd8CegsA06l9CCmnajAnadLphekheNXVLt50VdAxNuEqZZhUNPYGr5ysnE/J/lZy/r5s53e6KJnL/klfHltsbB8E3Ay78/bJcb7AGpYWw4893Uxpf/xK3uaSJvb9i2cGqpQNqh+TLHjNI2vsf1+YCzUzwAopChoOioGuvfURLoLlawaUAR4d37ItzqqgnMUfixs0cgGWhtHA235hgxYliK2ocjgNJw/5L9qP0Q+CmBykDJHgIwA/iVoraYV8wnW+uLy0qSMICwVcGCkNyX3zl9qf2wDGIZIHpgiybjtYp0BjvszwmjliC92BYRCE4hvPNuT/xtKG0eynBw4r7DYxNZUqdFRcaCSnpmRwH/pU27qLEYnhoo1jqz3GerN2HlMP11C+H5kcWZGTelu4oUw5TEFFmMYT/mwXdbxfuS3qwbzvCNb7cFpPT4VTi3d9OztUdqquBsF/b9ppOOQziTC3LeHtRVLPxt2fQeNItFEVe7CQ/aAQjLh5RIEnLj+wMjoV8TJMP+JI=
 script:
-- make fmt vet style test build
+- make tools
+- make
 before_deploy:
 - make build-x
 deploy:

@@ -102,7 +102,6 @@ func initLoggerAndErrors() {
 }
 
 func collectMetrics(collector prometheus.Collector, errLabel string) (*collectResult, error) {
-
 	ch := make(chan prometheus.Metric)
 	go func() {
 		collector.Collect(ch)

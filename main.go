@@ -44,7 +44,6 @@ var (
 )
 
 func main() {
-
 	c, err := config.InitConfig()
 	if err != nil {
 		fmt.Println(err)
@@ -63,7 +62,7 @@ func main() {
 		"caller", log.DefaultCaller,
 	)
 
-	level.Info(logger).Log(
+	level.Info(logger).Log( // nolint
 		"msg", "starting sakuracloud_exporter",
 		"rate-limit", c.RateLimit,
 		"version", Version,
@@ -148,10 +147,10 @@ func main() {
 			</html>`))
 	})
 
-	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr)
+	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr) // nolint
 	if err := http.ListenAndServe(c.WebAddr, nil); err != nil {
 		cancel()
-		level.Error(logger).Log("msg", "http listenandserve error", "err", err)
+		level.Error(logger).Log("msg", "http listenandserve error", "err", err) // nolint
 		os.Exit(2)
 	}
 }

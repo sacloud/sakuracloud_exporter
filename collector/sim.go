@@ -48,7 +48,7 @@ func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.
 
 	simLabels := []string{"id", "name"}
 	simInfoLabels := append(simLabels, "imei_lock",
-		"registerd_date", "activated_date", "deactivated_date",
+		"registered_date", "activated_date", "deactivated_date",
 		"ipaddress", "simgroup_id", "carriers", "tags", "description")
 
 	return &SIMCollector{
@@ -94,7 +94,7 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 	sims, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list sims",
 			"err", err,
 		)
@@ -135,7 +135,6 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(sims[i])
 	}
 
@@ -153,7 +152,7 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 	simConfigs, err := c.client.GetNetworkOperatorConfig(c.ctx, sim.ID)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get sim's network operator config: SIMID=%d", sim.ID),
 			"err", err,
 		)
@@ -205,11 +204,10 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 }
 
 func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *sacloud.SIM, now time.Time) {
-
 	values, err := c.client.MonitorTraffic(c.ctx, sim.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get sim's metrics: SIMID=%d", sim.ID),
 			"err", err,
 		)

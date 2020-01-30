@@ -16,17 +16,16 @@ package iaas
 
 import (
 	"context"
-	"github.com/sacloud/libsacloud/v2/sacloud/fake"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/fake"
 	"github.com/sacloud/libsacloud/v2/sacloud/trace"
 	"github.com/sacloud/sakuracloud_exporter/config"
-
-	"fmt"
 )
 
 type Client struct {

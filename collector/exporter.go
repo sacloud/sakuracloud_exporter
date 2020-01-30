@@ -57,7 +57,7 @@ func NewExporterCollector(ctx context.Context, logger log.Logger, version string
 		BuildInfo: prometheus.NewDesc(
 			"sakuracloud_exporter_build_info",
 			"A metric with a constant '1' value labeled by version, revision, and branch from which the node_exporter was built.",
-			[]string{"verison", "revision", "goversion"}, nil,
+			[]string{"version", "revision", "goversion"}, nil,
 		),
 	}
 }
@@ -70,7 +70,7 @@ func (c *ExporterCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *ExporterCollector) Collect(ch chan<- prometheus.Metric) {
-	level.Debug(c.logger).Log(
+	level.Debug(c.logger).Log( // nolint
 		"starttime", c.startTime.Unix(),
 		"version", c.version,
 		"revision", c.revision,

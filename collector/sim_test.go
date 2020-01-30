@@ -134,7 +134,7 @@ func TestSIMCollector_Collect(t *testing.T) {
 						"id":               "101",
 						"name":             "sim",
 						"imei_lock":        "1",
-						"registerd_date":   "1000",
+						"registered_date":  "1000",
 						"activated_date":   "2000",
 						"deactivated_date": "0",
 						"ipaddress":        "192.0.2.1",

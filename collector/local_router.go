@@ -17,7 +17,6 @@ package collector
 import (
 	"context"
 	"fmt"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
@@ -132,7 +132,7 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	localRouters, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list localRouters",
 			"err", err,
 		)
@@ -185,7 +185,6 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(localRouters[i])
 	}
 
@@ -246,14 +245,13 @@ func (c *LocalRouterCollector) collectNetworkInfo(ch chan<- prometheus.Metric, l
 }
 
 func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter) {
-
 	//localRouterPeerLabels := append(localRouterLabels, "peer_index", "peer_id")
 	//localRouterPeerInfoLabels := append(localRouterPeerLabels, "enabled", "description")
 
 	healthStatus, err := c.client.Health(c.ctx, localRouter.ID)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't read health status of the localRouter[%s]", localRouter.ID.String()),
 			"err", err,
 		)
@@ -263,7 +261,6 @@ func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, loca
 	for i, peer := range localRouter.Peers {
 		peerStatus := c.getPeerStatus(healthStatus.Peers, peer.ID)
 		if peerStatus != nil {
-
 			labels := append(c.localRouterLabels(localRouter),
 				fmt.Sprintf("%d", i),
 				peer.ID.String(),
@@ -320,11 +317,10 @@ func (c *LocalRouterCollector) collectStaticRouteInfo(ch chan<- prometheus.Metri
 }
 
 func (c *LocalRouterCollector) collectLocalRouterMetrics(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter, now time.Time) {
-
 	values, err := c.client.Monitor(c.ctx, localRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get localRouter's metrics: LocalRouterID=%d", localRouter.ID),
 			"err", err,
 		)

@@ -92,7 +92,7 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 	autoBackups, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list autoBackups",
 			"err", err,
 		)
@@ -151,11 +151,10 @@ func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *sacloud.AutoBackup, 
 }
 
 func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, autoBackup *sacloud.AutoBackup, now time.Time) {
-
 	archives, err := c.client.ListBackups(c.ctx, autoBackup.ZoneName, autoBackup.ID)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list backed up archives",
 			"err", err,
 		)
@@ -193,5 +192,4 @@ func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, 
 			c.archiveInfoLabels(autoBackup, archive)...,
 		)
 	}
-
 }
