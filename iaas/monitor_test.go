@@ -23,7 +23,6 @@ import (
 )
 
 func TestMonitor_monitorCPUTimeValue(t *testing.T) {
-
 	cases := []struct {
 		name   string
 		in     []*sacloud.MonitorCPUTimeValue
@@ -90,5 +89,4 @@ func TestMonitor_monitorCPUTimeValue(t *testing.T) {
 			require.Equal(t, tc.expect, actual, tc.name)
 		})
 	}
-
 }

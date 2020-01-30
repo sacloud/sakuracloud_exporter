@@ -44,7 +44,6 @@ var (
 )
 
 func main() {
-
 	c, err := config.InitConfig()
 	if err != nil {
 		fmt.Println(err)

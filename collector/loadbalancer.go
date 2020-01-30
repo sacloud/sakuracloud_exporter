@@ -195,9 +195,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 					c.collectLBStatus(ch, lb)
 					wg.Done()
 				}()
-
 			}
-
 		}(lbs[i])
 	}
 
@@ -389,7 +387,6 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 			c.vipLabels(lb, vipIndex)...,
 		)
 		for serverIndex, server := range vip.Servers {
-
 			// ServerInfo
 			ch <- prometheus.MustNewConstMetric(
 				c.ServerInfo,

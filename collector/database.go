@@ -247,7 +247,6 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(databases[i])
 	}
 
@@ -336,7 +335,6 @@ func (c *DatabaseCollector) nicInfoLabels(database *iaas.Database) []string {
 }
 
 func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorCPU(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
@@ -361,7 +359,6 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 }
 
 func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorDisk(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
@@ -392,7 +389,6 @@ func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, data
 }
 
 func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorNIC(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
@@ -424,7 +420,6 @@ func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, datab
 }
 
 func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
-
 	values, err := c.client.MonitorDatabase(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)

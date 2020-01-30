@@ -185,7 +185,6 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(localRouters[i])
 	}
 
@@ -246,7 +245,6 @@ func (c *LocalRouterCollector) collectNetworkInfo(ch chan<- prometheus.Metric, l
 }
 
 func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter) {
-
 	//localRouterPeerLabels := append(localRouterLabels, "peer_index", "peer_id")
 	//localRouterPeerInfoLabels := append(localRouterPeerLabels, "enabled", "description")
 
@@ -263,7 +261,6 @@ func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, loca
 	for i, peer := range localRouter.Peers {
 		peerStatus := c.getPeerStatus(healthStatus.Peers, peer.ID)
 		if peerStatus != nil {
-
 			labels := append(c.localRouterLabels(localRouter),
 				fmt.Sprintf("%d", i),
 				peer.ID.String(),
@@ -320,7 +317,6 @@ func (c *LocalRouterCollector) collectStaticRouteInfo(ch chan<- prometheus.Metri
 }
 
 func (c *LocalRouterCollector) collectLocalRouterMetrics(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter, now time.Time) {
-
 	values, err := c.client.Monitor(c.ctx, localRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)

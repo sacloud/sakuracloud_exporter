@@ -23,7 +23,6 @@ import (
 )
 
 func TestFunctions_queryPerZone(t *testing.T) {
-
 	serverOp := sacloud.NewServerOp(testCaller)
 
 	// prepare on is1a

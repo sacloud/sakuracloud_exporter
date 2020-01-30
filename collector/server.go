@@ -294,7 +294,6 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 					}(i)
 				}
 			}
-
 		}(servers[i])
 	}
 
@@ -465,7 +464,6 @@ func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *ia
 }
 
 func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server *iaas.Server, index int, now time.Time) {
-
 	if len(server.Disks) <= index {
 		return
 	}
@@ -510,7 +508,6 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 }
 
 func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server *iaas.Server, index int, now time.Time) {
-
 	if len(server.Interfaces) <= index {
 		return
 	}
@@ -591,5 +588,4 @@ func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, se
 		float64(info.EventEnd().Unix()),
 		c.serverLabels(server)...,
 	)
-
 }

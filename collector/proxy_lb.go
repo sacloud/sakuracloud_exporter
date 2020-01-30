@@ -192,7 +192,6 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(proxyLBs[i])
 	}
 
@@ -345,7 +344,6 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 }
 
 func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, now time.Time) {
-
 	values, err := c.client.Monitor(c.ctx, proxyLB.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)

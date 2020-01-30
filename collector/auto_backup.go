@@ -151,7 +151,6 @@ func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *sacloud.AutoBackup, 
 }
 
 func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, autoBackup *sacloud.AutoBackup, now time.Time) {
-
 	archives, err := c.client.ListBackups(c.ctx, autoBackup.ZoneName, autoBackup.ID)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
@@ -193,5 +192,4 @@ func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, 
 			c.archiveInfoLabels(autoBackup, archive)...,
 		)
 	}
-
 }

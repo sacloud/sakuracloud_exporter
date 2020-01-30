@@ -67,7 +67,6 @@ func (c *autoBackupClient) Find(ctx context.Context) ([]*sacloud.AutoBackup, err
 }
 
 func (c *autoBackupClient) ListBackups(ctx context.Context, zone string, autoBackupID types.ID) ([]*sacloud.Archive, error) {
-
 	client := sacloud.NewArchiveOp(c.caller)
 	tagName := fmt.Sprintf("autobackup-%d", autoBackupID)
 

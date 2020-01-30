@@ -135,7 +135,6 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(sims[i])
 	}
 
@@ -205,7 +204,6 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 }
 
 func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *sacloud.SIM, now time.Time) {
-
 	values, err := c.client.MonitorTraffic(c.ctx, sim.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)

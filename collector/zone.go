@@ -90,6 +90,5 @@ func (c *ZoneCollector) Collect(ch chan<- prometheus.Metric) {
 			1.0,
 			labels...,
 		)
-
 	}
 }

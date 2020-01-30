@@ -83,7 +83,6 @@ func TestDatabaseCollector_Describe(t *testing.T) {
 }
 
 func TestDatabaseCollector_Collect(t *testing.T) {
-
 	initLoggerAndErrors()
 	c := NewDatabaseCollector(context.Background(), testLogger, testErrors, nil)
 

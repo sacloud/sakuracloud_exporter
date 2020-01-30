@@ -160,7 +160,6 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 			}
-
 		}(nfss[i])
 	}
 
@@ -226,7 +225,6 @@ func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
 }
 
 func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
-
 	values, err := c.client.MonitorFreeDiskSize(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
@@ -255,7 +253,6 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaa
 }
 
 func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
-
 	values, err := c.client.MonitorNIC(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)

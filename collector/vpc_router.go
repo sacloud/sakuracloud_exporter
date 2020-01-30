@@ -162,7 +162,6 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 			)
 
 			if vpcRouter.InstanceStatus.IsUp() && len(vpcRouter.Interfaces) > 0 {
-
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
@@ -236,7 +235,6 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 					}(nic)
 				}
 			}
-
 		}(vpcRouters[i])
 	}
 
@@ -332,7 +330,6 @@ func (c *VPCRouterCollector) nicLabels(vpcRouter *iaas.VPCRouter, index int) []s
 	labels := c.vpcRouterLabels(vpcRouter)
 	nic := getInterfaceByIndex(vpcRouter.Settings.Interfaces, index)
 	if nic != nil {
-
 		vip = nic.VirtualIPAddress
 		if len(nic.IPAddress) > 0 {
 			ipaddress1 = nic.IPAddress[0]
