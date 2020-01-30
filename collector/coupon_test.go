@@ -51,7 +51,7 @@ func TestCouponCollector_Describe(t *testing.T) {
 func TestCouponCollector_Collect(t *testing.T) {
 	initLoggerAndErrors()
 	c := NewCouponCollector(context.Background(), testLogger, testErrors, nil)
-	untilAt := time.Now().Add(time.Hour * 24 * 3)
+	untilAt := time.Now().Add(time.Hour * 24 * 3).Add(time.Hour)
 
 	cases := []struct {
 		name           string
@@ -101,7 +101,7 @@ func TestCouponCollector_Collect(t *testing.T) {
 				{
 					// RemainingDays
 					desc: c.RemainingDays,
-					metric: createGaugeMetric(2, map[string]string{
+					metric: createGaugeMetric(3, map[string]string{
 						"id":          "101",
 						"contract_id": "201",
 						"member_id":   "memberID",
