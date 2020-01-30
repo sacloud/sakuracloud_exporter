@@ -45,7 +45,7 @@ fmt:
 	@$(GO) fmt $(PKGS)
 
 goimports: fmt
-	goimports -l -w .
+	goimports -l -w $$(find . -type f -name '*.go' -not -path "./vendor/*")
 
 run:
 	@$(GO) run main.go

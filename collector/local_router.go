@@ -17,7 +17,6 @@ package collector
 import (
 	"context"
 	"fmt"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +25,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/sacloud/types"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 )
 
