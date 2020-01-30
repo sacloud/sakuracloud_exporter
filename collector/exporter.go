@@ -57,7 +57,7 @@ func NewExporterCollector(ctx context.Context, logger log.Logger, version string
 		BuildInfo: prometheus.NewDesc(
 			"sakuracloud_exporter_build_info",
 			"A metric with a constant '1' value labeled by version, revision, and branch from which the node_exporter was built.",
-			[]string{"verison", "revision", "goversion"}, nil,
+			[]string{"version", "revision", "goversion"}, nil,
 		),
 	}
 }

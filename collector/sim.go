@@ -48,7 +48,7 @@ func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.
 
 	simLabels := []string{"id", "name"}
 	simInfoLabels := append(simLabels, "imei_lock",
-		"registerd_date", "activated_date", "deactivated_date",
+		"registered_date", "activated_date", "deactivated_date",
 		"ipaddress", "simgroup_id", "carriers", "tags", "description")
 
 	return &SIMCollector{
