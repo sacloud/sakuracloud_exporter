@@ -87,5 +87,5 @@ set-license:
 .PHONY: all fmt build build-x test goimports docker clean lint
 
 .PHONY: release
-release: build-envs
-	ghr ${VERSION} bin/
+release:
+	ghr $(VERSION) bin/
