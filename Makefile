@@ -1,3 +1,18 @@
+#
+# Copyright 2016-2020 The sakuracloud_exporter Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 NAME     := sakuracloud_exporter
 VERSION  := $(subst /,-,$(shell cat VERSION))
 REVISION := $(shell git rev-parse --short HEAD)
@@ -16,24 +31,21 @@ COPYRIGHT_FILES ?=$$(find . -name "*.go" -print | grep -v "/vendor/")
 GO     := GO111MODULE=on go
 PKGS    = $(shell $(GO) list ./... | grep -v /vendor/)
 
-all: fmt build test
-lint: fmt vet style
+all: fmt test build
+lint: fmt goimports
+	@echo ">> running golangci-lint"
+	golangci-lint run ./...
 
 test:
 	@echo ">> running tests"
 	@$(GO) test -v $(PKGS)
 
-style:
-	@echo ">> checking code style"
-	@! gofmt -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
-
 fmt:
 	@echo ">> formatting code"
 	@$(GO) fmt $(PKGS)
 
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(PKGS)
+goimports: fmt
+	goimports -l -w .
 
 run:
 	@$(GO) run main.go
@@ -62,11 +74,11 @@ docker:
 .PHONY: tools
 tools:
 	GO111MODULE=off go get github.com/sacloud/addlicense
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.19.1/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.19.1
+
 
 .PHONY: set-license
 set-license:
 	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
 
-
-
-.PHONY: all style fmt build build-x test vet docker clean lint
+.PHONY: all fmt build build-x test goimports docker clean lint
