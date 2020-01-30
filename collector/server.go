@@ -180,7 +180,7 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 	servers, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list servers",
 			"err", err,
 		)
@@ -370,7 +370,7 @@ func (c *ServerCollector) collectDiskInfo(ch chan<- prometheus.Metric, server *i
 	disk, err := c.client.ReadDisk(c.ctx, server.ZoneName, server.Disks[index].ID)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get server connected disk info: ID=%d, DiskID=%d", server.ID, server.Disks[index].ID),
 			"err", err,
 		)
@@ -444,7 +444,7 @@ func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *ia
 	values, err := c.client.MonitorCPU(c.ctx, server.ZoneName, server.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get server's CPU-TIME: ID=%d", server.ID),
 			"err", err,
 		)
@@ -474,7 +474,7 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 	values, err := c.client.MonitorDisk(c.ctx, server.ZoneName, disk.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get disk's metrics: ServerID=%d, DiskID=%d", server.ID, disk.ID),
 			"err", err,
 		)
@@ -519,7 +519,7 @@ func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server 
 	values, err := c.client.MonitorNIC(c.ctx, server.ZoneName, nic.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get nic's metrics: ServerID=%d,NICID=%d", server.ID, nic.ID),
 			"err", err,
 		)
@@ -561,7 +561,7 @@ func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, se
 	info, err := c.client.MaintenanceInfo(server.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get server's maintenance info: ServerID=%d", server.ID),
 			"err", err,
 		)

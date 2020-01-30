@@ -105,7 +105,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 	nfss, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list nfs",
 			"err", err,
 		)
@@ -230,7 +230,7 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaa
 	values, err := c.client.MonitorFreeDiskSize(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get disk's free size: NFSID=%d", nfs.ID),
 			"err", err,
 		)
@@ -259,7 +259,7 @@ func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.
 	values, err := c.client.MonitorNIC(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get nfs's NIC metrics: NFSID=%d", nfs.ID),
 			"err", err,
 		)

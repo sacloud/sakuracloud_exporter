@@ -132,7 +132,7 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	localRouters, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list localRouters",
 			"err", err,
 		)
@@ -253,7 +253,7 @@ func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, loca
 	healthStatus, err := c.client.Health(c.ctx, localRouter.ID)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't read health status of the localRouter[%s]", localRouter.ID.String()),
 			"err", err,
 		)
@@ -324,7 +324,7 @@ func (c *LocalRouterCollector) collectLocalRouterMetrics(ch chan<- prometheus.Me
 	values, err := c.client.Monitor(c.ctx, localRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get localRouter's metrics: LocalRouterID=%d", localRouter.ID),
 			"err", err,
 		)

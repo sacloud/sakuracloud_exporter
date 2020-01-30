@@ -129,7 +129,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	vpcRouters, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list vpc routers",
 			"err", err,
 		)
@@ -169,7 +169,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 					status, err := c.client.Status(c.ctx, vpcRouter.ZoneName, vpcRouter.ID)
 					if err != nil {
 						c.errors.WithLabelValues("vpc_router").Add(1)
-						level.Warn(c.logger).Log(
+						level.Warn(c.logger).Log( // nolint
 							"msg", "can't fetch vpc_router's status",
 							"err", err,
 						)
@@ -357,7 +357,7 @@ func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcR
 	values, err := c.client.MonitorNIC(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get vpc_router's receive bytes: ID=%d, NICIndex=%d", vpcRouter.ID, index),
 			"err", err,
 		)

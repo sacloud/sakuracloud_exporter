@@ -63,7 +63,7 @@ func (c *ZoneCollector) Collect(ch chan<- prometheus.Metric) {
 	zones, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("zone").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't get zone info",
 			"err", err,
 		)

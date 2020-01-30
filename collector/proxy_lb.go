@@ -129,7 +129,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 	proxyLBs, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", "can't list proxyLBs",
 			"err", err,
 		)
@@ -271,7 +271,7 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 	cert, err := c.client.GetCertificate(c.ctx, proxyLB.ID)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get certificate: proxyLB=%d", proxyLB.ID),
 			"err", err,
 		)
@@ -349,7 +349,7 @@ func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, pr
 	values, err := c.client.Monitor(c.ctx, proxyLB.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
-		level.Warn(c.logger).Log(
+		level.Warn(c.logger).Log( // nolint
 			"msg", fmt.Sprintf("can't get proxyLB's metrics: ProxyLBID=%d", proxyLB.ID),
 			"err", err,
 		)
