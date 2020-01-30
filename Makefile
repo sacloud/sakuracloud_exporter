@@ -76,6 +76,7 @@ docker:
 tools:
 	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 	GO111MODULE=off go get github.com/sacloud/addlicense
+	GO111MODULE=off go get github.com/tcnksm/ghr
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.19.1/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.19.1
 
 
@@ -84,3 +85,7 @@ set-license:
 	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
 
 .PHONY: all fmt build build-x test goimports docker clean lint
+
+.PHONY: release
+release: build-envs
+	ghr ${VERSION} bin/
