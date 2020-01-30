@@ -63,9 +63,5 @@ func (c *couponClient) Find(ctx context.Context) ([]*sacloud.Coupon, error) {
 		return nil, err
 	}
 
-	var res []*sacloud.Coupon
-	for _, v := range searched.Coupons {
-		res = append(res, v)
-	}
-	return res, nil
+	return searched.Coupons, nil
 }

@@ -46,10 +46,7 @@ func (c *localRouterClient) Find(ctx context.Context) ([]*sacloud.LocalRouter, e
 	if err != nil {
 		return results, err
 	}
-	for _, lb := range res.LocalRouters {
-		results = append(results, lb)
-	}
-	return results, err
+	return res.LocalRouters, nil
 }
 
 func (c *localRouterClient) Health(ctx context.Context, id types.ID) (*sacloud.LocalRouterHealth, error) {

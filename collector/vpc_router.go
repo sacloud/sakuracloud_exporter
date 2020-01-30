@@ -304,11 +304,9 @@ func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *iaas.VPCRouter) []st
 }
 
 func findVPCRouterInterfaceSettingByIndex(settings []*sacloud.VPCRouterInterfaceSetting, index int) *sacloud.VPCRouterInterfaceSetting {
-	if settings != nil {
-		for _, s := range settings {
-			if s.Index == index {
-				return s
-			}
+	for _, s := range settings {
+		if s.Index == index {
+			return s
 		}
 	}
 	return nil

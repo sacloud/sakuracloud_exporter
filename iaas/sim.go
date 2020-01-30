@@ -47,10 +47,7 @@ func (c *simClient) Find(ctx context.Context) ([]*sacloud.SIM, error) {
 	if err != nil {
 		return results, err
 	}
-	for _, lb := range res.SIMs {
-		results = append(results, lb)
-	}
-	return results, err
+	return res.SIMs, nil
 }
 
 func (c *simClient) GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*sacloud.SIMNetworkOperatorConfig, error) {

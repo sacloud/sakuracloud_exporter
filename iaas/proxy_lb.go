@@ -46,10 +46,7 @@ func (c *proxyLBClient) Find(ctx context.Context) ([]*sacloud.ProxyLB, error) {
 	if err != nil {
 		return results, err
 	}
-	for _, lb := range res.ProxyLBs {
-		results = append(results, lb)
-	}
-	return results, err
+	return res.ProxyLBs, nil
 }
 
 func (c *proxyLBClient) GetCertificate(ctx context.Context, id types.ID) (*sacloud.ProxyLBCertificates, error) {
