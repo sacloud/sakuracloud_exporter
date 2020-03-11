@@ -212,14 +212,14 @@ func (c *LoadBalancerCollector) lbLabels(lb *iaas.LoadBalancer) []string {
 
 var loadBalancerPlanMapping = map[types.ID]string{
 	types.LoadBalancerPlans.Standard: "standard",
-	types.LoadBalancerPlans.Premium:  "highspec",
+	types.LoadBalancerPlans.HighSpec: "highspec",
 }
 
 func (c *LoadBalancerCollector) lbInfoLabels(lb *iaas.LoadBalancer) []string {
 	labels := c.lbLabels(lb)
 
 	isHA := "0"
-	if lb.PlanID == types.LoadBalancerPlans.Premium {
+	if lb.PlanID == types.LoadBalancerPlans.HighSpec {
 		isHA = "1"
 	}
 
