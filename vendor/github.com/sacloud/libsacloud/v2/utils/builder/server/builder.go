@@ -56,6 +56,7 @@ type Builder struct {
 // BuildResult サーバ構築結果
 type BuildResult struct {
 	ServerID               types.ID
+	DiskIDs                []types.ID
 	GeneratedSSHPrivateKey string
 }
 
@@ -130,8 +131,9 @@ func (b *Builder) Build(ctx context.Context, zone string) (*BuildResult, error) 
 	for _, diskReq := range b.DiskBuilders {
 		builtDisk, err := diskReq.Build(ctx, zone, server.ID)
 		if err != nil {
-			return nil, err
+			return result, err
 		}
+		result.DiskIDs = append(result.DiskIDs, builtDisk.DiskID)
 		if builtDisk.GeneratedSSHKey != nil {
 			result.GeneratedSSHPrivateKey = builtDisk.GeneratedSSHKey.PrivateKey
 		}
@@ -139,21 +141,21 @@ func (b *Builder) Build(ctx context.Context, zone string) (*BuildResult, error) 
 
 	// connect packet filter
 	if err := b.updateInterfaces(ctx, zone, server); err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// insert CD-ROM
 	if !b.CDROMID.IsEmpty() {
 		req := &sacloud.InsertCDROMRequest{ID: b.CDROMID}
 		if err := b.Client.Server.InsertCDROM(ctx, zone, server.ID, req); err != nil {
-			return nil, err
+			return result, err
 		}
 	}
 
 	// bool
 	if b.BootAfterCreate {
 		if err := power.BootServer(ctx, b.Client.Server, zone, server.ID); err != nil {
-			return nil, err
+			return result, err
 		}
 	}
 
@@ -172,7 +174,18 @@ func (b *Builder) IsNeedShutdown(ctx context.Context, zone string) (bool, error)
 		return false, err
 	}
 
-	if !reflect.DeepEqual(b.currentState(server), b.desiredState()) {
+	current := b.currentState(server)
+	desired := b.desiredState()
+
+	// シャットダウンが不要な項目には固定値を入れる
+	var nics []*nicState
+	nics = append(nics, current.nic)
+	nics = append(nics, current.additionalNICs...)
+	nics = append(nics, desired.nic)
+	nics = append(nics, desired.additionalNICs...)
+	b.fillDummyValueToState(nics...)
+
+	if !reflect.DeepEqual(current, desired) {
 		return true, nil
 	}
 
@@ -197,6 +210,15 @@ func (b *Builder) IsNeedShutdown(ctx context.Context, zone string) (bool, error)
 	return false, nil
 }
 
+func (b *Builder) fillDummyValueToState(state ...*nicState) {
+	for _, s := range state {
+		if s != nil {
+			s.packetFilterID = types.ID(0)
+			s.displayIP = ""
+		}
+	}
+}
+
 // Update サーバの更新
 func (b *Builder) Update(ctx context.Context, zone string) (*BuildResult, error) {
 	// validate
@@ -211,29 +233,29 @@ func (b *Builder) Update(ctx context.Context, zone string) (*BuildResult, error)
 
 	server, err := b.Client.Server.Read(ctx, zone, b.ServerID)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	isNeedShutdown, err := b.IsNeedShutdown(ctx, zone)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// shutdown
 	if isNeedShutdown && server.InstanceStatus.IsUp() {
 		if err := power.ShutdownServer(ctx, b.Client.Server, zone, server.ID, b.ForceShutdown); err != nil {
-			return nil, err
+			return result, err
 		}
 	}
 
 	// reconcile disks
 	if err := b.reconcileDisks(ctx, zone, server, result); err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// reconcile interface
 	if err := b.reconcileInterfaces(ctx, zone, server); err != nil {
-		return nil, err
+		return result, err
 	}
 
 	// plan
@@ -245,7 +267,7 @@ func (b *Builder) Update(ctx context.Context, zone string) (*BuildResult, error)
 			ServerPlanCommitment: b.Commitment,
 		})
 		if err != nil {
-			return nil, err
+			return result, err
 		}
 		server = updated
 	}
@@ -260,26 +282,27 @@ func (b *Builder) Update(ctx context.Context, zone string) (*BuildResult, error)
 		InterfaceDriver: b.InterfaceDriver,
 	})
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	server = updated
+	result.ServerID = server.ID
 
 	// insert CD-ROM
 	if !b.CDROMID.IsEmpty() && b.CDROMID != server.CDROMID {
 		if !server.CDROMID.IsEmpty() {
 			if err := b.Client.Server.EjectCDROM(ctx, zone, server.ID, &sacloud.EjectCDROMRequest{ID: server.CDROMID}); err != nil {
-				return nil, err
+				return result, err
 			}
 		}
 		if err := b.Client.Server.InsertCDROM(ctx, zone, server.ID, &sacloud.InsertCDROMRequest{ID: b.CDROMID}); err != nil {
-			return nil, err
+			return result, err
 		}
 	}
 
 	// bool
 	if isNeedShutdown && server.InstanceStatus.IsDown() {
 		if err := power.BootServer(ctx, b.Client.Server, zone, server.ID); err != nil {
-			return nil, err
+			return result, err
 		}
 	}
 
@@ -528,9 +551,11 @@ func (b *Builder) reconcileDisks(ctx context.Context, zone string, server *saclo
 		}
 		// reconnect all
 		for _, diskReq := range b.DiskBuilders {
+			result.DiskIDs = []types.ID{}
 			if err := b.Client.Disk.ConnectToServer(ctx, zone, diskReq.DiskID(), server.ID); err != nil {
 				return err
 			}
+			result.DiskIDs = append(result.DiskIDs, diskReq.DiskID())
 		}
 	}
 	return nil
@@ -548,10 +573,12 @@ func (b *Builder) reconcileInterfaces(ctx context.Context, zone string, server *
 				desired = desiredState.additionalNICs[i-1]
 			}
 		}
-		if desired == nil && !nic.SwitchID.IsEmpty() {
+		if desired == nil {
 			// disconnect and delete
-			if err := b.Client.Interface.DisconnectFromSwitch(ctx, zone, nic.ID); err != nil {
-				return err
+			if !nic.SwitchID.IsEmpty() {
+				if err := b.Client.Interface.DisconnectFromSwitch(ctx, zone, nic.ID); err != nil {
+					return err
+				}
 			}
 			if err := b.Client.Interface.Delete(ctx, zone, nic.ID); err != nil {
 				return err
@@ -572,6 +599,9 @@ func (b *Builder) reconcileInterfaces(ctx context.Context, zone string, server *
 	desiredNICs = append(desiredNICs, desiredState.additionalNICs...)
 
 	for i, desired := range desiredNICs {
+		if desired == nil {
+			continue
+		}
 		var nic *sacloud.InterfaceView
 		if len(server.Interfaces) > i {
 			nic = server.Interfaces[i]
@@ -637,5 +667,6 @@ func (b *Builder) isPlanChanged(server *sacloud.Server) bool {
 	return b.CPU != server.CPU ||
 		b.MemoryGB != server.GetMemoryGB() ||
 		b.Commitment != server.ServerPlanCommitment ||
-		b.Generation != server.ServerPlanGeneration
+		(b.Generation != types.PlanGenerations.Default && b.Generation != server.ServerPlanGeneration)
+	//b.Generation != server.ServerPlanGeneration
 }
