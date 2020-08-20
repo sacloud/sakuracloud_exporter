@@ -57,7 +57,7 @@ func InitConfig() (Config, error) {
 	c := Config{
 		WebPath:   "/metrics",
 		WebAddr:   ":9542",
-		Zones:     []string{"is1a", "is1b", "tk1a", "tk1v"},
+		Zones:     []string{"is1a", "is1b", "tk1a", "tk1b", "tk1v"},
 		RateLimit: defaultRateLimit,
 	}
 	arg.MustParse(&c)
