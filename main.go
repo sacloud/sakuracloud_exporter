@@ -75,7 +75,7 @@ func main() {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}
 
-	errors := prometheus.NewCounterVec(prometheus.CounterOpts{
+	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "sakuracloud_exporter_errors_total",
 		Help: "The total number of errors per collector",
 	}, []string{"collector"})
@@ -90,47 +90,47 @@ func main() {
 	// collector info
 	r.MustRegister(prometheus.NewGoCollector())
 	r.MustRegister(collector.NewExporterCollector(ctx, logger, Version, Revision, GoVersion, StartTime))
-	r.MustRegister(errors)
+	r.MustRegister(errs)
 
 	// sakuracloud metrics
 	if !c.NoCollectorAutoBackup {
-		r.MustRegister(collector.NewAutoBackupCollector(ctx, logger, errors, client.AutoBackup))
+		r.MustRegister(collector.NewAutoBackupCollector(ctx, logger, errs, client.AutoBackup))
 	}
 	if !c.NoCollectorCoupon {
-		r.MustRegister(collector.NewCouponCollector(ctx, logger, errors, client.Coupon))
+		r.MustRegister(collector.NewCouponCollector(ctx, logger, errs, client.Coupon))
 	}
 	if !c.NoCollectorDatabase {
-		r.MustRegister(collector.NewDatabaseCollector(ctx, logger, errors, client.Database))
+		r.MustRegister(collector.NewDatabaseCollector(ctx, logger, errs, client.Database))
 	}
 	if !c.NoCollectorInternet {
-		r.MustRegister(collector.NewInternetCollector(ctx, logger, errors, client.Internet))
+		r.MustRegister(collector.NewInternetCollector(ctx, logger, errs, client.Internet))
 	}
 	if !c.NoCollectorLoadBalancer {
-		r.MustRegister(collector.NewLoadBalancerCollector(ctx, logger, errors, client.LoadBalancer))
+		r.MustRegister(collector.NewLoadBalancerCollector(ctx, logger, errs, client.LoadBalancer))
 	}
 	if !c.NoCollectorLoadBalancer {
-		r.MustRegister(collector.NewLocalRouterCollector(ctx, logger, errors, client.LocalRouter))
+		r.MustRegister(collector.NewLocalRouterCollector(ctx, logger, errs, client.LocalRouter))
 	}
 	if !c.NoCollectorNFS {
-		r.MustRegister(collector.NewNFSCollector(ctx, logger, errors, client.NFS))
+		r.MustRegister(collector.NewNFSCollector(ctx, logger, errs, client.NFS))
 	}
 	if !c.NoCollectorMobileGateway {
-		r.MustRegister(collector.NewMobileGatewayCollector(ctx, logger, errors, client.MobileGateway))
+		r.MustRegister(collector.NewMobileGatewayCollector(ctx, logger, errs, client.MobileGateway))
 	}
 	if !c.NoCollectorProxyLB {
-		r.MustRegister(collector.NewProxyLBCollector(ctx, logger, errors, client.ProxyLB))
+		r.MustRegister(collector.NewProxyLBCollector(ctx, logger, errs, client.ProxyLB))
 	}
 	if !c.NoCollectorServer {
-		r.MustRegister(collector.NewServerCollector(ctx, logger, errors, client.Server))
+		r.MustRegister(collector.NewServerCollector(ctx, logger, errs, client.Server))
 	}
 	if !c.NoCollectorSIM {
-		r.MustRegister(collector.NewSIMCollector(ctx, logger, errors, client.SIM))
+		r.MustRegister(collector.NewSIMCollector(ctx, logger, errs, client.SIM))
 	}
 	if !c.NoCollectorVPCRouter {
-		r.MustRegister(collector.NewVPCRouterCollector(ctx, logger, errors, client.VPCRouter))
+		r.MustRegister(collector.NewVPCRouterCollector(ctx, logger, errs, client.VPCRouter))
 	}
 	if !c.NoCollectorZone {
-		r.MustRegister(collector.NewZoneCollector(ctx, logger, errors, client.Zone))
+		r.MustRegister(collector.NewZoneCollector(ctx, logger, errs, client.Zone))
 	}
 
 	http.Handle(c.WebPath,

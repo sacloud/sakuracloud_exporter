@@ -25,9 +25,9 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/fake"
 	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/utils/builder/disk"
-	"github.com/sacloud/libsacloud/v2/utils/builder/server"
-	"github.com/sacloud/libsacloud/v2/utils/query"
+	"github.com/sacloud/libsacloud/v2/helper/builder/disk"
+	"github.com/sacloud/libsacloud/v2/helper/builder/server"
+	"github.com/sacloud/libsacloud/v2/helper/query"
 )
 
 const fakeStoreFileName = "example-fake-store.json"
@@ -256,10 +256,8 @@ func createMobileGateway(caller sacloud.APICaller) {
 		Name:        "example",
 		Description: "desc",
 		Tags:        types.Tags{"example", "mobile-gateway"},
-		Settings: &sacloud.MobileGatewaySettingCreate{
-			InternetConnectionEnabled:       true,
-			InterDeviceCommunicationEnabled: true,
-		},
+		InternetConnectionEnabled:       true,
+		InterDeviceCommunicationEnabled: true,
 	})
 	if err != nil {
 		log.Fatal(err)

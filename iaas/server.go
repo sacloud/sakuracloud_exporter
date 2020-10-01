@@ -20,7 +20,7 @@ import (
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/utils/newsfeed"
+	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
 )
 
 type ServerClient interface {
