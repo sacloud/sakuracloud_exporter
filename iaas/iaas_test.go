@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 	os.Setenv("TESTACC", "")
 
 	testZone = testutil.TestZone()
-	testCaller = testutil.SingletonAPICaller()
+	testCaller = testutil.SingletonAPICaller().(*sacloud.Client)
 	testCaller.UserAgent = "test-sakuracloud_exporter/dev"
 
 	ret := m.Run()

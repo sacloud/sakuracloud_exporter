@@ -41,6 +41,7 @@ type Config struct {
 	NoCollectorAutoBackup    bool `arg:"--no-collector.auto-backup" help:"Disable the AutoBackup collector"`
 	NoCollectorCoupon        bool `arg:"--no-collector.coupon" help:"Disable the Coupon collector"`
 	NoCollectorDatabase      bool `arg:"--no-collector.database" help:"Disable the Database collector"`
+	NoCollectorESME          bool `arg:"--no-collector.esme" help:"Disable the ESME collector"`
 	NoCollectorInternet      bool `arg:"--no-collector.internet" help:"Disable the Internet(Switch+Router) collector"`
 	NoCollectorLoadBalancer  bool `arg:"--no-collector.load-balancer" help:"Disable the LoadBalancer collector"`
 	NoCollectorLocalRouter   bool `arg:"--no-collector.local-router" help:"Disable the LocalRouter collector"`

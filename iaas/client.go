@@ -33,6 +33,7 @@ type Client struct {
 	AutoBackup    AutoBackupClient
 	Coupon        CouponClient
 	Database      DatabaseClient
+	ESME          ESMEClient
 	Internet      InternetClient
 	LoadBalancer  LoadBalancerClient
 	LocalRouter   LocalRouterClient
@@ -83,6 +84,7 @@ func NewSakuraCloucClient(c config.Config, version string) *Client {
 		AutoBackup:    getAutoBackupClient(caller, c.Zones),
 		Coupon:        getCouponClient(caller),
 		Database:      getDatabaseClient(caller, c.Zones),
+		ESME:          getESMEClient(caller),
 		Internet:      getInternetClient(caller, c.Zones),
 		LoadBalancer:  getLoadBalancerClient(caller, c.Zones),
 		LocalRouter:   getLocalRouterClient(caller),

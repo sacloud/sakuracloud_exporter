@@ -101,15 +101,13 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
-							ID:             101,
-							Name:           "mobile-gateway",
-							Tags:           types.Tags{"tag1", "tag2"},
-							Description:    "desc",
-							InstanceStatus: types.ServerInstanceStatuses.Down,
-							Settings: &sacloud.MobileGatewaySetting{
-								InternetConnectionEnabled:       false,
-								InterDeviceCommunicationEnabled: false,
-							},
+							ID:                              101,
+							Name:                            "mobile-gateway",
+							Tags:                            types.Tags{"tag1", "tag2"},
+							Description:                     "desc",
+							InstanceStatus:                  types.ServerInstanceStatuses.Down,
+							InternetConnectionEnabled:       false,
+							InterDeviceCommunicationEnabled: false,
 						},
 					},
 				},
@@ -144,16 +142,14 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
-							ID:             101,
-							Name:           "mobile-gateway",
-							Tags:           types.Tags{"tag1", "tag2"},
-							Description:    "desc",
-							InstanceStatus: types.ServerInstanceStatuses.Up,
-							Availability:   types.Availabilities.Available,
-							Settings: &sacloud.MobileGatewaySetting{
-								InternetConnectionEnabled:       true,
-								InterDeviceCommunicationEnabled: true,
-							},
+							ID:                              101,
+							Name:                            "mobile-gateway",
+							Tags:                            types.Tags{"tag1", "tag2"},
+							Description:                     "desc",
+							InstanceStatus:                  types.ServerInstanceStatuses.Up,
+							Availability:                    types.Availabilities.Available,
+							InternetConnectionEnabled:       true,
+							InterDeviceCommunicationEnabled: true,
 						},
 					},
 				},
@@ -239,16 +235,14 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
-							ID:             101,
-							Name:           "mobile-gateway",
-							Tags:           types.Tags{"tag1", "tag2"},
-							Description:    "desc",
-							InstanceStatus: types.ServerInstanceStatuses.Up,
-							Availability:   types.Availabilities.Available,
-							Settings: &sacloud.MobileGatewaySetting{
-								InternetConnectionEnabled:       true,
-								InterDeviceCommunicationEnabled: true,
-							},
+							ID:                              101,
+							Name:                            "mobile-gateway",
+							Tags:                            types.Tags{"tag1", "tag2"},
+							Description:                     "desc",
+							InstanceStatus:                  types.ServerInstanceStatuses.Up,
+							Availability:                    types.Availabilities.Available,
+							InternetConnectionEnabled:       true,
+							InterDeviceCommunicationEnabled: true,
 							Interfaces: []*sacloud.MobileGatewayInterface{
 								{
 									IPAddress:            "192.168.0.1",
@@ -393,16 +387,14 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
-							ID:             101,
-							Name:           "mobile-gateway",
-							Tags:           types.Tags{"tag1", "tag2"},
-							Description:    "desc",
-							InstanceStatus: types.ServerInstanceStatuses.Up,
-							Availability:   types.Availabilities.Available,
-							Settings: &sacloud.MobileGatewaySetting{
-								InternetConnectionEnabled:       true,
-								InterDeviceCommunicationEnabled: true,
-							},
+							ID:                              101,
+							Name:                            "mobile-gateway",
+							Tags:                            types.Tags{"tag1", "tag2"},
+							Description:                     "desc",
+							InstanceStatus:                  types.ServerInstanceStatuses.Up,
+							Availability:                    types.Availabilities.Available,
+							InternetConnectionEnabled:       true,
+							InterDeviceCommunicationEnabled: true,
 							Interfaces: []*sacloud.MobileGatewayInterface{
 								{
 									IPAddress:            "192.168.0.1",

@@ -49,6 +49,7 @@ $ docker run -p 9542:9542 sacloud/sakuracloud_exporter
 | `--no-collector.auto-backup`                   |          | `false`    | Disable the AutoBackup collector                     |
 | `--no-collector.coupon`                        |          | `false`    | Disable the Coupon collector                         |
 | `--no-collector.database`                      |          | `false`    | Disable the Database collector                       |
+| `--no-collector.esme`                          |          | `false`    | Disable the ESME collector                           |
 | `--no-collector.internet`                      |          | `false`    | Disable the Internet(Switch+Router) collector        |
 | `--no-collector.load-balancer`                 |          | `false`    | Disable the LoadBalancer collector                   |
 | `--no-collector.local-router`                  |          | `false`    | Disable the LocalRouter collector                    |
@@ -80,6 +81,7 @@ The exporter returns the following metrics:
 | [AutoBackup](#autobackup)       | sakuracloud_auto_backup_*    |
 | [Coupon](#coupon)               | sakuracloud_coupon_*         |
 | [Database](#database)           | sakuracloud_database_*       |
+| [ESME](#esme)                   | sakuracloud_esme_*           |
 | [Switch+Router](#switchrouter)  | sakuracloud_internet_*       |
 | [LoadBalancer](#loadbalancer)   | sakuracloud_loadbalancer_*   |
 | [LocalRouter](#localrouter)     | sakuracloud_local_router_*   |
@@ -131,6 +133,14 @@ The exporter returns the following metrics:
 | sakuracloud_database_disk_read         | Disk's read bytes(unit: KBps)                                      | `id`, `name`, `zone`                                                                                                                                                       |
 | sakuracloud_database_disk_write        | Disk's write bytes(unit: KBps)                                     | `id`, `name`, `zone`                                                                                                                                                       |
 | sakuracloud_database_replication_delay | Replication delay time(unit:second)                                | `id`, `name`, `zone`                                                                                                                                                       |
+
+#### ESME
+
+| Metric                               | Description                                                     | Labels                               |
+| ------                               | -----------                                                     | ------                               |
+| sakuracloud_esme_info                | A metric with a constant '1' value labeled by ESME information  | `id`, `name`, `tags`, `descriptions` |
+| sakuracloud_esme_message_count       | A count of messages handled by ESME                             | `id`, `name`, `status`               |
+
 
 #### Switch+Router
 

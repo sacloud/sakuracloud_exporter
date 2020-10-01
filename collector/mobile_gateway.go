@@ -198,12 +198,12 @@ func (c *MobileGatewayCollector) mobileGatewayInfoLabels(mobileGateway *iaas.Mob
 	labels := c.mobileGatewayLabels(mobileGateway)
 
 	internetConnection := "0"
-	if mobileGateway.Settings != nil && mobileGateway.Settings.InternetConnectionEnabled {
+	if mobileGateway.InternetConnectionEnabled {
 		internetConnection = "1"
 	}
 
 	interDeviceCommunication := "0"
-	if mobileGateway.Settings != nil && mobileGateway.Settings.InterDeviceCommunicationEnabled {
+	if mobileGateway.InterDeviceCommunicationEnabled {
 		interDeviceCommunication = "1"
 	}
 
