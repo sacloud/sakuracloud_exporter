@@ -138,7 +138,7 @@ The exporter returns the following metrics:
 
 | Metric                               | Description                                                     | Labels                               |
 | ------                               | -----------                                                     | ------                               |
-| sakuracloud_esme_info                | A metric with a constant '1' value labeled by ESME information  | `id`, `name`, `tags`, `descriptions` |
+| sakuracloud_esme_info                | A metric with a constant '1' value labeled by ESME information  | `id`, `name`, `tags`, `description`  |
 | sakuracloud_esme_message_count       | A count of messages handled by ESME                             | `id`, `name`, `status`               |
 
 
