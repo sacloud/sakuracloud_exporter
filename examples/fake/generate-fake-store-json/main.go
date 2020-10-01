@@ -21,13 +21,13 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/sacloud/libsacloud/v2/helper/builder/disk"
+	"github.com/sacloud/libsacloud/v2/helper/builder/server"
+	"github.com/sacloud/libsacloud/v2/helper/query"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/fake"
 	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/helper/builder/disk"
-	"github.com/sacloud/libsacloud/v2/helper/builder/server"
-	"github.com/sacloud/libsacloud/v2/helper/query"
 )
 
 const fakeStoreFileName = "example-fake-store.json"
@@ -49,6 +49,7 @@ func main() {
 	createFuncs := []func(caller sacloud.APICaller){
 		createAutoBackup,
 		createDatabase,
+		//createESME, // TODO implememts this after supported ESME by libsacloud's fake driver
 		createInternet,
 		createLoadBalancer,
 		createMobileGateway,
@@ -157,6 +158,28 @@ func createDatabase(caller sacloud.APICaller) {
 
 }
 
+// TODO implememts this after supported ESME by libsacloud's fake driver
+//func createESME(caller sacloud.APICaller) {
+//	op := sacloud.NewESMEOp(caller)
+//	esme, err := op.Create(context.Background(), &sacloud.ESMECreateRequest{
+//		Name:           "example",
+//		Description:    "desc",
+//		Tags:           types.Tags{"example", "esme"},
+//	})
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// send dummy SMS
+//	_ , err = op.SendMessageWithGeneratedOTP(context.Background(), esme.ID, &sacloud.ESMESendMessageWithGeneratedOTPRequest{
+//		Destination: "819012345678",
+//		Sender:      "sakuracloud_exporter",
+//	})
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//}
+
 func createInternet(caller sacloud.APICaller) {
 	op := sacloud.NewInternetOp(caller)
 	_, err := op.Create(context.Background(), "is1a", &sacloud.InternetCreateRequest{
@@ -253,9 +276,9 @@ func createMobileGateway(caller sacloud.APICaller) {
 
 	mgwOp := sacloud.NewMobileGatewayOp(caller)
 	mgw, err := mgwOp.Create(context.Background(), "is1a", &sacloud.MobileGatewayCreateRequest{
-		Name:        "example",
-		Description: "desc",
-		Tags:        types.Tags{"example", "mobile-gateway"},
+		Name:                            "example",
+		Description:                     "desc",
+		Tags:                            types.Tags{"example", "mobile-gateway"},
 		InternetConnectionEnabled:       true,
 		InterDeviceCommunicationEnabled: true,
 	})

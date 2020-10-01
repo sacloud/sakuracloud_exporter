@@ -102,6 +102,9 @@ func main() {
 	if !c.NoCollectorDatabase {
 		r.MustRegister(collector.NewDatabaseCollector(ctx, logger, errs, client.Database))
 	}
+	if !c.NoCollectorESME {
+		r.MustRegister(collector.NewESMECollector(ctx, logger, errs, client.ESME))
+	}
 	if !c.NoCollectorInternet {
 		r.MustRegister(collector.NewInternetCollector(ctx, logger, errs, client.Internet))
 	}

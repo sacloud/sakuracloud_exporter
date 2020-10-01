@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/iaas"
 	"github.com/stretchr/testify/require"
 )
