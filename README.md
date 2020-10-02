@@ -32,7 +32,7 @@ $ sakuracloud_exporter <flags>
 To run the SakuraCloud exporter as a Docker container, run:
 
 ```bash
-$ docker run -p 9542:9542 sacloud/sakuracloud_exporter 
+$ docker run -p 9542:9542 -e SAKURACLOUD_ACCESS_TOKEN=<YOUR-TOKEN> -e SAKURACLOUD_ACCESS_TOKEN_SECRET=<YOUR-SECRET> ghcr.io/sacloud/sakuracloud_exporter 
 ```
 
 ## Usage
