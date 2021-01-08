@@ -1,4 +1,4 @@
-// Copyright 2016-2020 The Libsacloud Authors
+// Copyright 2016-2021 The Libsacloud Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1184,8 +1184,8 @@ type internetUpdateBandWidthResponseEnvelope struct {
 
 // internetAddSubnetRequestEnvelope is envelop of API request
 type internetAddSubnetRequestEnvelope struct {
-	NetworkMaskLen int    `validate:"min=24,max=28"`
-	NextHop        string `validate:"ipv4"`
+	NetworkMaskLen int    `json:",omitempty"`
+	NextHop        string `json:",omitempty"`
 }
 
 // internetAddSubnetResponseEnvelope is envelop of API response
@@ -1198,7 +1198,7 @@ type internetAddSubnetResponseEnvelope struct {
 
 // internetUpdateSubnetRequestEnvelope is envelop of API request
 type internetUpdateSubnetRequestEnvelope struct {
-	NextHop string `validate:"ipv4"`
+	NextHop string `json:",omitempty"`
 }
 
 // internetUpdateSubnetResponseEnvelope is envelop of API response
