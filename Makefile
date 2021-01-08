@@ -1,5 +1,5 @@
 #
-# Copyright 2016-2020 The sakuracloud_exporter Authors
+# Copyright 2019-2021 The sakuracloud_exporter Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ DOCKER_IMAGE_NAME       ?= sacloud/sakuracloud_exporter
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell cat VERSION))
 
 AUTHOR          ?="The sakuracloud_exporter Authors"
-COPYRIGHT_YEAR  ?="2019-2020"
+COPYRIGHT_YEAR  ?="2019-2021"
 COPYRIGHT_FILES ?=$$(find . -name "*.go" -print | grep -v "/vendor/")
 
 GO     := GO111MODULE=on go

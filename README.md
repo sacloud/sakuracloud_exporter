@@ -276,7 +276,7 @@ The exporter returns the following metrics:
 
 ## License
 
- `sakuracloud_exporter` Copyright (C) 2019-2020 sakuracloud_exporter authors.
+ `sakuracloud_exporter` Copyright (C) 2019-2021 sakuracloud_exporter authors.
 
   This project is published under [Apache 2.0 License](LICENSE).
   
