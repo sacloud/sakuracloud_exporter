@@ -1933,6 +1933,58 @@ func (t *DatabaseTracer) Status(ctx context.Context, zone string, id types.ID) (
 	return resultDatabaseStatus, err
 }
 
+// GetParameter is API call with trace log
+func (t *DatabaseTracer) GetParameter(ctx context.Context, zone string, id types.ID) (*sacloud.DatabaseParameter, error) {
+	var span trace.Span
+	options := append(t.config.SpanStartOptions, trace.WithAttributes(
+		label.String("libsacloud.api.arguments.zone", zone),
+		label.Any("libsacloud.api.arguments.id", id),
+	))
+	ctx, span = t.config.Tracer.Start(ctx, "DatabaseAPI.GetParameter", options...)
+	defer func() {
+		span.End()
+	}()
+
+	// for http trace
+	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
+	resultDatabaseParameter, err := t.Internal.GetParameter(ctx, zone, id)
+
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+	} else {
+		span.SetStatus(codes.Ok, "")
+		span.SetAttributes(label.Any("libsacloud.api.results.resultDatabaseParameter", resultDatabaseParameter))
+
+	}
+	return resultDatabaseParameter, err
+}
+
+// SetParameter is API call with trace log
+func (t *DatabaseTracer) SetParameter(ctx context.Context, zone string, id types.ID, param map[string]interface{}) error {
+	var span trace.Span
+	options := append(t.config.SpanStartOptions, trace.WithAttributes(
+		label.String("libsacloud.api.arguments.zone", zone),
+		label.Any("libsacloud.api.arguments.id", id),
+		label.Any("libsacloud.api.arguments.param", param),
+	))
+	ctx, span = t.config.Tracer.Start(ctx, "DatabaseAPI.SetParameter", options...)
+	defer func() {
+		span.End()
+	}()
+
+	// for http trace
+	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
+	err := t.Internal.SetParameter(ctx, zone, id, param)
+
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+	} else {
+		span.SetStatus(codes.Ok, "")
+
+	}
+	return err
+}
+
 /*************************************************
 * DiskTracer
 *************************************************/
@@ -2059,31 +2111,6 @@ func (t *DiskTracer) CreateWithConfig(ctx context.Context, zone string, createPa
 	return resultDisk, err
 }
 
-// ToBlank is API call with trace log
-func (t *DiskTracer) ToBlank(ctx context.Context, zone string, id types.ID) error {
-	var span trace.Span
-	options := append(t.config.SpanStartOptions, trace.WithAttributes(
-		label.String("libsacloud.api.arguments.zone", zone),
-		label.Any("libsacloud.api.arguments.id", id),
-	))
-	ctx, span = t.config.Tracer.Start(ctx, "DiskAPI.ToBlank", options...)
-	defer func() {
-		span.End()
-	}()
-
-	// for http trace
-	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
-	err := t.Internal.ToBlank(ctx, zone, id)
-
-	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-	} else {
-		span.SetStatus(codes.Ok, "")
-
-	}
-	return err
-}
-
 // ResizePartition is API call with trace log
 func (t *DiskTracer) ResizePartition(ctx context.Context, zone string, id types.ID, param *sacloud.DiskResizePartitionRequest) error {
 	var span trace.Span
@@ -2159,34 +2186,6 @@ func (t *DiskTracer) DisconnectFromServer(ctx context.Context, zone string, id t
 
 	}
 	return err
-}
-
-// Install is API call with trace log
-func (t *DiskTracer) Install(ctx context.Context, zone string, id types.ID, installParam *sacloud.DiskInstallRequest, distantFrom []types.ID) (*sacloud.Disk, error) {
-	var span trace.Span
-	options := append(t.config.SpanStartOptions, trace.WithAttributes(
-		label.String("libsacloud.api.arguments.zone", zone),
-		label.Any("libsacloud.api.arguments.id", id),
-		label.Any("libsacloud.api.arguments.installParam", installParam),
-		label.Any("libsacloud.api.arguments.distantFrom", distantFrom),
-	))
-	ctx, span = t.config.Tracer.Start(ctx, "DiskAPI.Install", options...)
-	defer func() {
-		span.End()
-	}()
-
-	// for http trace
-	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
-	resultDisk, err := t.Internal.Install(ctx, zone, id, installParam, distantFrom)
-
-	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-	} else {
-		span.SetStatus(codes.Ok, "")
-		span.SetAttributes(label.Any("libsacloud.api.results.resultDisk", resultDisk))
-
-	}
-	return resultDisk, err
 }
 
 // Read is API call with trace log

@@ -17,14 +17,11 @@ package iaas
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/libsacloud/v2/helper/api"
 	"github.com/sacloud/libsacloud/v2/sacloud/fake"
-	"github.com/sacloud/libsacloud/v2/sacloud/trace"
 	"github.com/sacloud/sakuracloud_exporter/config"
 )
 
@@ -47,36 +44,28 @@ type Client struct {
 }
 
 func NewSakuraCloucClient(c config.Config, version string) *Client {
-	caller := &sacloud.Client{
-		AccessToken:       c.Token,
-		AccessTokenSecret: c.Secret,
-		UserAgent:         fmt.Sprintf("sakuracloud_exporter/%s", version),
-		RetryMax:          9,
-		RetryWaitMin:      1 * time.Second,
-		RetryWaitMax:      5 * time.Second,
-		HTTPClient: &http.Client{
-			Transport: &sacloud.RateLimitRoundTripper{RateLimitPerSec: c.RateLimit},
-		},
+	fakeStorePath := c.FakeMode
+	if stat, err := os.Stat(fakeStorePath); err == nil {
+		if stat.IsDir() {
+			fakeStorePath = filepath.Join(fakeStorePath, "fake-store.json")
+		}
 	}
+	caller := api.NewCaller(&api.CallerOptions{
+		AccessToken:          c.Token,
+		AccessTokenSecret:    c.Secret,
+		HTTPRequestTimeout:   0,
+		HTTPRequestRateLimit: c.RateLimit,
+		UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
+		RetryMax:             9,
+		RetryWaitMin:         1,
+		RetryWaitMax:         5,
+		TraceAPI:             c.Debug,
+		TraceHTTP:            c.Trace,
+		FakeMode:             c.FakeMode != "",
+		FakeStorePath:        fakeStorePath,
+	})
 	if c.FakeMode != "" {
-		fakeStorePath := c.FakeMode
-		if stat, err := os.Stat(fakeStorePath); err == nil {
-			if stat.IsDir() {
-				fakeStorePath = filepath.Join(fakeStorePath, "fake-store.json")
-			}
-		}
-		fake.DataStore = fake.NewJSONFileStore(fakeStorePath)
-		fake.SwitchFactoryFuncToFake()
 		fake.InitDataStore()
-	}
-
-	if c.Debug {
-		trace.AddClientFactoryHooks()
-	}
-	if c.Trace {
-		caller.HTTPClient.Transport = &sacloud.TracingRoundTripper{
-			Transport: caller.HTTPClient.Transport,
-		}
 	}
 
 	return &Client{

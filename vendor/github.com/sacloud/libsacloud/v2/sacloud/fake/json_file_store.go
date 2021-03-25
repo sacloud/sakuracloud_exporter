@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
@@ -303,6 +302,7 @@ var jsonResourceTypeMap = map[string]func() interface{}{
 	valuePoolResourceKey:         func() interface{} { return &valuePool{} },
 	"BillDetails":                func() interface{} { return &[]*sacloud.BillDetail{} },
 	"ContainerRegistryUsers":     func() interface{} { return &[]*sacloud.ContainerRegistryUser{} },
+	"DatabaseParameter":          func() interface{} { return map[string]interface{}{} },
 	"ESMELogs":                   func() interface{} { return &[]*sacloud.ESMELogs{} },
 	"LocalRouterStatus":          func() interface{} { return &sacloud.LocalRouterHealth{} },
 	"MobileGatewayDNS":           func() interface{} { return &sacloud.MobileGatewayDNSSetting{} },
@@ -330,14 +330,14 @@ func (s *JSONFileStore) store() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(s.Path, data, 0600)
+	return os.WriteFile(s.Path, data, 0600)
 }
 
 func (s *JSONFileStore) load() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	data, err := ioutil.ReadFile(s.Path)
+	data, err := os.ReadFile(s.Path)
 	if err != nil {
 		return err
 	}
