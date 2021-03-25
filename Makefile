@@ -14,15 +14,12 @@
 # limitations under the License.
 #
 NAME     := sakuracloud_exporter
-VERSION  := $(subst /,-,$(shell cat VERSION))
 REVISION := $(shell git rev-parse --short HEAD)
 SRCS     := $(shell find . -type f -name '*.go')
-LDFLAGS  := -ldflags="-s -w -X \"main.Version=$(VERSION)\" -X \"main.Revision=$(REVISION)\" -extldflags -static"
+LDFLAGS  := -ldflags="-s -w -X \"main.Revision=$(REVISION)\" -extldflags -static"
 
 PREFIX                  ?= $(shell pwd)/bin
 BIN_DIR                 ?= $(shell pwd)/bin
-DOCKER_IMAGE_NAME       ?= sacloud/sakuracloud_exporter
-DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell cat VERSION))
 
 AUTHOR          ?="The sakuracloud_exporter Authors"
 COPYRIGHT_YEAR  ?="2019-2021"
@@ -59,24 +56,10 @@ build: $(BIN_DIR)/$(NAME)
 $(BIN_DIR)/$(NAME): $(SRCS)
 	CGO_ENABLED=0 $(GO) build $(LDFLAGS) -a -tags netgo -installsuffix netgo -o $(BIN_DIR)/$(NAME)
 
-build-x:
-	for os in darwin linux windows; do \
-	    for arch in amd64 386; do \
-	        GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 $(GO) build $(LDFLAGS) -a -tags netgo -installsuffix netgo -o $(BIN_DIR)/$(NAME); \
-	        ( cd $(BIN_DIR); zip -r "$(NAME)_$$os-$$arch" $(NAME) ../LICENSE ../README.md ); \
-	        rm -f $(BIN_DIR)/$(NAME); \
-	    done; \
-	done
-
-docker:
-	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
-
 .PHONY: tools
 tools:
 	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 	GO111MODULE=off go get github.com/sacloud/addlicense
-	GO111MODULE=off go get github.com/tcnksm/ghr
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.38.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.38.0
 
 
@@ -84,8 +67,4 @@ tools:
 set-license:
 	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
 
-.PHONY: all fmt build build-x test goimports docker clean lint
-
-.PHONY: release
-release:
-	ghr $(VERSION) bin/
+.PHONY: all fmt build build-x test goimports clean lint
