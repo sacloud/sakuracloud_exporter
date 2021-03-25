@@ -16,7 +16,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - nakedret
     - misspell
     - staticcheck
