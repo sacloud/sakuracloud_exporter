@@ -6,8 +6,8 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X main.Revision={{.ShortCommit}} -extldflags -static"
-      - -a -tags netgo -installsuffix netgo
+      - -X main.Revision={{.ShortCommit}}
+      - -extldflags -static
     goos:
       - windows
       - linux
