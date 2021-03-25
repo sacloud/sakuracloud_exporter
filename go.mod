@@ -7,7 +7,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4
-	github.com/sacloud/libsacloud/v2 v2.10.0
+	github.com/sacloud/libsacloud/v2 v2.14.1
 	github.com/stretchr/testify v1.6.1
 )
 
