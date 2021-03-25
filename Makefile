@@ -54,7 +54,7 @@ clean:
 build: $(BIN_DIR)/$(NAME)
 
 $(BIN_DIR)/$(NAME): $(SRCS)
-	CGO_ENABLED=0 $(GO) build $(LDFLAGS) -a -tags netgo -installsuffix netgo -o $(BIN_DIR)/$(NAME)
+	CGO_ENABLED=0 $(GO) build $(LDFLAGS) -o $(BIN_DIR)/$(NAME)
 
 .PHONY: tools
 tools:
