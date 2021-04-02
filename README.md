@@ -1,7 +1,7 @@
 # sakuracloud_exporter
 
 [![Build Status](https://travis-ci.org/sacloud/sakuracloud_exporter.svg?branch=master)](https://travis-ci.org/sacloud/sakuracloud_exporter)
-[![Slack](https://slack.usacloud.jp/badge.svg)](https://slack.usacloud.jp/)  
+[![Slack](https://img.shields.io/badge/Slack-Sacloud%20Workspace-brightgreen)](https://join.slack.com/t/sacloud/shared_invite/zt-ohsdpv2t-_Bi1_F0jDAAmWjoMQCmAxg)  
 
 [Prometheus](https://prometheus.io) exporter for [SakuraCloud](https://cloud.sakura.ad.jp) metrics.
 
