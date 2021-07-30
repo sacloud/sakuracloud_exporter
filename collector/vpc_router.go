@@ -46,6 +46,8 @@ type VPCRouterCollector struct {
 	L2TPSessionCount     *prometheus.Desc
 	PPTPSessionCount     *prometheus.Desc
 	SiteToSitePeerStatus *prometheus.Desc
+
+	SessionAnalysis *prometheus.Desc
 }
 
 // NewVPCRouterCollector returns a new VPCRouterCollector.
@@ -56,6 +58,7 @@ func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prome
 	vpcRouterInfoLabels := append(vpcRouterLabels, "plan", "ha", "vrid", "vip", "ipaddress1", "ipaddress2", "nw_mask_len", "internet_connection", "tags", "description")
 	nicLabels := append(vpcRouterLabels, "nic_index", "vip", "ipaddress1", "ipaddress2", "nw_mask_len")
 	s2sPeerLabels := append(vpcRouterLabels, "peer_address", "peer_index")
+	sessionAnalysisLabels := append(vpcRouterLabels, "type", "label")
 
 	return &VPCRouterCollector{
 		ctx:    ctx,
@@ -107,6 +110,11 @@ func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prome
 			"VPCRouter's receive bytes(unit: Kbps)",
 			nicLabels, nil,
 		),
+		SessionAnalysis: prometheus.NewDesc(
+			"sakuracloud_vpc_router_session_analysis",
+			"Session statistics for VPC routers",
+			sessionAnalysisLabels, nil,
+		),
 	}
 }
 
@@ -122,6 +130,7 @@ func (c *VPCRouterCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.SiteToSitePeerStatus
 	ch <- c.Receive
 	ch <- c.Send
+	ch <- c.SessionAnalysis
 }
 
 // Collect is called by the Prometheus registry when collecting metrics.
@@ -220,6 +229,25 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 							up,
 							labels...,
 						)
+					}
+					if status.SessionAnalysis != nil {
+						sessionAnalysis := map[string][]*sacloud.VPCRouterStatisticsValue{
+							"SourceAndDestination": status.SessionAnalysis.SourceAndDestination,
+							"DestinationAddress":   status.SessionAnalysis.DestinationAddress,
+							"DestinationPort":      status.SessionAnalysis.DestinationPort,
+							"SourceAddress":        status.SessionAnalysis.SourceAddress,
+						}
+						for typeName , analysis := range sessionAnalysis {
+							for _ , v := range  analysis {
+								labels := append(c.vpcRouterLabels(vpcRouter), typeName, v.Name)
+								ch <- prometheus.MustNewConstMetric(
+									c.SessionAnalysis,
+									prometheus.GaugeValue,
+									float64(v.Count),
+									labels...,
+								)
+							}
+						}
 					}
 				}()
 
