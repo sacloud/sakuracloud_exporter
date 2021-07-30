@@ -248,17 +248,18 @@ The exporter returns the following metrics:
 
 #### VPCRouter
 
-| Metric                              | Description                                                          | Labels                                                                                                                                     |
-| ------                              | -----------                                                          | ------                                                                                                                                     |
-| sakuracloud_vpc_router_info         | A metric with a constant '1' value labeled by vpc_router information | `id`, `name`, `zone`, `plan`, `ha`, `vrid`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`, `internet_connection`, `tags`, `description` |
-| sakuracloud_vpc_router_up           | If 1 the vpc_router is up and running, 0 otherwise                   | `id`, `name`, `zone`                                                                                                                       |
-| sakuracloud_vpc_router_session      | Current session count                                                | `id`, `name`, `zone`                                                                                                                       |
-| sakuracloud_vpc_router_dhcp_lease   | Current DHCPServer lease count                                       | `id`, `name`, `zone`                                                                                                                       |
-| sakuracloud_vpc_router_l2tp_session | Current L2TP-IPsec session count                                     | `id`, `name`, `zone`                                                                                                                       |
-| sakuracloud_vpc_router_pptp_session | Current PPTP session count                                           | `id`, `name`, `zone`                                                                                                                       |
-| sakuracloud_vpc_router_s2s_peer_up  | If 1 the vpc_router's site to site peer is up, 0 otherwise           | `id`, `name`, `zone`, `peer_address`, `peer_index`                                                                                         |
-| sakuracloud_vpc_router_receive      | VPCRouter's receive bytes(unit: Kbps)                                | `id`, `name`, `zone`, `nic_index`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`                                                        |
-| sakuracloud_vpc_router_send         | VPCRouter's receive bytes(unit: Kbps)                                | `id`, `name`, `zone`, `nic_index`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`                                                        |
+| Metric                                  | Description                                                          | Labels                                                                                                                                     |
+| ------                                  | -----------                                                          | ------                                                                                                                                     |
+| sakuracloud_vpc_router_info             | A metric with a constant '1' value labeled by vpc_router information | `id`, `name`, `zone`, `plan`, `ha`, `vrid`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`, `internet_connection`, `tags`, `description` |
+| sakuracloud_vpc_router_up               | If 1 the vpc_router is up and running, 0 otherwise                   | `id`, `name`, `zone`                                                                                                                       |
+| sakuracloud_vpc_router_session          | Current session count                                                | `id`, `name`, `zone`                                                                                                                       |
+| sakuracloud_vpc_router_dhcp_lease       | Current DHCPServer lease count                                       | `id`, `name`, `zone`                                                                                                                       |
+| sakuracloud_vpc_router_l2tp_session     | Current L2TP-IPsec session count                                     | `id`, `name`, `zone`                                                                                                                       |
+| sakuracloud_vpc_router_pptp_session     | Current PPTP session count                                           | `id`, `name`, `zone`                                                                                                                       |
+| sakuracloud_vpc_router_s2s_peer_up      | If 1 the vpc_router's site to site peer is up, 0 otherwise           | `id`, `name`, `zone`, `peer_address`, `peer_index`                                                                                         |
+| sakuracloud_vpc_router_session_analysis | Session statistics for VPC routers                                   | `id`, `name`, `zone`, `type`, `label`                                                                                                      |
+| sakuracloud_vpc_router_receive          | VPCRouter's receive bytes(unit: Kbps)                                | `id`, `name`, `zone`, `nic_index`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`                                                        |
+| sakuracloud_vpc_router_send             | VPCRouter's receive bytes(unit: Kbps)                                | `id`, `name`, `zone`, `nic_index`, `vip`, `ipaddress1`, `ipaddress2`, `nw_mask_len`                                                        |
 
 #### Zone
 

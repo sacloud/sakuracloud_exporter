@@ -61,6 +61,7 @@ func TestVPCRouterCollector_Describe(t *testing.T) {
 		c.SiteToSitePeerStatus,
 		c.Receive,
 		c.Send,
+		c.SessionAnalysis,
 	}))
 }
 
@@ -162,6 +163,11 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 							Peer:   "172.16.3.1",
 						},
 					},
+					SessionAnalysis: &sacloud.VPCRouterSessionAnalysis{
+						SourceAddress:        []*sacloud.VPCRouterStatisticsValue{
+							{Name: "localhost", Count: 4},
+						},
+					},
 				},
 				monitor: &sacloud.MonitorInterfaceValue{
 					Time:    monitorTime,
@@ -236,6 +242,16 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 						"zone":         "is1a",
 						"peer_index":   "0",
 						"peer_address": "172.16.3.1",
+					}),
+				},
+				{
+					desc: c.SessionAnalysis,
+					metric: createGaugeMetric(4, map[string]string{
+						"id":          "101",
+						"name":        "router",
+						"zone":        "is1a",
+						"type": "SourceAddress",
+						"label": "localhost",
 					}),
 				},
 				{
