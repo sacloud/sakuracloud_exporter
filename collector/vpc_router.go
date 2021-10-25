@@ -237,8 +237,8 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 							"DestinationPort":      status.SessionAnalysis.DestinationPort,
 							"SourceAddress":        status.SessionAnalysis.SourceAddress,
 						}
-						for typeName , analysis := range sessionAnalysis {
-							for _ , v := range  analysis {
+						for typeName, analysis := range sessionAnalysis {
+							for _, v := range analysis {
 								labels := append(c.vpcRouterLabels(vpcRouter), typeName, v.Name)
 								ch <- prometheus.MustNewConstMetric(
 									c.SessionAnalysis,

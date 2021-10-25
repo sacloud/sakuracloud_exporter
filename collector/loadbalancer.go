@@ -380,6 +380,9 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 			return
 		}
 		vipStatus := getVIPStatus(status, vip.VirtualIPAddress)
+		if vipStatus == nil {
+			continue
+		}
 		ch <- prometheus.MustNewConstMetric(
 			c.VIPCPS,
 			prometheus.GaugeValue,

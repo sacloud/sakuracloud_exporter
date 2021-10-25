@@ -164,7 +164,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 						},
 					},
 					SessionAnalysis: &sacloud.VPCRouterSessionAnalysis{
-						SourceAddress:        []*sacloud.VPCRouterStatisticsValue{
+						SourceAddress: []*sacloud.VPCRouterStatisticsValue{
 							{Name: "localhost", Count: 4},
 						},
 					},
@@ -247,10 +247,10 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 				{
 					desc: c.SessionAnalysis,
 					metric: createGaugeMetric(4, map[string]string{
-						"id":          "101",
-						"name":        "router",
-						"zone":        "is1a",
-						"type": "SourceAddress",
+						"id":    "101",
+						"name":  "router",
+						"zone":  "is1a",
+						"type":  "SourceAddress",
 						"label": "localhost",
 					}),
 				},
