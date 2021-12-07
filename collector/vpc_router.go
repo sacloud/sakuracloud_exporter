@@ -42,6 +42,7 @@ type VPCRouterCollector struct {
 	Receive       *prometheus.Desc
 	Send          *prometheus.Desc
 
+	CPUTime              *prometheus.Desc
 	DHCPLeaseCount       *prometheus.Desc
 	L2TPSessionCount     *prometheus.Desc
 	PPTPSessionCount     *prometheus.Desc
@@ -79,6 +80,11 @@ func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prome
 			"sakuracloud_vpc_router_info",
 			"A metric with a constant '1' value labeled by vpc_router information",
 			vpcRouterInfoLabels, nil,
+		),
+		CPUTime: prometheus.NewDesc(
+			"sakuracloud_vpc_router_cpu_time",
+			"VPCRouter's CPU time(unit: ms)",
+			vpcRouterLabels, nil,
 		),
 		DHCPLeaseCount: prometheus.NewDesc(
 			"sakuracloud_vpc_router_dhcp_lease",
@@ -123,6 +129,7 @@ func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prome
 func (c *VPCRouterCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.Up
 	ch <- c.VPCRouterInfo
+	ch <- c.CPUTime
 	ch <- c.SessionCount
 	ch <- c.DHCPLeaseCount
 	ch <- c.L2TPSessionCount
@@ -170,97 +177,106 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 				c.vpcRouterInfoLabels(vpcRouter)...,
 			)
 
-			if vpcRouter.InstanceStatus.IsUp() && len(vpcRouter.Interfaces) > 0 {
+			if vpcRouter.InstanceStatus.IsUp() {
+				// collect metrics per resources under server
+				now := time.Now()
+				// CPU-TIME
 				wg.Add(1)
 				go func() {
-					defer wg.Done()
-					status, err := c.client.Status(c.ctx, vpcRouter.ZoneName, vpcRouter.ID)
-					if err != nil {
-						c.errors.WithLabelValues("vpc_router").Add(1)
-						level.Warn(c.logger).Log( // nolint
-							"msg", "can't fetch vpc_router's status",
-							"err", err,
-						)
-						return
-					}
-
-					// Session Count
-					ch <- prometheus.MustNewConstMetric(
-						c.SessionCount,
-						prometheus.GaugeValue,
-						float64(status.SessionCount),
-						c.vpcRouterLabels(vpcRouter)...,
-					)
-					// DHCP Server Leases
-					ch <- prometheus.MustNewConstMetric(
-						c.DHCPLeaseCount,
-						prometheus.GaugeValue,
-						float64(len(status.DHCPServerLeases)),
-						c.vpcRouterLabels(vpcRouter)...,
-					)
-					// L2TP/IPsec Sessions
-					ch <- prometheus.MustNewConstMetric(
-						c.L2TPSessionCount,
-						prometheus.GaugeValue,
-						float64(len(status.L2TPIPsecServerSessions)),
-						c.vpcRouterLabels(vpcRouter)...,
-					)
-					// PPTP Sessions
-					ch <- prometheus.MustNewConstMetric(
-						c.PPTPSessionCount,
-						prometheus.GaugeValue,
-						float64(len(status.PPTPServerSessions)),
-						c.vpcRouterLabels(vpcRouter)...,
-					)
-					// Site to Site Peer
-					for i, peer := range status.SiteToSiteIPsecVPNPeers {
-						up := float64(0)
-						if strings.ToLower(peer.Status) == "up" {
-							up = float64(1)
-						}
-						labels := append(c.vpcRouterLabels(vpcRouter),
-							peer.Peer,
-							fmt.Sprintf("%d", i),
-						)
-
-						ch <- prometheus.MustNewConstMetric(
-							c.SiteToSitePeerStatus,
-							prometheus.GaugeValue,
-							up,
-							labels...,
-						)
-					}
-					if status.SessionAnalysis != nil {
-						sessionAnalysis := map[string][]*sacloud.VPCRouterStatisticsValue{
-							"SourceAndDestination": status.SessionAnalysis.SourceAndDestination,
-							"DestinationAddress":   status.SessionAnalysis.DestinationAddress,
-							"DestinationPort":      status.SessionAnalysis.DestinationPort,
-							"SourceAddress":        status.SessionAnalysis.SourceAddress,
-						}
-						for typeName, analysis := range sessionAnalysis {
-							for _, v := range analysis {
-								labels := append(c.vpcRouterLabels(vpcRouter), typeName, v.Name)
-								ch <- prometheus.MustNewConstMetric(
-									c.SessionAnalysis,
-									prometheus.GaugeValue,
-									float64(v.Count),
-									labels...,
-								)
-							}
-						}
-					}
+					c.collectCPUTime(ch, vpcRouter, now)
+					wg.Done()
 				}()
 
-				// collect metrics
-				now := time.Now()
-
-				for _, nic := range vpcRouter.Interfaces {
-					// NIC(Receive/Send)
+				if len(vpcRouter.Interfaces) > 0 {
 					wg.Add(1)
-					go func(nic *sacloud.VPCRouterInterface) {
-						c.collectNICMetrics(ch, vpcRouter, nic.Index, now)
-						wg.Done()
-					}(nic)
+					go func() {
+						defer wg.Done()
+						status, err := c.client.Status(c.ctx, vpcRouter.ZoneName, vpcRouter.ID)
+						if err != nil {
+							c.errors.WithLabelValues("vpc_router").Add(1)
+							level.Warn(c.logger).Log( // nolint
+								"msg", "can't fetch vpc_router's status",
+								"err", err,
+							)
+							return
+						}
+
+						// Session Count
+						ch <- prometheus.MustNewConstMetric(
+							c.SessionCount,
+							prometheus.GaugeValue,
+							float64(status.SessionCount),
+							c.vpcRouterLabels(vpcRouter)...,
+						)
+						// DHCP Server Leases
+						ch <- prometheus.MustNewConstMetric(
+							c.DHCPLeaseCount,
+							prometheus.GaugeValue,
+							float64(len(status.DHCPServerLeases)),
+							c.vpcRouterLabels(vpcRouter)...,
+						)
+						// L2TP/IPsec Sessions
+						ch <- prometheus.MustNewConstMetric(
+							c.L2TPSessionCount,
+							prometheus.GaugeValue,
+							float64(len(status.L2TPIPsecServerSessions)),
+							c.vpcRouterLabels(vpcRouter)...,
+						)
+						// PPTP Sessions
+						ch <- prometheus.MustNewConstMetric(
+							c.PPTPSessionCount,
+							prometheus.GaugeValue,
+							float64(len(status.PPTPServerSessions)),
+							c.vpcRouterLabels(vpcRouter)...,
+						)
+						// Site to Site Peer
+						for i, peer := range status.SiteToSiteIPsecVPNPeers {
+							up := float64(0)
+							if strings.ToLower(peer.Status) == "up" {
+								up = float64(1)
+							}
+							labels := append(c.vpcRouterLabels(vpcRouter),
+								peer.Peer,
+								fmt.Sprintf("%d", i),
+							)
+
+							ch <- prometheus.MustNewConstMetric(
+								c.SiteToSitePeerStatus,
+								prometheus.GaugeValue,
+								up,
+								labels...,
+							)
+						}
+						if status.SessionAnalysis != nil {
+							sessionAnalysis := map[string][]*sacloud.VPCRouterStatisticsValue{
+								"SourceAndDestination": status.SessionAnalysis.SourceAndDestination,
+								"DestinationAddress":   status.SessionAnalysis.DestinationAddress,
+								"DestinationPort":      status.SessionAnalysis.DestinationPort,
+								"SourceAddress":        status.SessionAnalysis.SourceAddress,
+							}
+							for typeName, analysis := range sessionAnalysis {
+								for _, v := range analysis {
+									labels := append(c.vpcRouterLabels(vpcRouter), typeName, v.Name)
+									ch <- prometheus.MustNewConstMetric(
+										c.SessionAnalysis,
+										prometheus.GaugeValue,
+										float64(v.Count),
+										labels...,
+									)
+								}
+							}
+						}
+					}()
+
+					// collect metrics
+					for _, nic := range vpcRouter.Interfaces {
+						// NIC(Receive/Send)
+						wg.Add(1)
+						go func(nic *sacloud.VPCRouterInterface) {
+							c.collectNICMetrics(ch, vpcRouter, nic.Index, now)
+							wg.Done()
+						}(nic)
+					}
 				}
 			}
 		}(vpcRouters[i])
@@ -412,5 +428,29 @@ func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcR
 		send,
 		c.nicLabels(vpcRouter, index)...,
 	)
+	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+}
+
+func (c *VPCRouterCollector) collectCPUTime(ch chan<- prometheus.Metric, vpcRouter *iaas.VPCRouter, now time.Time) {
+	values, err := c.client.MonitorCPU(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, now)
+	if err != nil {
+		c.errors.WithLabelValues("server").Add(1)
+		level.Warn(c.logger).Log( // nolint
+			"msg", fmt.Sprintf("can't get server's CPU-TIME: ID=%d", vpcRouter.ID),
+			"err", err,
+		)
+		return
+	}
+	if values == nil {
+		return
+	}
+
+	m := prometheus.MustNewConstMetric(
+		c.CPUTime,
+		prometheus.GaugeValue,
+		values.CPUTime*1000,
+		c.vpcRouterLabels(vpcRouter)...,
+	)
+
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }

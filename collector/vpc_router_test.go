@@ -28,12 +28,14 @@ import (
 )
 
 type dummyVPCRouterClient struct {
-	find       []*iaas.VPCRouter
-	findErr    error
-	status     *sacloud.VPCRouterStatus
-	statusErr  error
-	monitor    *sacloud.MonitorInterfaceValue
-	monitorErr error
+	find          []*iaas.VPCRouter
+	findErr       error
+	status        *sacloud.VPCRouterStatus
+	statusErr     error
+	monitor       *sacloud.MonitorInterfaceValue
+	monitorErr    error
+	monitorCPU    *sacloud.MonitorCPUTimeValue
+	monitorCPUErr error
 }
 
 func (d *dummyVPCRouterClient) Find(ctx context.Context) ([]*iaas.VPCRouter, error) {
@@ -46,6 +48,10 @@ func (d *dummyVPCRouterClient) MonitorNIC(ctx context.Context, zone string, id t
 	return d.monitor, d.monitorErr
 }
 
+func (d *dummyVPCRouterClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+	return d.monitorCPU, d.monitorCPUErr
+}
+
 func TestVPCRouterCollector_Describe(t *testing.T) {
 	initLoggerAndErrors()
 	c := NewVPCRouterCollector(context.Background(), testLogger, testErrors, &dummyVPCRouterClient{})
@@ -54,6 +60,7 @@ func TestVPCRouterCollector_Describe(t *testing.T) {
 	require.Len(t, descs, len([]*prometheus.Desc{
 		c.Up,
 		c.VPCRouterInfo,
+		c.CPUTime,
 		c.SessionCount,
 		c.DHCPLeaseCount,
 		c.L2TPSessionCount,
