@@ -31,6 +31,7 @@ type VPCRouterClient interface {
 	Find(ctx context.Context) ([]*VPCRouter, error)
 	Status(ctx context.Context, zone string, id types.ID) (*sacloud.VPCRouterStatus, error)
 	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error)
 }
 
 func getVPCRouterClient(caller sacloud.APICaller, zones []string) VPCRouterClient {
@@ -80,6 +81,14 @@ func (c *vpcRouterClient) MonitorNIC(ctx context.Context, zone string, id types.
 		return nil, err
 	}
 	return monitorInterfaceValue(mvs.Values), nil
+}
+
+func (c *vpcRouterClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+	mvs, err := c.client.MonitorCPU(ctx, zone, id, monitorCondition(end))
+	if err != nil {
+		return nil, err
+	}
+	return monitorCPUTimeValue(mvs.Values), nil
 }
 
 func (c *vpcRouterClient) Status(ctx context.Context, zone string, id types.ID) (*sacloud.VPCRouterStatus, error) {
