@@ -1,5 +1,5 @@
 #
-# Copyright 2019-2021 The sakuracloud_exporter Authors
+# Copyright 2019-2022 The sakuracloud_exporter Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ PREFIX                  ?= $(shell pwd)/bin
 BIN_DIR                 ?= $(shell pwd)/bin
 
 AUTHOR          ?="The sakuracloud_exporter Authors"
-COPYRIGHT_YEAR  ?="2019-2021"
+COPYRIGHT_YEAR  ?="2019-2022"
 COPYRIGHT_FILES ?=$$(find . -name "*.go" -print | grep -v "/vendor/")
 
 GO     := GO111MODULE=on go
