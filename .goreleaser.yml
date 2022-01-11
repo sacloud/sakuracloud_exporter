@@ -40,4 +40,4 @@ release:
   # for debug
   # draft: true
 changelog:
-  skip: true
+  skip: false
