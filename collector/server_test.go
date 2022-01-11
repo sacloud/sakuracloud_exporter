@@ -67,7 +67,7 @@ func (d *dummyServerClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem,
 
 func TestServerCollector_Describe(t *testing.T) {
 	initLoggerAndErrors()
-	c := NewServerCollector(context.Background(), testLogger, testErrors, &dummyServerClient{})
+	c := NewServerCollector(context.Background(), testLogger, testErrors, &dummyServerClient{}, false)
 
 	descs := collectDescs(c)
 	require.Len(t, descs, len([]*prometheus.Desc{
@@ -88,7 +88,7 @@ func TestServerCollector_Describe(t *testing.T) {
 
 func TestServerCollector_Collect(t *testing.T) {
 	initLoggerAndErrors()
-	c := NewServerCollector(context.Background(), testLogger, testErrors, nil)
+	c := NewServerCollector(context.Background(), testLogger, testErrors, nil, false)
 	monitorTime := time.Unix(1, 0)
 
 	server := &iaas.Server{
@@ -481,6 +481,180 @@ func TestServerCollector_Collect(t *testing.T) {
 						"zone": "is1a",
 					}),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "server",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"name":        "server",
+						"zone":        "is1a",
+						"info_url":    "https://maintenance.example.com/?entry=1",
+						"info_title":  "maintenance-title",
+						"description": "maintenance-desc",
+						"start_date":  fmt.Sprintf("%d", time.Unix(2, 0).Unix()),
+						"end_date":    fmt.Sprintf("%d", time.Unix(3, 0).Unix()),
+					}),
+				},
+				{
+					desc: c.MaintenanceStartTime,
+					metric: createGaugeMetric(float64(time.Unix(2, 0).Unix()), map[string]string{
+						"id":   "101",
+						"name": "server",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceEndTime,
+					metric: createGaugeMetric(float64(time.Unix(3, 0).Unix()), map[string]string{
+						"id":   "101",
+						"name": "server",
+						"zone": "is1a",
+					}),
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		initLoggerAndErrors()
+		c.logger = testLogger
+		c.errors = testErrors
+		c.client = tc.in
+
+		collected, err := collectMetrics(c, "server")
+		require.NoError(t, err)
+		require.Equal(t, tc.wantLogs, collected.logged)
+		require.Equal(t, tc.wantErrCounter, *collected.errors.Counter.Value)
+		requireMetricsEqual(t, tc.wantMetrics, collected.collected)
+	}
+}
+
+func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
+	initLoggerAndErrors()
+	c := NewServerCollector(context.Background(), testLogger, testErrors, nil, true)
+	monitorTime := time.Unix(1, 0)
+
+	server := &iaas.Server{
+		ZoneName: "is1a",
+		Server: &sacloud.Server{
+			ID:               101,
+			Name:             "server",
+			Description:      "desc",
+			Tags:             types.Tags{"tag1", "tag2"},
+			CPU:              2,
+			MemoryMB:         4 * 1024,
+			InstanceStatus:   types.ServerInstanceStatuses.Up,
+			InstanceHostName: "sacXXX",
+			Disks: []*sacloud.ServerConnectedDisk{
+				{
+					ID:         201,
+					Name:       "disk",
+					DiskPlanID: types.DiskPlans.SSD,
+					Connection: types.DiskConnections.VirtIO,
+					SizeMB:     20 * 1024,
+					Storage: &sacloud.Storage{
+						ID:         1001,
+						Class:      "iscsi1204",
+						Generation: 100,
+					},
+				},
+			},
+			Interfaces: []*sacloud.InterfaceView{
+				{
+					ID:           301,
+					SwitchID:     401,
+					SwitchName:   "switch",
+					UpstreamType: types.UpstreamNetworkTypes.Switch,
+				},
+			},
+		},
+	}
+
+	cases := []struct {
+		name           string
+		in             iaas.ServerClient
+		wantLogs       []string
+		wantErrCounter float64
+		wantMetrics    []*collectedMetric
+	}{
+		{
+			name: "collector returns error",
+			in: &dummyServerClient{
+				findErr: errors.New("dummy"),
+			},
+			wantLogs:       []string{`level=warn msg="can't list servers" err=dummy`},
+			wantErrCounter: 1,
+			wantMetrics:    nil,
+		},
+		{
+			name:        "empty result",
+			in:          &dummyServerClient{},
+			wantMetrics: nil,
+		},
+		{
+			name: "a server maintenance scheduled",
+			in: &dummyServerClient{
+				find: []*iaas.Server{server},
+				monitorCPU: &sacloud.MonitorCPUTimeValue{
+					Time:    monitorTime,
+					CPUTime: 100,
+				},
+				monitorDisk: &sacloud.MonitorDiskValue{
+					Time:  monitorTime,
+					Read:  201,
+					Write: 202,
+				},
+				monitorNIC: &sacloud.MonitorInterfaceValue{
+					Time:    monitorTime,
+					Receive: 301,
+					Send:    302,
+				},
+			},
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "server",
+						"zone": "is1a",
+					}),
+				},
+			},
+		},
+		{
+			name: "maintenance info",
+			in: &dummyServerClient{
+				find: []*iaas.Server{
+					{
+						ZoneName: "is1a",
+						Server: &sacloud.Server{
+							ID:                  101,
+							Name:                "server",
+							CPU:                 2,
+							MemoryMB:            4 * 1024,
+							InstanceStatus:      types.ServerInstanceStatuses.Up,
+							InstanceHostName:    "sacXXX",
+							InstanceHostInfoURL: "https://maintenance.example.com",
+						},
+					},
+				},
+				maintenance: &newsfeed.FeedItem{
+					StrDate:       fmt.Sprintf("%d", time.Unix(1, 0).Unix()),
+					Description:   "maintenance-desc",
+					StrEventStart: fmt.Sprintf("%d", time.Unix(2, 0).Unix()),
+					StrEventEnd:   fmt.Sprintf("%d", time.Unix(3, 0).Unix()),
+					Title:         "maintenance-title",
+					URL:           "https://maintenance.example.com/?entry=1",
+				},
+			},
+			wantMetrics: []*collectedMetric{
 				{
 					desc: c.MaintenanceScheduled,
 					metric: createGaugeMetric(1, map[string]string{

@@ -38,20 +38,21 @@ type Config struct {
 	WebPath   string   `arg:"env:WEB_PATH"`
 	RateLimit int      `arg:"env:SAKURACLOUD_RATE_LIMIT" help:"Rate limit per second for SakuraCloud API calls"`
 
-	NoCollectorAutoBackup    bool `arg:"--no-collector.auto-backup" help:"Disable the AutoBackup collector"`
-	NoCollectorCoupon        bool `arg:"--no-collector.coupon" help:"Disable the Coupon collector"`
-	NoCollectorDatabase      bool `arg:"--no-collector.database" help:"Disable the Database collector"`
-	NoCollectorESME          bool `arg:"--no-collector.esme" help:"Disable the ESME collector"`
-	NoCollectorInternet      bool `arg:"--no-collector.internet" help:"Disable the Internet(Switch+Router) collector"`
-	NoCollectorLoadBalancer  bool `arg:"--no-collector.load-balancer" help:"Disable the LoadBalancer collector"`
-	NoCollectorLocalRouter   bool `arg:"--no-collector.local-router" help:"Disable the LocalRouter collector"`
-	NoCollectorMobileGateway bool `arg:"--no-collector.mobile-gateway" help:"Disable the MobileGateway collector"`
-	NoCollectorNFS           bool `arg:"--no-collector.nfs" help:"Disable the NFS collector"`
-	NoCollectorProxyLB       bool `arg:"--no-collector.proxy-lb" help:"Disable the ProxyLB(Enhanced LoadBalancer) collector"`
-	NoCollectorServer        bool `arg:"--no-collector.server" help:"Disable the Server collector"`
-	NoCollectorSIM           bool `arg:"--no-collector.sim" help:"Disable the SIM collector"`
-	NoCollectorVPCRouter     bool `arg:"--no-collector.vpc-router" help:"Disable the VPCRouter collector"`
-	NoCollectorZone          bool `arg:"--no-collector.zone" help:"Disable the Zone collector"`
+	NoCollectorAutoBackup              bool `arg:"--no-collector.auto-backup" help:"Disable the AutoBackup collector"`
+	NoCollectorCoupon                  bool `arg:"--no-collector.coupon" help:"Disable the Coupon collector"`
+	NoCollectorDatabase                bool `arg:"--no-collector.database" help:"Disable the Database collector"`
+	NoCollectorESME                    bool `arg:"--no-collector.esme" help:"Disable the ESME collector"`
+	NoCollectorInternet                bool `arg:"--no-collector.internet" help:"Disable the Internet(Switch+Router) collector"`
+	NoCollectorLoadBalancer            bool `arg:"--no-collector.load-balancer" help:"Disable the LoadBalancer collector"`
+	NoCollectorLocalRouter             bool `arg:"--no-collector.local-router" help:"Disable the LocalRouter collector"`
+	NoCollectorMobileGateway           bool `arg:"--no-collector.mobile-gateway" help:"Disable the MobileGateway collector"`
+	NoCollectorNFS                     bool `arg:"--no-collector.nfs" help:"Disable the NFS collector"`
+	NoCollectorProxyLB                 bool `arg:"--no-collector.proxy-lb" help:"Disable the ProxyLB(Enhanced LoadBalancer) collector"`
+	NoCollectorServer                  bool `arg:"--no-collector.server" help:"Disable the Server collector"`
+	NoCollectorServerExceptMaintenance bool `arg:"--no-collector.server.except-maintenance" help:"Disable the Server collector except for maintenance information"`
+	NoCollectorSIM                     bool `arg:"--no-collector.sim" help:"Disable the SIM collector"`
+	NoCollectorVPCRouter               bool `arg:"--no-collector.vpc-router" help:"Disable the VPCRouter collector"`
+	NoCollectorZone                    bool `arg:"--no-collector.zone" help:"Disable the Zone collector"`
 }
 
 func InitConfig() (Config, error) {
@@ -74,6 +75,9 @@ func InitConfig() (Config, error) {
 	}
 	if c.RateLimit > maximumRateLimit {
 		return c, fmt.Errorf("--ratelimit must be 1 to %d", maximumRateLimit)
+	}
+	if c.NoCollectorServerExceptMaintenance && c.NoCollectorServer {
+		return c, fmt.Errorf("--no-collector.server.except-maintenance enabled and --no-collector-server are both enabled")
 	}
 
 	return c, nil

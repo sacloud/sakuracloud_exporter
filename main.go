@@ -124,7 +124,7 @@ func main() {
 		r.MustRegister(collector.NewProxyLBCollector(ctx, logger, errs, client.ProxyLB))
 	}
 	if !c.NoCollectorServer {
-		r.MustRegister(collector.NewServerCollector(ctx, logger, errs, client.Server))
+		r.MustRegister(collector.NewServerCollector(ctx, logger, errs, client.Server, c.NoCollectorServerExceptMaintenance))
 	}
 	if !c.NoCollectorSIM {
 		r.MustRegister(collector.NewSIMCollector(ctx, logger, errs, client.SIM))

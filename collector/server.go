@@ -30,10 +30,11 @@ import (
 
 // ServerCollector collects metrics about all servers.
 type ServerCollector struct {
-	ctx    context.Context
-	logger log.Logger
-	errors *prometheus.CounterVec
-	client iaas.ServerClient
+	ctx       context.Context
+	logger    log.Logger
+	errors    *prometheus.CounterVec
+	client    iaas.ServerClient
+	maintOnly bool
 
 	Up         *prometheus.Desc
 	ServerInfo *prometheus.Desc
@@ -57,7 +58,7 @@ type ServerCollector struct {
 }
 
 // NewServerCollector returns a new ServerCollector.
-func NewServerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ServerClient) *ServerCollector {
+func NewServerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ServerClient, maintenanceOnly bool) *ServerCollector {
 	errors.WithLabelValues("server").Add(0)
 
 	serverLabels := []string{"id", "name", "zone"}
@@ -69,10 +70,11 @@ func NewServerCollector(ctx context.Context, logger log.Logger, errors *promethe
 	maintenanceInfoLabel := append(serverLabels, "info_url", "info_title", "description", "start_date", "end_date")
 
 	return &ServerCollector{
-		ctx:    ctx,
-		logger: logger,
-		errors: errors,
-		client: client,
+		ctx:       ctx,
+		logger:    logger,
+		errors:    errors,
+		client:    client,
+		maintOnly: maintenanceOnly,
 		Up: prometheus.NewDesc(
 			"sakuracloud_server_up",
 			"If 1 the server is up and running, 0 otherwise",
@@ -195,34 +197,90 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 
 			serverLabels := c.serverLabels(server)
 
-			var up float64
-			if server.InstanceStatus.IsUp() {
-				up = 1.0
+			if !c.maintOnly {
+				var up float64
+				if server.InstanceStatus.IsUp() {
+					up = 1.0
+				}
+				ch <- prometheus.MustNewConstMetric(
+					c.Up,
+					prometheus.GaugeValue,
+					up,
+					serverLabels...,
+				)
+				ch <- prometheus.MustNewConstMetric(
+					c.ServerInfo,
+					prometheus.GaugeValue,
+					float64(1.0),
+					c.serverInfoLabels(server)...,
+				)
+				ch <- prometheus.MustNewConstMetric(
+					c.CPUs,
+					prometheus.GaugeValue,
+					float64(server.GetCPU()),
+					serverLabels...,
+				)
+				ch <- prometheus.MustNewConstMetric(
+					c.Memories,
+					prometheus.GaugeValue,
+					float64(server.GetMemoryGB()),
+					serverLabels...,
+				)
+
+				wg.Add(len(server.Disks))
+				for i := range server.Disks {
+					go func(i int) {
+						c.collectDiskInfo(ch, server, i)
+						wg.Done()
+					}(i)
+				}
+
+				for i := range server.Interfaces {
+					ch <- prometheus.MustNewConstMetric(
+						c.NICInfo,
+						prometheus.GaugeValue,
+						float64(1.0),
+						c.nicInfoLabels(server, i)...,
+					)
+
+					bandwidth := float64(server.BandWidthAt(i))
+					ch <- prometheus.MustNewConstMetric(
+						c.NICBandwidth,
+						prometheus.GaugeValue,
+						bandwidth,
+						c.nicLabels(server, i)...,
+					)
+				}
+
+				if server.InstanceStatus.IsUp() {
+					// collect metrics per resources under server
+					now := time.Now()
+					// CPU-TIME
+					wg.Add(1)
+					go func() {
+						c.collectCPUTime(ch, server, now)
+						wg.Done()
+					}()
+
+					// Disks
+					wg.Add(len(server.Disks))
+					for i := range server.Disks {
+						go func(i int) {
+							c.collectDiskMetrics(ch, server, i, now)
+							wg.Done()
+						}(i)
+					}
+
+					// NICs
+					wg.Add(len(server.Interfaces))
+					for i := range server.Interfaces {
+						go func(i int) {
+							c.collectNICMetrics(ch, server, i, now)
+							wg.Done()
+						}(i)
+					}
+				}
 			}
-			ch <- prometheus.MustNewConstMetric(
-				c.Up,
-				prometheus.GaugeValue,
-				up,
-				serverLabels...,
-			)
-			ch <- prometheus.MustNewConstMetric(
-				c.ServerInfo,
-				prometheus.GaugeValue,
-				float64(1.0),
-				c.serverInfoLabels(server)...,
-			)
-			ch <- prometheus.MustNewConstMetric(
-				c.CPUs,
-				prometheus.GaugeValue,
-				float64(server.GetCPU()),
-				serverLabels...,
-			)
-			ch <- prometheus.MustNewConstMetric(
-				c.Memories,
-				prometheus.GaugeValue,
-				float64(server.GetMemoryGB()),
-				serverLabels...,
-			)
 
 			// maintenance info
 			var maintenanceScheduled float64
@@ -240,60 +298,6 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 				maintenanceScheduled,
 				serverLabels...,
 			)
-
-			wg.Add(len(server.Disks))
-			for i := range server.Disks {
-				go func(i int) {
-					c.collectDiskInfo(ch, server, i)
-					wg.Done()
-				}(i)
-			}
-
-			for i := range server.Interfaces {
-				ch <- prometheus.MustNewConstMetric(
-					c.NICInfo,
-					prometheus.GaugeValue,
-					float64(1.0),
-					c.nicInfoLabels(server, i)...,
-				)
-
-				bandwidth := float64(server.BandWidthAt(i))
-				ch <- prometheus.MustNewConstMetric(
-					c.NICBandwidth,
-					prometheus.GaugeValue,
-					bandwidth,
-					c.nicLabels(server, i)...,
-				)
-			}
-
-			if server.InstanceStatus.IsUp() {
-				// collect metrics per resources under server
-				now := time.Now()
-				// CPU-TIME
-				wg.Add(1)
-				go func() {
-					c.collectCPUTime(ch, server, now)
-					wg.Done()
-				}()
-
-				// Disks
-				wg.Add(len(server.Disks))
-				for i := range server.Disks {
-					go func(i int) {
-						c.collectDiskMetrics(ch, server, i, now)
-						wg.Done()
-					}(i)
-				}
-
-				// NICs
-				wg.Add(len(server.Interfaces))
-				for i := range server.Interfaces {
-					go func(i int) {
-						c.collectNICMetrics(ch, server, i, now)
-						wg.Done()
-					}(i)
-				}
-			}
 		}(servers[i])
 	}
 
