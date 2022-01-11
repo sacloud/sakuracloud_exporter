@@ -226,25 +226,7 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 					float64(server.GetMemoryGB()),
 					serverLabels...,
 				)
-			}
 
-			// maintenance info
-			var maintenanceScheduled float64
-			if server.InstanceHostInfoURL != "" {
-				maintenanceScheduled = 1.0
-				wg.Add(1)
-				go func() {
-					c.collectMaintenanceInfo(ch, server)
-					wg.Done()
-				}()
-			}
-			ch <- prometheus.MustNewConstMetric(
-				c.MaintenanceScheduled,
-				prometheus.GaugeValue,
-				maintenanceScheduled,
-				serverLabels...,
-			)
-			if !c.maintOnly {
 				wg.Add(len(server.Disks))
 				for i := range server.Disks {
 					go func(i int) {
@@ -299,6 +281,23 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 					}
 				}
 			}
+
+			// maintenance info
+			var maintenanceScheduled float64
+			if server.InstanceHostInfoURL != "" {
+				maintenanceScheduled = 1.0
+				wg.Add(1)
+				go func() {
+					c.collectMaintenanceInfo(ch, server)
+					wg.Done()
+				}()
+			}
+			ch <- prometheus.MustNewConstMetric(
+				c.MaintenanceScheduled,
+				prometheus.GaugeValue,
+				maintenanceScheduled,
+				serverLabels...,
+			)
 		}(servers[i])
 	}
 
