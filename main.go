@@ -34,7 +34,7 @@ import (
 
 var (
 	// Version of sakuracloud_exporter.
-	Version = "0.16.0"
+	Version = "0.17.0"
 	// Revision or Commit this binary was built from.
 	Revision string
 	// GoVersion running this binary.
