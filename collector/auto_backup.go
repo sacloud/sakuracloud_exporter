@@ -25,7 +25,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // AutoBackupCollector collects metrics about all auto_backups.
@@ -33,7 +33,7 @@ type AutoBackupCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.AutoBackupClient
+	client platform.AutoBackupClient
 
 	Info *prometheus.Desc
 
@@ -43,7 +43,7 @@ type AutoBackupCollector struct {
 }
 
 // NewAutoBackupCollector returns a new AutoBackupCollector.
-func NewAutoBackupCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.AutoBackupClient) *AutoBackupCollector {
+func NewAutoBackupCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.AutoBackupClient) *AutoBackupCollector {
 	errors.WithLabelValues("auto_backup").Add(0)
 
 	labels := []string{"id", "name", "disk_id"}

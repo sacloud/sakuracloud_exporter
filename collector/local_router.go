@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // LocalRouterCollector collects metrics about all localRouters.
@@ -34,7 +34,7 @@ type LocalRouterCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.LocalRouterClient
+	client platform.LocalRouterClient
 
 	Up              *prometheus.Desc
 	LocalRouterInfo *prometheus.Desc
@@ -49,7 +49,7 @@ type LocalRouterCollector struct {
 }
 
 // NewLocalRouterCollector returns a new LocalRouterCollector.
-func NewLocalRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.LocalRouterClient) *LocalRouterCollector {
+func NewLocalRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.LocalRouterClient) *LocalRouterCollector {
 	errors.WithLabelValues("local_router").Add(0)
 
 	localRouterLabels := []string{"id", "name"}

@@ -23,7 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,7 +73,7 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.LocalRouterClient
+		in             platform.LocalRouterClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric

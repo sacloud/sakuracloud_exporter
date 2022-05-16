@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // ESMECollector collects metrics about all esme.
@@ -31,14 +31,14 @@ type ESMECollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.ESMEClient
+	client platform.ESMEClient
 
 	ESMEInfo     *prometheus.Desc
 	MessageCount *prometheus.Desc
 }
 
 // NewESMECollector returns a new ESMECollector.
-func NewESMECollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ESMEClient) *ESMECollector {
+func NewESMECollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ESMEClient) *ESMECollector {
 	errors.WithLabelValues("esme").Add(0)
 
 	labels := []string{"id", "name"}

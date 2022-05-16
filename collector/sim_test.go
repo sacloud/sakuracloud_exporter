@@ -23,7 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +66,7 @@ func TestSIMCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.SIMClient
+		in             platform.SIMClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric

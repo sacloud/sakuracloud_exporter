@@ -25,7 +25,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // SIMCollector collects metrics about all sims.
@@ -33,7 +33,7 @@ type SIMCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.SIMClient
+	client platform.SIMClient
 
 	Up      *prometheus.Desc
 	SIMInfo *prometheus.Desc
@@ -43,7 +43,7 @@ type SIMCollector struct {
 }
 
 // NewSIMCollector returns a new SIMCollector.
-func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.SIMClient) *SIMCollector {
+func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.SIMClient) *SIMCollector {
 	errors.WithLabelValues("sim").Add(0)
 
 	simLabels := []string{"id", "name"}

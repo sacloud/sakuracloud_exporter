@@ -23,18 +23,18 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyInternetClient struct {
-	find       []*iaas.Internet
+	find       []*platform.Internet
 	findErr    error
 	monitor    *sacloud.MonitorRouterValue
 	monitorErr error
 }
 
-func (d *dummyInternetClient) Find(ctx context.Context) ([]*iaas.Internet, error) {
+func (d *dummyInternetClient) Find(ctx context.Context) ([]*platform.Internet, error) {
 	return d.find, d.findErr
 }
 
@@ -61,7 +61,7 @@ func TestInternetCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.InternetClient
+		in             platform.InternetClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -83,7 +83,7 @@ func TestInternetCollector_Collect(t *testing.T) {
 		{
 			name: "a internet router",
 			in: &dummyInternetClient{
-				find: []*iaas.Internet{
+				find: []*platform.Internet{
 					{
 						ZoneName: "is1a",
 						Internet: &sacloud.Internet{

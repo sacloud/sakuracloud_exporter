@@ -23,12 +23,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyVPCRouterClient struct {
-	find          []*iaas.VPCRouter
+	find          []*platform.VPCRouter
 	findErr       error
 	status        *sacloud.VPCRouterStatus
 	statusErr     error
@@ -38,7 +38,7 @@ type dummyVPCRouterClient struct {
 	monitorCPUErr error
 }
 
-func (d *dummyVPCRouterClient) Find(ctx context.Context) ([]*iaas.VPCRouter, error) {
+func (d *dummyVPCRouterClient) Find(ctx context.Context) ([]*platform.VPCRouter, error) {
 	return d.find, d.findErr
 }
 func (d *dummyVPCRouterClient) Status(ctx context.Context, zone string, id types.ID) (*sacloud.VPCRouterStatus, error) {
@@ -79,7 +79,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.VPCRouterClient
+		in             platform.VPCRouterClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -101,7 +101,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 		{
 			name: "a VPCRouter with activity monitor",
 			in: &dummyVPCRouterClient{
-				find: []*iaas.VPCRouter{
+				find: []*platform.VPCRouter{
 					{
 						ZoneName: "is1a",
 						VPCRouter: &sacloud.VPCRouter{
@@ -318,7 +318,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 		{
 			name: "APIs return error",
 			in: &dummyVPCRouterClient{
-				find: []*iaas.VPCRouter{
+				find: []*platform.VPCRouter{
 					{
 						ZoneName: "is1a",
 						VPCRouter: &sacloud.VPCRouter{

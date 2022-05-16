@@ -22,7 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,7 +55,7 @@ func TestCouponCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.CouponClient
+		in             platform.CouponClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric

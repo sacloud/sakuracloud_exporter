@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // VPCRouterCollector collects metrics about all servers.
@@ -34,7 +34,7 @@ type VPCRouterCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.VPCRouterClient
+	client platform.VPCRouterClient
 
 	Up            *prometheus.Desc
 	SessionCount  *prometheus.Desc
@@ -52,7 +52,7 @@ type VPCRouterCollector struct {
 }
 
 // NewVPCRouterCollector returns a new VPCRouterCollector.
-func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.VPCRouterClient) *VPCRouterCollector {
+func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.VPCRouterClient) *VPCRouterCollector {
 	errors.WithLabelValues("vpc_router").Add(0)
 
 	vpcRouterLabels := []string{"id", "name", "zone"}
@@ -155,7 +155,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(vpcRouters))
 
 	for i := range vpcRouters {
-		func(vpcRouter *iaas.VPCRouter) {
+		func(vpcRouter *platform.VPCRouter) {
 			defer wg.Done()
 
 			vpcRouterLabels := c.vpcRouterLabels(vpcRouter)
@@ -285,7 +285,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *VPCRouterCollector) vpcRouterLabels(vpcRouter *iaas.VPCRouter) []string {
+func (c *VPCRouterCollector) vpcRouterLabels(vpcRouter *platform.VPCRouter) []string {
 	return []string{
 		vpcRouter.ID.String(),
 		vpcRouter.Name,
@@ -299,7 +299,7 @@ var vpcRouterPlanMapping = map[types.ID]string{
 	types.VPCRouterPlans.HighSpec: "highspec",
 }
 
-func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *iaas.VPCRouter) []string {
+func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *platform.VPCRouter) []string {
 	labels := c.vpcRouterLabels(vpcRouter)
 
 	isHA := "0"
@@ -363,7 +363,7 @@ func getInterfaceByIndex(interfaces []*sacloud.VPCRouterInterfaceSetting, index 
 	return nil
 }
 
-func (c *VPCRouterCollector) nicLabels(vpcRouter *iaas.VPCRouter, index int) []string {
+func (c *VPCRouterCollector) nicLabels(vpcRouter *platform.VPCRouter, index int) []string {
 	if len(vpcRouter.Interfaces) <= index {
 		return nil
 	}
@@ -392,7 +392,7 @@ func (c *VPCRouterCollector) nicLabels(vpcRouter *iaas.VPCRouter, index int) []s
 	)
 }
 
-func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcRouter *iaas.VPCRouter, index int, now time.Time) {
+func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcRouter *platform.VPCRouter, index int, now time.Time) {
 	values, err := c.client.MonitorNIC(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
@@ -431,7 +431,7 @@ func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcR
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *VPCRouterCollector) collectCPUTime(ch chan<- prometheus.Metric, vpcRouter *iaas.VPCRouter, now time.Time) {
+func (c *VPCRouterCollector) collectCPUTime(ch chan<- prometheus.Metric, vpcRouter *platform.VPCRouter, now time.Time) {
 	values, err := c.client.MonitorCPU(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)

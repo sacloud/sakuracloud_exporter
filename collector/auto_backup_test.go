@@ -24,7 +24,7 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,7 +62,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.AutoBackupClient
+		in             platform.AutoBackupClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric

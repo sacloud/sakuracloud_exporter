@@ -24,12 +24,12 @@ import (
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
 
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyDatabaseClient struct {
-	find           []*iaas.Database
+	find           []*platform.Database
 	findErr        error
 	monitorDB      *sacloud.MonitorDatabaseValue
 	monitorDBErr   error
@@ -41,7 +41,7 @@ type dummyDatabaseClient struct {
 	monitorDiskErr error
 }
 
-func (d *dummyDatabaseClient) Find(ctx context.Context) ([]*iaas.Database, error) {
+func (d *dummyDatabaseClient) Find(ctx context.Context) ([]*platform.Database, error) {
 	return d.find, d.findErr
 }
 func (d *dummyDatabaseClient) MonitorDatabase(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDatabaseValue, error) {
@@ -87,7 +87,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 	c := NewDatabaseCollector(context.Background(), testLogger, testErrors, nil)
 
 	var (
-		dbValue = &iaas.Database{
+		dbValue = &platform.Database{
 			Database: &sacloud.Database{
 				ID:               101,
 				Name:             "database",
@@ -151,7 +151,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.DatabaseClient
+		in             platform.DatabaseClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -173,7 +173,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 		{
 			name: "a database without activity monitor values",
 			in: &dummyDatabaseClient{
-				find: []*iaas.Database{
+				find: []*platform.Database{
 					dbValue,
 				},
 			},
@@ -195,7 +195,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor returns error",
 			in: &dummyDatabaseClient{
-				find: []*iaas.Database{
+				find: []*platform.Database{
 					dbValue,
 				},
 				monitorDBErr:   errors.New("dummy"),
@@ -228,7 +228,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor returns error",
 			in: &dummyDatabaseClient{
-				find: []*iaas.Database{
+				find: []*platform.Database{
 					dbValue,
 				},
 				monitorCPU: &sacloud.MonitorCPUTimeValue{

@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // MobileGatewayCollector collects metrics about all servers.
@@ -31,7 +31,7 @@ type MobileGatewayCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.MobileGatewayClient
+	client platform.MobileGatewayClient
 
 	Up                *prometheus.Desc
 	MobileGatewayInfo *prometheus.Desc
@@ -46,7 +46,7 @@ type MobileGatewayCollector struct {
 }
 
 // NewMobileGatewayCollector returns a new MobileGatewayCollector.
-func NewMobileGatewayCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.MobileGatewayClient) *MobileGatewayCollector {
+func NewMobileGatewayCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.MobileGatewayClient) *MobileGatewayCollector {
 	errors.WithLabelValues("mobile_gateway").Add(0)
 
 	mobileGatewayLabels := []string{"id", "name", "zone"}
@@ -130,7 +130,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(mobileGateways))
 
 	for i := range mobileGateways {
-		func(mobileGateway *iaas.MobileGateway) {
+		func(mobileGateway *platform.MobileGateway) {
 			defer wg.Done()
 
 			mobileGatewayLabels := c.mobileGatewayLabels(mobileGateway)
@@ -186,7 +186,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *MobileGatewayCollector) mobileGatewayLabels(mobileGateway *iaas.MobileGateway) []string {
+func (c *MobileGatewayCollector) mobileGatewayLabels(mobileGateway *platform.MobileGateway) []string {
 	return []string{
 		mobileGateway.ID.String(),
 		mobileGateway.Name,
@@ -194,7 +194,7 @@ func (c *MobileGatewayCollector) mobileGatewayLabels(mobileGateway *iaas.MobileG
 	}
 }
 
-func (c *MobileGatewayCollector) mobileGatewayInfoLabels(mobileGateway *iaas.MobileGateway) []string {
+func (c *MobileGatewayCollector) mobileGatewayInfoLabels(mobileGateway *platform.MobileGateway) []string {
 	labels := c.mobileGatewayLabels(mobileGateway)
 
 	internetConnection := "0"
@@ -215,7 +215,7 @@ func (c *MobileGatewayCollector) mobileGatewayInfoLabels(mobileGateway *iaas.Mob
 	)
 }
 
-func (c *MobileGatewayCollector) nicLabels(mobileGateway *iaas.MobileGateway, index int) []string {
+func (c *MobileGatewayCollector) nicLabels(mobileGateway *platform.MobileGateway, index int) []string {
 	if len(mobileGateway.Interfaces) <= index {
 		return nil
 	}
@@ -234,7 +234,7 @@ func (c *MobileGatewayCollector) nicLabels(mobileGateway *iaas.MobileGateway, in
 	)
 }
 
-func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.Metric, mobileGateway *iaas.MobileGateway) {
+func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.Metric, mobileGateway *platform.MobileGateway) {
 	info, err := c.client.TrafficControl(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
@@ -282,7 +282,7 @@ func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.
 	)
 }
 
-func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metric, mobileGateway *iaas.MobileGateway) {
+func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metric, mobileGateway *platform.MobileGateway) {
 	status, err := c.client.TrafficStatus(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
@@ -319,7 +319,7 @@ func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metri
 	)
 }
 
-func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, mobileGateway *iaas.MobileGateway, index int, now time.Time) {
+func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, mobileGateway *platform.MobileGateway, index int, now time.Time) {
 	values, err := c.client.MonitorNIC(c.ctx, mobileGateway.ZoneName, mobileGateway.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)

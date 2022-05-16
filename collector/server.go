@@ -25,7 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // ServerCollector collects metrics about all servers.
@@ -33,7 +33,7 @@ type ServerCollector struct {
 	ctx       context.Context
 	logger    log.Logger
 	errors    *prometheus.CounterVec
-	client    iaas.ServerClient
+	client    platform.ServerClient
 	maintOnly bool
 
 	Up         *prometheus.Desc
@@ -58,7 +58,7 @@ type ServerCollector struct {
 }
 
 // NewServerCollector returns a new ServerCollector.
-func NewServerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ServerClient, maintenanceOnly bool) *ServerCollector {
+func NewServerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ServerClient, maintenanceOnly bool) *ServerCollector {
 	errors.WithLabelValues("server").Add(0)
 
 	serverLabels := []string{"id", "name", "zone"}
@@ -192,7 +192,7 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(servers))
 
 	for i := range servers {
-		func(server *iaas.Server) {
+		func(server *platform.Server) {
 			defer wg.Done()
 
 			serverLabels := c.serverLabels(server)
@@ -304,7 +304,7 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *ServerCollector) serverLabels(server *iaas.Server) []string {
+func (c *ServerCollector) serverLabels(server *platform.Server) []string {
 	return []string{
 		server.ID.String(),
 		server.Name,
@@ -312,7 +312,7 @@ func (c *ServerCollector) serverLabels(server *iaas.Server) []string {
 	}
 }
 
-func (c *ServerCollector) serverInfoLabels(server *iaas.Server) []string {
+func (c *ServerCollector) serverInfoLabels(server *platform.Server) []string {
 	labels := c.serverLabels(server)
 
 	instanceHost := "-"
@@ -332,7 +332,7 @@ func (c *ServerCollector) serverInfoLabels(server *iaas.Server) []string {
 	)
 }
 
-func (c *ServerCollector) serverMaintenanceInfoLabels(server *iaas.Server, info *newsfeed.FeedItem) []string {
+func (c *ServerCollector) serverMaintenanceInfoLabels(server *platform.Server, info *newsfeed.FeedItem) []string {
 	labels := c.serverLabels(server)
 
 	return append(labels,
@@ -349,7 +349,7 @@ var diskPlanLabels = map[types.ID]string{
 	types.DiskPlans.SSD: "ssd",
 }
 
-func (c *ServerCollector) diskLabels(server *iaas.Server, index int) []string {
+func (c *ServerCollector) diskLabels(server *platform.Server, index int) []string {
 	if len(server.Disks) <= index {
 		return nil
 	}
@@ -364,7 +364,7 @@ func (c *ServerCollector) diskLabels(server *iaas.Server, index int) []string {
 	}
 }
 
-func (c *ServerCollector) collectDiskInfo(ch chan<- prometheus.Metric, server *iaas.Server, index int) {
+func (c *ServerCollector) collectDiskInfo(ch chan<- prometheus.Metric, server *platform.Server, index int) {
 	if len(server.Disks) <= index {
 		return
 	}
@@ -409,7 +409,7 @@ func (c *ServerCollector) collectDiskInfo(ch chan<- prometheus.Metric, server *i
 	)
 }
 
-func (c *ServerCollector) nicLabels(server *iaas.Server, index int) []string {
+func (c *ServerCollector) nicLabels(server *platform.Server, index int) []string {
 	if len(server.Interfaces) <= index {
 		return nil
 	}
@@ -423,7 +423,7 @@ func (c *ServerCollector) nicLabels(server *iaas.Server, index int) []string {
 	}
 }
 
-func (c *ServerCollector) nicInfoLabels(server *iaas.Server, index int) []string {
+func (c *ServerCollector) nicInfoLabels(server *platform.Server, index int) []string {
 	if len(server.Interfaces) <= index {
 		return nil
 	}
@@ -443,7 +443,7 @@ func (c *ServerCollector) nicInfoLabels(server *iaas.Server, index int) []string
 	)
 }
 
-func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *iaas.Server, now time.Time) {
+func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *platform.Server, now time.Time) {
 	values, err := c.client.MonitorCPU(c.ctx, server.ZoneName, server.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
@@ -467,7 +467,7 @@ func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *ia
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server *iaas.Server, index int, now time.Time) {
+func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server *platform.Server, index int, now time.Time) {
 	if len(server.Disks) <= index {
 		return
 	}
@@ -511,7 +511,7 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server *iaas.Server, index int, now time.Time) {
+func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server *platform.Server, index int, now time.Time) {
 	if len(server.Interfaces) <= index {
 		return
 	}
@@ -555,7 +555,7 @@ func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server 
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, server *iaas.Server) {
+func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, server *platform.Server) {
 	if server.InstanceHostInfoURL == "" {
 		return
 	}

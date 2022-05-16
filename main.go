@@ -29,7 +29,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sacloud/sakuracloud_exporter/collector"
 	"github.com/sacloud/sakuracloud_exporter/config"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 var (
@@ -70,7 +70,7 @@ func main() {
 		"goVersion", GoVersion,
 	)
 
-	client := iaas.NewSakuraCloucClient(c, Version)
+	client := platform.NewSakuraCloucClient(c, Version)
 	if !client.HasValidAPIKeys(context.TODO()) {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}

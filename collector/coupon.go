@@ -22,7 +22,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // CouponCollector collects metrics about the account.
@@ -30,7 +30,7 @@ type CouponCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.CouponClient
+	client platform.CouponClient
 
 	Discount      *prometheus.Desc
 	RemainingDays *prometheus.Desc
@@ -39,7 +39,7 @@ type CouponCollector struct {
 }
 
 // NewCouponCollector returns a new CouponCollector.
-func NewCouponCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.CouponClient) *CouponCollector {
+func NewCouponCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.CouponClient) *CouponCollector {
 	errors.WithLabelValues("coupon").Add(0)
 
 	labels := []string{"id", "member_id", "contract_id"}

@@ -24,12 +24,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyLoadBalancerClient struct {
-	find       []*iaas.LoadBalancer
+	find       []*platform.LoadBalancer
 	findErr    error
 	status     []*sacloud.LoadBalancerStatus
 	statusErr  error
@@ -37,7 +37,7 @@ type dummyLoadBalancerClient struct {
 	monitorErr error
 }
 
-func (d *dummyLoadBalancerClient) Find(ctx context.Context) ([]*iaas.LoadBalancer, error) {
+func (d *dummyLoadBalancerClient) Find(ctx context.Context) ([]*platform.LoadBalancer, error) {
 	return d.find, d.findErr
 }
 func (d *dummyLoadBalancerClient) Status(ctx context.Context, zone string, id types.ID) ([]*sacloud.LoadBalancerStatus, error) {
@@ -73,7 +73,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.LoadBalancerClient
+		in             platform.LoadBalancerClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -95,7 +95,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 		{
 			name: "a load balancer",
 			in: &dummyLoadBalancerClient{
-				find: []*iaas.LoadBalancer{
+				find: []*platform.LoadBalancer{
 					{
 						ZoneName: "is1a",
 						LoadBalancer: &sacloud.LoadBalancer{
@@ -144,7 +144,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 		{
 			name: "a highspec load balancer with activity monitors",
 			in: &dummyLoadBalancerClient{
-				find: []*iaas.LoadBalancer{
+				find: []*platform.LoadBalancer{
 					{
 						ZoneName: "is1a",
 						LoadBalancer: &sacloud.LoadBalancer{
@@ -326,7 +326,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 		{
 			name: "status and monitor API return error",
 			in: &dummyLoadBalancerClient{
-				find: []*iaas.LoadBalancer{
+				find: []*platform.LoadBalancer{
 					{
 						ZoneName: "is1a",
 						LoadBalancer: &sacloud.LoadBalancer{

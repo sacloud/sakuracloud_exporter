@@ -23,12 +23,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyMobileGatewayClient struct {
-	find              []*iaas.MobileGateway
+	find              []*platform.MobileGateway
 	findErr           error
 	trafficStatus     *sacloud.MobileGatewayTrafficStatus
 	trafficStatusErr  error
@@ -38,7 +38,7 @@ type dummyMobileGatewayClient struct {
 	monitorErr        error
 }
 
-func (d *dummyMobileGatewayClient) Find(ctx context.Context) ([]*iaas.MobileGateway, error) {
+func (d *dummyMobileGatewayClient) Find(ctx context.Context) ([]*platform.MobileGateway, error) {
 	return d.find, d.findErr
 }
 func (d *dummyMobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficStatus, error) {
@@ -75,7 +75,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.MobileGatewayClient
+		in             platform.MobileGatewayClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -97,7 +97,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 		{
 			name: "a mobile gateway",
 			in: &dummyMobileGatewayClient{
-				find: []*iaas.MobileGateway{
+				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
@@ -138,7 +138,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 		{
 			name: "a mobile gateway with status and activity monitor",
 			in: &dummyMobileGatewayClient{
-				find: []*iaas.MobileGateway{
+				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
@@ -231,7 +231,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 		{
 			name: "a mobile gateway with multiple interface",
 			in: &dummyMobileGatewayClient{
-				find: []*iaas.MobileGateway{
+				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{
@@ -383,7 +383,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 		{
 			name: "status and monitor API returns error",
 			in: &dummyMobileGatewayClient{
-				find: []*iaas.MobileGateway{
+				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
 						MobileGateway: &sacloud.MobileGateway{

@@ -26,7 +26,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // ProxyLBCollector collects metrics about all proxyLBs.
@@ -34,7 +34,7 @@ type ProxyLBCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.ProxyLBClient
+	client platform.ProxyLBClient
 
 	Up          *prometheus.Desc
 	ProxyLBInfo *prometheus.Desc
@@ -51,7 +51,7 @@ type ProxyLBCollector struct {
 }
 
 // NewProxyLBCollector returns a new ProxyLBCollector.
-func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ProxyLBClient) *ProxyLBCollector {
+func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ProxyLBClient) *ProxyLBCollector {
 	errors.WithLabelValues("proxylb").Add(0)
 
 	proxyLBLabels := []string{"id", "name"}

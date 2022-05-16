@@ -25,12 +25,12 @@ import (
 	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyServerClient struct {
-	find           []*iaas.Server
+	find           []*platform.Server
 	findErr        error
 	readDisk       *sacloud.Disk
 	readDiskErr    error
@@ -44,7 +44,7 @@ type dummyServerClient struct {
 	maintenanceErr error
 }
 
-func (d *dummyServerClient) Find(ctx context.Context) ([]*iaas.Server, error) {
+func (d *dummyServerClient) Find(ctx context.Context) ([]*platform.Server, error) {
 	return d.find, d.findErr
 }
 
@@ -91,7 +91,7 @@ func TestServerCollector_Collect(t *testing.T) {
 	c := NewServerCollector(context.Background(), testLogger, testErrors, nil, false)
 	monitorTime := time.Unix(1, 0)
 
-	server := &iaas.Server{
+	server := &platform.Server{
 		ZoneName: "is1a",
 		Server: &sacloud.Server{
 			ID:               101,
@@ -129,7 +129,7 @@ func TestServerCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.ServerClient
+		in             platform.ServerClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -151,7 +151,7 @@ func TestServerCollector_Collect(t *testing.T) {
 		{
 			name: "a server with activity monitors",
 			in: &dummyServerClient{
-				find: []*iaas.Server{server},
+				find: []*platform.Server{server},
 				monitorCPU: &sacloud.MonitorCPUTimeValue{
 					Time:    monitorTime,
 					CPUTime: 100,
@@ -312,7 +312,7 @@ func TestServerCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor APIs return error",
 			in: &dummyServerClient{
-				find:           []*iaas.Server{server},
+				find:           []*platform.Server{server},
 				monitorCPUErr:  errors.New("dummy1"),
 				monitorDiskErr: errors.New("dummy2"),
 				monitorNICErr:  errors.New("dummy3"),
@@ -418,7 +418,7 @@ func TestServerCollector_Collect(t *testing.T) {
 		{
 			name: "maintenance info",
 			in: &dummyServerClient{
-				find: []*iaas.Server{
+				find: []*platform.Server{
 					{
 						ZoneName: "is1a",
 						Server: &sacloud.Server{
@@ -541,7 +541,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 	c := NewServerCollector(context.Background(), testLogger, testErrors, nil, true)
 	monitorTime := time.Unix(1, 0)
 
-	server := &iaas.Server{
+	server := &platform.Server{
 		ZoneName: "is1a",
 		Server: &sacloud.Server{
 			ID:               101,
@@ -579,7 +579,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.ServerClient
+		in             platform.ServerClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -601,7 +601,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 		{
 			name: "a server maintenance scheduled",
 			in: &dummyServerClient{
-				find: []*iaas.Server{server},
+				find: []*platform.Server{server},
 				monitorCPU: &sacloud.MonitorCPUTimeValue{
 					Time:    monitorTime,
 					CPUTime: 100,
@@ -631,7 +631,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 		{
 			name: "maintenance info",
 			in: &dummyServerClient{
-				find: []*iaas.Server{
+				find: []*platform.Server{
 					{
 						ZoneName: "is1a",
 						Server: &sacloud.Server{

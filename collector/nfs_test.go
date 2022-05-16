@@ -24,12 +24,12 @@ import (
 	"github.com/sacloud/libsacloud/v2/helper/query"
 	"github.com/sacloud/libsacloud/v2/sacloud"
 	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyNFSClient struct {
-	find           []*iaas.NFS
+	find           []*platform.NFS
 	findErr        error
 	monitorFree    *sacloud.MonitorFreeDiskSizeValue
 	monitorFreeErr error
@@ -37,7 +37,7 @@ type dummyNFSClient struct {
 	monitorNICErr  error
 }
 
-func (d *dummyNFSClient) Find(ctx context.Context) ([]*iaas.NFS, error) {
+func (d *dummyNFSClient) Find(ctx context.Context) ([]*platform.NFS, error) {
 	return d.find, d.findErr
 }
 func (d *dummyNFSClient) MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorFreeDiskSizeValue, error) {
@@ -69,7 +69,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.NFSClient
+		in             platform.NFSClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -91,7 +91,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 		{
 			name: "a nfs without activity monitor",
 			in: &dummyNFSClient{
-				find: []*iaas.NFS{
+				find: []*platform.NFS{
 					{
 						ZoneName: "is1a",
 						NFS: &sacloud.NFS{
@@ -156,7 +156,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 		{
 			name: "a nfs with activity monitor",
 			in: &dummyNFSClient{
-				find: []*iaas.NFS{
+				find: []*platform.NFS{
 					{
 						ZoneName: "is1a",
 						NFS: &sacloud.NFS{
@@ -255,7 +255,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor APIs return error",
 			in: &dummyNFSClient{
-				find: []*iaas.NFS{
+				find: []*platform.NFS{
 					{
 						ZoneName: "is1a",
 						NFS: &sacloud.NFS{
