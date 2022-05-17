@@ -21,30 +21,30 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyLocalRouterClient struct {
-	find       []*sacloud.LocalRouter
+	find       []*iaas.LocalRouter
 	findErr    error
-	health     *sacloud.LocalRouterHealth
+	health     *iaas.LocalRouterHealth
 	healthErr  error
-	monitor    *sacloud.MonitorLocalRouterValue
+	monitor    *iaas.MonitorLocalRouterValue
 	monitorErr error
 }
 
-func (d *dummyLocalRouterClient) Find(ctx context.Context) ([]*sacloud.LocalRouter, error) {
+func (d *dummyLocalRouterClient) Find(ctx context.Context) ([]*iaas.LocalRouter, error) {
 	return d.find, d.findErr
 }
 
-func (d *dummyLocalRouterClient) Health(ctx context.Context, id types.ID) (*sacloud.LocalRouterHealth, error) {
+func (d *dummyLocalRouterClient) Health(ctx context.Context, id types.ID) (*iaas.LocalRouterHealth, error) {
 	return d.health, d.healthErr
 }
 
-func (d *dummyLocalRouterClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorLocalRouterValue, error) {
+func (d *dummyLocalRouterClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorLocalRouterValue, error) {
 	return d.monitor, d.monitorErr
 }
 
@@ -73,7 +73,7 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.LocalRouterClient
+		in             platform.LocalRouterClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -95,25 +95,25 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 		{
 			name: "a local router",
 			in: &dummyLocalRouterClient{
-				find: []*sacloud.LocalRouter{
+				find: []*iaas.LocalRouter{
 					{
 						ID:           101,
 						Name:         "local-router",
 						Tags:         types.Tags{"tag1", "tag2"},
 						Description:  "desc",
 						Availability: types.Availabilities.Available,
-						Switch: &sacloud.LocalRouterSwitch{
+						Switch: &iaas.LocalRouterSwitch{
 							Code:     "201",
 							Category: "cloud",
 							ZoneID:   "is1a",
 						},
-						Interface: &sacloud.LocalRouterInterface{
+						Interface: &iaas.LocalRouterInterface{
 							VirtualIPAddress: "192.0.2.1",
 							IPAddress:        []string{"192.0.2.11", "192.0.2.12"},
 							NetworkMaskLen:   24,
 							VRID:             100,
 						},
-						StaticRoutes: []*sacloud.LocalRouterStaticRoute{
+						StaticRoutes: []*iaas.LocalRouterStaticRoute{
 							{
 								Prefix:  "10.0.0.0/24",
 								NextHop: "192.0.2.101",
@@ -190,14 +190,14 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 		{
 			name: "a local router with peers",
 			in: &dummyLocalRouterClient{
-				find: []*sacloud.LocalRouter{
+				find: []*iaas.LocalRouter{
 					{
 						ID:           101,
 						Name:         "local-router",
 						Tags:         types.Tags{"tag1", "tag2"},
 						Description:  "desc",
 						Availability: types.Availabilities.Available,
-						Peers: []*sacloud.LocalRouterPeer{
+						Peers: []*iaas.LocalRouterPeer{
 							{
 								ID:          201,
 								SecretKey:   "dummy",
@@ -213,8 +213,8 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				health: &sacloud.LocalRouterHealth{
-					Peers: []*sacloud.LocalRouterHealthPeer{
+				health: &iaas.LocalRouterHealth{
+					Peers: []*iaas.LocalRouterHealthPeer{
 						{
 							ID:     201,
 							Status: "UP",
@@ -290,7 +290,7 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 		{
 			name: "a local router with activities",
 			in: &dummyLocalRouterClient{
-				find: []*sacloud.LocalRouter{
+				find: []*iaas.LocalRouter{
 					{
 						ID:           101,
 						Name:         "local-router",
@@ -299,7 +299,7 @@ func TestLocalRouterCollector_Collect(t *testing.T) {
 						Availability: types.Availabilities.Available,
 					},
 				},
-				monitor: &sacloud.MonitorLocalRouterValue{
+				monitor: &iaas.MonitorLocalRouterValue{
 					Time:               monitorTime,
 					ReceiveBytesPerSec: 10,
 					SendBytesPerSec:    20,

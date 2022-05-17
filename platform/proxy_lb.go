@@ -12,35 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type ProxyLBClient interface {
-	Find(ctx context.Context) ([]*sacloud.ProxyLB, error)
-	GetCertificate(ctx context.Context, id types.ID) (*sacloud.ProxyLBCertificates, error)
-	Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorConnectionValue, error)
+	Find(ctx context.Context) ([]*iaas.ProxyLB, error)
+	GetCertificate(ctx context.Context, id types.ID) (*iaas.ProxyLBCertificates, error)
+	Monitor(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorConnectionValue, error)
 }
 
-func getProxyLBClient(caller sacloud.APICaller) ProxyLBClient {
+func getProxyLBClient(caller iaas.APICaller) ProxyLBClient {
 	return &proxyLBClient{
-		client: sacloud.NewProxyLBOp(caller),
+		client: iaas.NewProxyLBOp(caller),
 	}
 }
 
 type proxyLBClient struct {
-	client sacloud.ProxyLBAPI
+	client iaas.ProxyLBAPI
 }
 
-func (c *proxyLBClient) Find(ctx context.Context) ([]*sacloud.ProxyLB, error) {
-	var results []*sacloud.ProxyLB
-	res, err := c.client.Find(ctx, &sacloud.FindCondition{
+func (c *proxyLBClient) Find(ctx context.Context) ([]*iaas.ProxyLB, error) {
+	var results []*iaas.ProxyLB
+	res, err := c.client.Find(ctx, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -49,11 +49,11 @@ func (c *proxyLBClient) Find(ctx context.Context) ([]*sacloud.ProxyLB, error) {
 	return res.ProxyLBs, nil
 }
 
-func (c *proxyLBClient) GetCertificate(ctx context.Context, id types.ID) (*sacloud.ProxyLBCertificates, error) {
+func (c *proxyLBClient) GetCertificate(ctx context.Context, id types.ID) (*iaas.ProxyLBCertificates, error) {
 	return c.client.GetCertificates(ctx, id)
 }
 
-func (c *proxyLBClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorConnectionValue, error) {
+func (c *proxyLBClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorConnectionValue, error) {
 	mvs, err := c.client.MonitorConnection(ctx, id, monitorCondition(end))
 	if err != nil {
 		return nil, err

@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // NFSCollector collects metrics about all nfss.
@@ -31,7 +31,7 @@ type NFSCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.NFSClient
+	client platform.NFSClient
 
 	Up      *prometheus.Desc
 	NFSInfo *prometheus.Desc
@@ -44,7 +44,7 @@ type NFSCollector struct {
 }
 
 // NewNFSCollector returns a new NFSCollector.
-func NewNFSCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.NFSClient) *NFSCollector {
+func NewNFSCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.NFSClient) *NFSCollector {
 	errors.WithLabelValues("nfs").Add(0)
 
 	nfsLabels := []string{"id", "name", "zone"}
@@ -115,7 +115,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(nfss))
 
 	for i := range nfss {
-		func(nfs *iaas.NFS) {
+		func(nfs *platform.NFS) {
 			defer wg.Done()
 
 			nfsLabels := c.nfsLabels(nfs)
@@ -166,7 +166,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *NFSCollector) nfsLabels(nfs *iaas.NFS) []string {
+func (c *NFSCollector) nfsLabels(nfs *platform.NFS) []string {
 	return []string{
 		nfs.ID.String(),
 		nfs.Name,
@@ -174,7 +174,7 @@ func (c *NFSCollector) nfsLabels(nfs *iaas.NFS) []string {
 	}
 }
 
-func (c *NFSCollector) nfsInfoLabels(nfs *iaas.NFS) []string {
+func (c *NFSCollector) nfsInfoLabels(nfs *platform.NFS) []string {
 	labels := c.nfsLabels(nfs)
 
 	instanceHost := "-"
@@ -198,7 +198,7 @@ func (c *NFSCollector) nfsInfoLabels(nfs *iaas.NFS) []string {
 	)
 }
 
-func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
+func (c *NFSCollector) nicInfoLabels(nfs *platform.NFS) []string {
 	labels := c.nfsLabels(nfs)
 
 	upstreamID := nfs.SwitchID.String()
@@ -224,7 +224,7 @@ func (c *NFSCollector) nicInfoLabels(nfs *iaas.NFS) []string {
 	)
 }
 
-func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
+func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *platform.NFS, now time.Time) {
 	values, err := c.client.MonitorFreeDiskSize(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
@@ -252,7 +252,7 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *iaa
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *iaas.NFS, now time.Time) {
+func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *platform.NFS, now time.Time) {
 	values, err := c.client.MonitorNIC(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)

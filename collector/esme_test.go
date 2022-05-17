@@ -20,25 +20,24 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyESMEClient struct {
-	esme    []*sacloud.ESME
+	esme    []*iaas.ESME
 	findErr error
-	logs    []*sacloud.ESMELogs
+	logs    []*iaas.ESMELogs
 	logsErr error
 }
 
-func (d *dummyESMEClient) Find(ctx context.Context) ([]*sacloud.ESME, error) {
+func (d *dummyESMEClient) Find(ctx context.Context) ([]*iaas.ESME, error) {
 	return d.esme, d.findErr
 }
 
-func (d *dummyESMEClient) Logs(ctx context.Context, esmeID types.ID) ([]*sacloud.ESMELogs, error) {
+func (d *dummyESMEClient) Logs(ctx context.Context, esmeID types.ID) ([]*iaas.ESMELogs, error) {
 	return d.logs, d.logsErr
 }
 
@@ -59,7 +58,7 @@ func TestESMECollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.ESMEClient
+		in             platform.ESMEClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -81,7 +80,7 @@ func TestESMECollector_Collect(t *testing.T) {
 		{
 			name: "esme: collecting ESME logs is failed ",
 			in: &dummyESMEClient{
-				esme: []*sacloud.ESME{
+				esme: []*iaas.ESME{
 					{
 						ID:          101,
 						Name:        "ESME",

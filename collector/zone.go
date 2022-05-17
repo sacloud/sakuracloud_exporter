@@ -20,7 +20,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // ZoneCollector collects metrics about the account.
@@ -28,13 +28,13 @@ type ZoneCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.ZoneClient
+	client platform.ZoneClient
 
 	ZoneInfo *prometheus.Desc
 }
 
 // NewZoneCollector returns a new ZoneCollector.
-func NewZoneCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ZoneClient) *ZoneCollector {
+func NewZoneCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ZoneClient) *ZoneCollector {
 	errors.WithLabelValues("zone").Add(0)
 
 	labels := []string{"id", "name", "description", "region_id", "region_name"}

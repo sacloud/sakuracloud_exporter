@@ -21,28 +21,28 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummySIMClient struct {
-	find         []*sacloud.SIM
+	find         []*iaas.SIM
 	findErr      error
-	nopConfig    []*sacloud.SIMNetworkOperatorConfig
+	nopConfig    []*iaas.SIMNetworkOperatorConfig
 	nopConfigErr error
-	monitor      *sacloud.MonitorLinkValue
+	monitor      *iaas.MonitorLinkValue
 	monitorErr   error
 }
 
-func (d *dummySIMClient) Find(ctx context.Context) ([]*sacloud.SIM, error) {
+func (d *dummySIMClient) Find(ctx context.Context) ([]*iaas.SIM, error) {
 	return d.find, d.findErr
 }
-func (d *dummySIMClient) GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*sacloud.SIMNetworkOperatorConfig, error) {
+func (d *dummySIMClient) GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*iaas.SIMNetworkOperatorConfig, error) {
 	return d.nopConfig, d.nopConfigErr
 }
-func (d *dummySIMClient) MonitorTraffic(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorLinkValue, error) {
+func (d *dummySIMClient) MonitorTraffic(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorLinkValue, error) {
 	return d.monitor, d.monitorErr
 }
 
@@ -66,7 +66,7 @@ func TestSIMCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.SIMClient
+		in             platform.SIMClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -88,11 +88,11 @@ func TestSIMCollector_Collect(t *testing.T) {
 		{
 			name: "a SIM with activity monitor",
 			in: &dummySIMClient{
-				find: []*sacloud.SIM{
+				find: []*iaas.SIM{
 					{
 						ID:   101,
 						Name: "sim",
-						Info: &sacloud.SIMInfo{
+						Info: &iaas.SIMInfo{
 							IMEILock:       true,
 							RegisteredDate: time.Unix(1, 0),
 							ActivatedDate:  time.Unix(2, 0),
@@ -100,7 +100,7 @@ func TestSIMCollector_Collect(t *testing.T) {
 							IP:            "192.0.2.1",
 							SIMGroupID:    "201",
 							SessionStatus: "UP",
-							TrafficBytesOfCurrentMonth: &sacloud.SIMTrafficBytes{
+							TrafficBytesOfCurrentMonth: &iaas.SIMTrafficBytes{
 								UplinkBytes:   100 * 1000,
 								DownlinkBytes: 200 * 1000,
 							},
@@ -109,12 +109,12 @@ func TestSIMCollector_Collect(t *testing.T) {
 						Description: "desc",
 					},
 				},
-				nopConfig: []*sacloud.SIMNetworkOperatorConfig{
+				nopConfig: []*iaas.SIMNetworkOperatorConfig{
 					{Allow: true, Name: "docomo"},
 					{Allow: false, Name: "softbank"},
 					{Allow: true, Name: "kddi"},
 				},
-				monitor: &sacloud.MonitorLinkValue{
+				monitor: &iaas.MonitorLinkValue{
 					Time:        monitorTime,
 					UplinkBPS:   10 * 1000,
 					DownlinkBPS: 20 * 1000,
@@ -163,11 +163,11 @@ func TestSIMCollector_Collect(t *testing.T) {
 		{
 			name: "APIs return error",
 			in: &dummySIMClient{
-				find: []*sacloud.SIM{
+				find: []*iaas.SIM{
 					{
 						ID:   101,
 						Name: "sim",
-						Info: &sacloud.SIMInfo{
+						Info: &iaas.SIMInfo{
 							IMEILock:       true,
 							RegisteredDate: time.Unix(1, 0),
 							ActivatedDate:  time.Unix(2, 0),

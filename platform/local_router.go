@@ -12,35 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type LocalRouterClient interface {
-	Find(ctx context.Context) ([]*sacloud.LocalRouter, error)
-	Health(ctx context.Context, id types.ID) (*sacloud.LocalRouterHealth, error)
-	Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorLocalRouterValue, error)
+	Find(ctx context.Context) ([]*iaas.LocalRouter, error)
+	Health(ctx context.Context, id types.ID) (*iaas.LocalRouterHealth, error)
+	Monitor(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorLocalRouterValue, error)
 }
 
-func getLocalRouterClient(caller sacloud.APICaller) LocalRouterClient {
+func getLocalRouterClient(caller iaas.APICaller) LocalRouterClient {
 	return &localRouterClient{
-		client: sacloud.NewLocalRouterOp(caller),
+		client: iaas.NewLocalRouterOp(caller),
 	}
 }
 
 type localRouterClient struct {
-	client sacloud.LocalRouterAPI
+	client iaas.LocalRouterAPI
 }
 
-func (c *localRouterClient) Find(ctx context.Context) ([]*sacloud.LocalRouter, error) {
-	var results []*sacloud.LocalRouter
-	res, err := c.client.Find(ctx, &sacloud.FindCondition{
+func (c *localRouterClient) Find(ctx context.Context) ([]*iaas.LocalRouter, error) {
+	var results []*iaas.LocalRouter
+	res, err := c.client.Find(ctx, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -49,11 +49,11 @@ func (c *localRouterClient) Find(ctx context.Context) ([]*sacloud.LocalRouter, e
 	return res.LocalRouters, nil
 }
 
-func (c *localRouterClient) Health(ctx context.Context, id types.ID) (*sacloud.LocalRouterHealth, error) {
+func (c *localRouterClient) Health(ctx context.Context, id types.ID) (*iaas.LocalRouterHealth, error) {
 	return c.client.HealthStatus(ctx, id)
 }
 
-func (c *localRouterClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorLocalRouterValue, error) {
+func (c *localRouterClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorLocalRouterValue, error) {
 	mvs, err := c.client.MonitorLocalRouter(ctx, id, monitorCondition(end))
 	if err != nil {
 		return nil, err

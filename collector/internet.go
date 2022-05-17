@@ -23,7 +23,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // InternetCollector collects metrics about all internets.
@@ -31,7 +31,7 @@ type InternetCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.InternetClient
+	client platform.InternetClient
 
 	Info *prometheus.Desc
 
@@ -40,7 +40,7 @@ type InternetCollector struct {
 }
 
 // NewInternetCollector returns a new InternetCollector.
-func NewInternetCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.InternetClient) *InternetCollector {
+func NewInternetCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.InternetClient) *InternetCollector {
 	errors.WithLabelValues("internet").Add(0)
 
 	labels := []string{"id", "name", "zone", "switch_id"}
@@ -92,7 +92,7 @@ func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(internets))
 
 	for i := range internets {
-		func(internet *iaas.Internet) {
+		func(internet *platform.Internet) {
 			defer wg.Done()
 
 			ch <- prometheus.MustNewConstMetric(
@@ -114,7 +114,7 @@ func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *InternetCollector) internetLabels(internet *iaas.Internet) []string {
+func (c *InternetCollector) internetLabels(internet *platform.Internet) []string {
 	return []string{
 		internet.ID.String(),
 		internet.Name,
@@ -123,7 +123,7 @@ func (c *InternetCollector) internetLabels(internet *iaas.Internet) []string {
 	}
 }
 
-func (c *InternetCollector) internetInfoLabels(internet *iaas.Internet) []string {
+func (c *InternetCollector) internetInfoLabels(internet *platform.Internet) []string {
 	labels := c.internetLabels(internet)
 
 	return append(labels,
@@ -132,7 +132,7 @@ func (c *InternetCollector) internetInfoLabels(internet *iaas.Internet) []string
 		internet.Description,
 	)
 }
-func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, internet *iaas.Internet, now time.Time) {
+func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, internet *platform.Internet, now time.Time) {
 	values, err := c.client.MonitorTraffic(c.ctx, internet.ZoneName, internet.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)

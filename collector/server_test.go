@@ -22,43 +22,43 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyServerClient struct {
-	find           []*iaas.Server
+	find           []*platform.Server
 	findErr        error
-	readDisk       *sacloud.Disk
+	readDisk       *iaas.Disk
 	readDiskErr    error
-	monitorCPU     *sacloud.MonitorCPUTimeValue
+	monitorCPU     *iaas.MonitorCPUTimeValue
 	monitorCPUErr  error
-	monitorDisk    *sacloud.MonitorDiskValue
+	monitorDisk    *iaas.MonitorDiskValue
 	monitorDiskErr error
-	monitorNIC     *sacloud.MonitorInterfaceValue
+	monitorNIC     *iaas.MonitorInterfaceValue
 	monitorNICErr  error
 	maintenance    *newsfeed.FeedItem
 	maintenanceErr error
 }
 
-func (d *dummyServerClient) Find(ctx context.Context) ([]*iaas.Server, error) {
+func (d *dummyServerClient) Find(ctx context.Context) ([]*platform.Server, error) {
 	return d.find, d.findErr
 }
 
-func (d *dummyServerClient) ReadDisk(ctx context.Context, zone string, diskID types.ID) (*sacloud.Disk, error) {
+func (d *dummyServerClient) ReadDisk(ctx context.Context, zone string, diskID types.ID) (*iaas.Disk, error) {
 	return d.readDisk, d.readDiskErr
 }
 
-func (d *dummyServerClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+func (d *dummyServerClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error) {
 	return d.monitorCPU, d.monitorCPUErr
 }
-func (d *dummyServerClient) MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error) {
+func (d *dummyServerClient) MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*iaas.MonitorDiskValue, error) {
 	return d.monitorDisk, d.monitorDiskErr
 }
-func (d *dummyServerClient) MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (d *dummyServerClient) MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitorNIC, d.monitorNICErr
 }
 func (d *dummyServerClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
@@ -91,9 +91,9 @@ func TestServerCollector_Collect(t *testing.T) {
 	c := NewServerCollector(context.Background(), testLogger, testErrors, nil, false)
 	monitorTime := time.Unix(1, 0)
 
-	server := &iaas.Server{
+	server := &platform.Server{
 		ZoneName: "is1a",
-		Server: &sacloud.Server{
+		Server: &iaas.Server{
 			ID:               101,
 			Name:             "server",
 			Description:      "desc",
@@ -102,21 +102,21 @@ func TestServerCollector_Collect(t *testing.T) {
 			MemoryMB:         4 * 1024,
 			InstanceStatus:   types.ServerInstanceStatuses.Up,
 			InstanceHostName: "sacXXX",
-			Disks: []*sacloud.ServerConnectedDisk{
+			Disks: []*iaas.ServerConnectedDisk{
 				{
 					ID:         201,
 					Name:       "disk",
 					DiskPlanID: types.DiskPlans.SSD,
 					Connection: types.DiskConnections.VirtIO,
 					SizeMB:     20 * 1024,
-					Storage: &sacloud.Storage{
+					Storage: &iaas.Storage{
 						ID:         1001,
 						Class:      "iscsi1204",
 						Generation: 100,
 					},
 				},
 			},
-			Interfaces: []*sacloud.InterfaceView{
+			Interfaces: []*iaas.InterfaceView{
 				{
 					ID:           301,
 					SwitchID:     401,
@@ -129,7 +129,7 @@ func TestServerCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.ServerClient
+		in             platform.ServerClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -151,17 +151,17 @@ func TestServerCollector_Collect(t *testing.T) {
 		{
 			name: "a server with activity monitors",
 			in: &dummyServerClient{
-				find: []*iaas.Server{server},
-				monitorCPU: &sacloud.MonitorCPUTimeValue{
+				find: []*platform.Server{server},
+				monitorCPU: &iaas.MonitorCPUTimeValue{
 					Time:    monitorTime,
 					CPUTime: 100,
 				},
-				monitorDisk: &sacloud.MonitorDiskValue{
+				monitorDisk: &iaas.MonitorDiskValue{
 					Time:  monitorTime,
 					Read:  201,
 					Write: 202,
 				},
-				monitorNIC: &sacloud.MonitorInterfaceValue{
+				monitorNIC: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 301,
 					Send:    302,
@@ -312,7 +312,7 @@ func TestServerCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor APIs return error",
 			in: &dummyServerClient{
-				find:           []*iaas.Server{server},
+				find:           []*platform.Server{server},
 				monitorCPUErr:  errors.New("dummy1"),
 				monitorDiskErr: errors.New("dummy2"),
 				monitorNICErr:  errors.New("dummy3"),
@@ -418,10 +418,10 @@ func TestServerCollector_Collect(t *testing.T) {
 		{
 			name: "maintenance info",
 			in: &dummyServerClient{
-				find: []*iaas.Server{
+				find: []*platform.Server{
 					{
 						ZoneName: "is1a",
-						Server: &sacloud.Server{
+						Server: &iaas.Server{
 							ID:                  101,
 							Name:                "server",
 							CPU:                 2,
@@ -541,9 +541,9 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 	c := NewServerCollector(context.Background(), testLogger, testErrors, nil, true)
 	monitorTime := time.Unix(1, 0)
 
-	server := &iaas.Server{
+	server := &platform.Server{
 		ZoneName: "is1a",
-		Server: &sacloud.Server{
+		Server: &iaas.Server{
 			ID:               101,
 			Name:             "server",
 			Description:      "desc",
@@ -552,21 +552,21 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 			MemoryMB:         4 * 1024,
 			InstanceStatus:   types.ServerInstanceStatuses.Up,
 			InstanceHostName: "sacXXX",
-			Disks: []*sacloud.ServerConnectedDisk{
+			Disks: []*iaas.ServerConnectedDisk{
 				{
 					ID:         201,
 					Name:       "disk",
 					DiskPlanID: types.DiskPlans.SSD,
 					Connection: types.DiskConnections.VirtIO,
 					SizeMB:     20 * 1024,
-					Storage: &sacloud.Storage{
+					Storage: &iaas.Storage{
 						ID:         1001,
 						Class:      "iscsi1204",
 						Generation: 100,
 					},
 				},
 			},
-			Interfaces: []*sacloud.InterfaceView{
+			Interfaces: []*iaas.InterfaceView{
 				{
 					ID:           301,
 					SwitchID:     401,
@@ -579,7 +579,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.ServerClient
+		in             platform.ServerClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -601,17 +601,17 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 		{
 			name: "a server maintenance scheduled",
 			in: &dummyServerClient{
-				find: []*iaas.Server{server},
-				monitorCPU: &sacloud.MonitorCPUTimeValue{
+				find: []*platform.Server{server},
+				monitorCPU: &iaas.MonitorCPUTimeValue{
 					Time:    monitorTime,
 					CPUTime: 100,
 				},
-				monitorDisk: &sacloud.MonitorDiskValue{
+				monitorDisk: &iaas.MonitorDiskValue{
 					Time:  monitorTime,
 					Read:  201,
 					Write: 202,
 				},
-				monitorNIC: &sacloud.MonitorInterfaceValue{
+				monitorNIC: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 301,
 					Send:    302,
@@ -631,10 +631,10 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 		{
 			name: "maintenance info",
 			in: &dummyServerClient{
-				find: []*iaas.Server{
+				find: []*platform.Server{
 					{
 						ZoneName: "is1a",
-						Server: &sacloud.Server{
+						Server: &iaas.Server{
 							ID:                  101,
 							Name:                "server",
 							CPU:                 2,

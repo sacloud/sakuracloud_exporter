@@ -21,29 +21,29 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/query"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyNFSClient struct {
-	find           []*iaas.NFS
+	find           []*platform.NFS
 	findErr        error
-	monitorFree    *sacloud.MonitorFreeDiskSizeValue
+	monitorFree    *iaas.MonitorFreeDiskSizeValue
 	monitorFreeErr error
-	monitorNIC     *sacloud.MonitorInterfaceValue
+	monitorNIC     *iaas.MonitorInterfaceValue
 	monitorNICErr  error
 }
 
-func (d *dummyNFSClient) Find(ctx context.Context) ([]*iaas.NFS, error) {
+func (d *dummyNFSClient) Find(ctx context.Context) ([]*platform.NFS, error) {
 	return d.find, d.findErr
 }
-func (d *dummyNFSClient) MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorFreeDiskSizeValue, error) {
+func (d *dummyNFSClient) MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorFreeDiskSizeValue, error) {
 	return d.monitorFree, d.monitorFreeErr
 }
-func (d *dummyNFSClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (d *dummyNFSClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitorNIC, d.monitorNICErr
 }
 
@@ -69,7 +69,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.NFSClient
+		in             platform.NFSClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -91,10 +91,10 @@ func TestNFSCollector_Collect(t *testing.T) {
 		{
 			name: "a nfs without activity monitor",
 			in: &dummyNFSClient{
-				find: []*iaas.NFS{
+				find: []*platform.NFS{
 					{
 						ZoneName: "is1a",
-						NFS: &sacloud.NFS{
+						NFS: &iaas.NFS{
 							ID:               101,
 							Name:             "nfs",
 							Tags:             types.Tags{"tag1", "tag2"},
@@ -156,10 +156,10 @@ func TestNFSCollector_Collect(t *testing.T) {
 		{
 			name: "a nfs with activity monitor",
 			in: &dummyNFSClient{
-				find: []*iaas.NFS{
+				find: []*platform.NFS{
 					{
 						ZoneName: "is1a",
-						NFS: &sacloud.NFS{
+						NFS: &iaas.NFS{
 							ID:               101,
 							Name:             "nfs",
 							Tags:             types.Tags{"tag1", "tag2"},
@@ -181,11 +181,11 @@ func TestNFSCollector_Collect(t *testing.T) {
 						PlanName: "HDD 100GB",
 					},
 				},
-				monitorFree: &sacloud.MonitorFreeDiskSizeValue{
+				monitorFree: &iaas.MonitorFreeDiskSizeValue{
 					Time:         monitorTime,
 					FreeDiskSize: 100,
 				},
-				monitorNIC: &sacloud.MonitorInterfaceValue{
+				monitorNIC: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 200,
 					Send:    300,
@@ -255,10 +255,10 @@ func TestNFSCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor APIs return error",
 			in: &dummyNFSClient{
-				find: []*iaas.NFS{
+				find: []*platform.NFS{
 					{
 						ZoneName: "is1a",
-						NFS: &sacloud.NFS{
+						NFS: &iaas.NFS{
 							ID:               101,
 							Name:             "nfs",
 							Tags:             types.Tags{"tag1", "tag2"},

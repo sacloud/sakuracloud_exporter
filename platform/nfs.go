@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/helper/query"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type NFS struct {
-	*sacloud.NFS
+	*iaas.NFS
 	Plan     *query.NFSPlanInfo
 	PlanName string
 	ZoneName string
@@ -32,27 +32,27 @@ type NFS struct {
 
 type NFSClient interface {
 	Find(ctx context.Context) ([]*NFS, error)
-	MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorFreeDiskSizeValue, error)
-	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorFreeDiskSizeValue, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
 }
 
-func getNFSClient(caller sacloud.APICaller, zones []string) NFSClient {
+func getNFSClient(caller iaas.APICaller, zones []string) NFSClient {
 	return &nfsClient{
-		noteOp: sacloud.NewNoteOp(caller),
-		nfsOp:  sacloud.NewNFSOp(caller),
+		noteOp: iaas.NewNoteOp(caller),
+		nfsOp:  iaas.NewNFSOp(caller),
 		zones:  zones,
 	}
 }
 
 type nfsClient struct {
-	noteOp sacloud.NoteAPI
-	nfsOp  sacloud.NFSAPI
+	noteOp iaas.NoteAPI
+	nfsOp  iaas.NFSAPI
 	zones  []string
 }
 
 func (c *nfsClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.nfsOp.Find(ctx, zone, &sacloud.FindCondition{
+	res, err := c.nfsOp.Find(ctx, zone, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -92,7 +92,7 @@ func (c *nfsClient) Find(ctx context.Context) ([]*NFS, error) {
 	return results, nil
 }
 
-func (c *nfsClient) MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorFreeDiskSizeValue, error) {
+func (c *nfsClient) MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorFreeDiskSizeValue, error) {
 	mvs, err := c.nfsOp.MonitorFreeDiskSize(ctx, zone, id, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (c *nfsClient) MonitorFreeDiskSize(ctx context.Context, zone string, id typ
 	return monitorFreeDiskSizeValue(mvs.Values), nil
 }
 
-func (c *nfsClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (c *nfsClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	mvs, err := c.nfsOp.MonitorInterface(ctx, zone, id, monitorCondition(end))
 	if err != nil {
 		return nil, err

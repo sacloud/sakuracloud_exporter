@@ -12,18 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
-	"context"
+	"os"
+	"testing"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/testutil"
 )
 
-type authStatusClient interface {
-	Read(context.Context) (*sacloud.AuthStatus, error)
-}
+var testZone string
+var testCaller *iaas.Client
 
-func getAuthStatusClient(caller sacloud.APICaller) authStatusClient {
-	return sacloud.NewAuthStatusOp(caller)
+func TestMain(m *testing.M) {
+	// this is for to use fake driver on iaas-api-go
+	os.Setenv("TESTACC", "")
+
+	testZone = testutil.TestZone()
+	testCaller = testutil.SingletonAPICaller().(*iaas.Client)
+
+	ret := m.Run()
+	os.Exit(ret)
 }

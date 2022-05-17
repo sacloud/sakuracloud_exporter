@@ -12,27 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
-	"os"
-	"testing"
+	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/testutil"
+	"github.com/sacloud/iaas-api-go"
 )
 
-var testZone string
-var testCaller *sacloud.Client
+// ZoneClient calls SakuraCloud zone API
+type ZoneClient interface {
+	Find(ctx context.Context) ([]*iaas.Zone, error)
+}
 
-func TestMain(m *testing.M) {
-	// this is for to use fake driver on libsacloud
-	os.Setenv("TESTACC", "")
+func getZoneClient(caller iaas.APICaller) ZoneClient {
+	return &zoneClient{
+		client: iaas.NewZoneOp(caller),
+	}
+}
 
-	testZone = testutil.TestZone()
-	testCaller = testutil.SingletonAPICaller().(*sacloud.Client)
-	testCaller.UserAgent = "test-sakuracloud_exporter/dev"
+type zoneClient struct {
+	client iaas.ZoneAPI
+}
 
-	ret := m.Run()
-	os.Exit(ret)
+func (c *zoneClient) Find(ctx context.Context) ([]*iaas.Zone, error) {
+	res, err := c.client.Find(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	return res.Zones, nil
 }

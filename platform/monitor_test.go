@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
 	"testing"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMonitor_monitorCPUTimeValue(t *testing.T) {
 	cases := []struct {
 		name   string
-		in     []*sacloud.MonitorCPUTimeValue
-		expect *sacloud.MonitorCPUTimeValue
+		in     []*iaas.MonitorCPUTimeValue
+		expect *iaas.MonitorCPUTimeValue
 	}{
 		{
 			name:   "input is nil",
@@ -35,7 +35,7 @@ func TestMonitor_monitorCPUTimeValue(t *testing.T) {
 		},
 		{
 			name: "input has only 1 value",
-			in: []*sacloud.MonitorCPUTimeValue{
+			in: []*iaas.MonitorCPUTimeValue{
 				{
 					Time:    time.Now(),
 					CPUTime: 1.0,
@@ -45,7 +45,7 @@ func TestMonitor_monitorCPUTimeValue(t *testing.T) {
 		},
 		{
 			name: "second last value is used: with 2 values",
-			in: []*sacloud.MonitorCPUTimeValue{
+			in: []*iaas.MonitorCPUTimeValue{
 				{
 					Time:    time.Unix(1, 0),
 					CPUTime: 1.0,
@@ -55,14 +55,14 @@ func TestMonitor_monitorCPUTimeValue(t *testing.T) {
 					CPUTime: 2.0,
 				},
 			},
-			expect: &sacloud.MonitorCPUTimeValue{
+			expect: &iaas.MonitorCPUTimeValue{
 				Time:    time.Unix(1, 0),
 				CPUTime: 1.0,
 			},
 		},
 		{
 			name: "second last value is used: with over 2 values",
-			in: []*sacloud.MonitorCPUTimeValue{
+			in: []*iaas.MonitorCPUTimeValue{
 				{
 					Time:    time.Unix(0, 0),
 					CPUTime: 0.0,
@@ -76,7 +76,7 @@ func TestMonitor_monitorCPUTimeValue(t *testing.T) {
 					CPUTime: 2.0,
 				},
 			},
-			expect: &sacloud.MonitorCPUTimeValue{
+			expect: &iaas.MonitorCPUTimeValue{
 				Time:    time.Unix(1, 0),
 				CPUTime: 1.0,
 			},

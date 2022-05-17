@@ -24,9 +24,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // LocalRouterCollector collects metrics about all localRouters.
@@ -34,7 +34,7 @@ type LocalRouterCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.LocalRouterClient
+	client platform.LocalRouterClient
 
 	Up              *prometheus.Desc
 	LocalRouterInfo *prometheus.Desc
@@ -49,7 +49,7 @@ type LocalRouterCollector struct {
 }
 
 // NewLocalRouterCollector returns a new LocalRouterCollector.
-func NewLocalRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.LocalRouterClient) *LocalRouterCollector {
+func NewLocalRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.LocalRouterClient) *LocalRouterCollector {
 	errors.WithLabelValues("local_router").Add(0)
 
 	localRouterLabels := []string{"id", "name"}
@@ -142,7 +142,7 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(localRouters))
 
 	for i := range localRouters {
-		func(localRouter *sacloud.LocalRouter) {
+		func(localRouter *iaas.LocalRouter) {
 			defer wg.Done()
 
 			localRouterLabels := c.localRouterLabels(localRouter)
@@ -191,14 +191,14 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *LocalRouterCollector) localRouterLabels(localRouter *sacloud.LocalRouter) []string {
+func (c *LocalRouterCollector) localRouterLabels(localRouter *iaas.LocalRouter) []string {
 	return []string{
 		localRouter.ID.String(),
 		localRouter.Name,
 	}
 }
 
-func (c *LocalRouterCollector) collectLocalRouterInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter) {
+func (c *LocalRouterCollector) collectLocalRouterInfo(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter) {
 	labels := append(c.localRouterLabels(localRouter),
 		flattenStringSlice(localRouter.Tags),
 		localRouter.Description,
@@ -212,7 +212,7 @@ func (c *LocalRouterCollector) collectLocalRouterInfo(ch chan<- prometheus.Metri
 	)
 }
 
-func (c *LocalRouterCollector) collectSwitchInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter) {
+func (c *LocalRouterCollector) collectSwitchInfo(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter) {
 	labels := append(c.localRouterLabels(localRouter),
 		localRouter.Switch.Category,
 		localRouter.Switch.Code,
@@ -227,7 +227,7 @@ func (c *LocalRouterCollector) collectSwitchInfo(ch chan<- prometheus.Metric, lo
 	)
 }
 
-func (c *LocalRouterCollector) collectNetworkInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter) {
+func (c *LocalRouterCollector) collectNetworkInfo(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter) {
 	labels := append(c.localRouterLabels(localRouter),
 		localRouter.Interface.VirtualIPAddress,
 		localRouter.Interface.IPAddress[0],
@@ -244,7 +244,7 @@ func (c *LocalRouterCollector) collectNetworkInfo(ch chan<- prometheus.Metric, l
 	)
 }
 
-func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter) {
+func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter) {
 	//localRouterPeerLabels := append(localRouterLabels, "peer_index", "peer_id")
 	//localRouterPeerInfoLabels := append(localRouterPeerLabels, "enabled", "description")
 
@@ -292,7 +292,7 @@ func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, loca
 	}
 }
 
-func (c *LocalRouterCollector) getPeerStatus(peerStatuses []*sacloud.LocalRouterHealthPeer, peerID types.ID) *sacloud.LocalRouterHealthPeer {
+func (c *LocalRouterCollector) getPeerStatus(peerStatuses []*iaas.LocalRouterHealthPeer, peerID types.ID) *iaas.LocalRouterHealthPeer {
 	for _, peer := range peerStatuses {
 		if peer.ID == peerID {
 			return peer
@@ -301,7 +301,7 @@ func (c *LocalRouterCollector) getPeerStatus(peerStatuses []*sacloud.LocalRouter
 	return nil
 }
 
-func (c *LocalRouterCollector) collectStaticRouteInfo(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter, staticRouteIndex int) {
+func (c *LocalRouterCollector) collectStaticRouteInfo(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter, staticRouteIndex int) {
 	labels := append(c.localRouterLabels(localRouter),
 		fmt.Sprintf("%d", staticRouteIndex),
 		localRouter.StaticRoutes[staticRouteIndex].Prefix,
@@ -316,7 +316,7 @@ func (c *LocalRouterCollector) collectStaticRouteInfo(ch chan<- prometheus.Metri
 	)
 }
 
-func (c *LocalRouterCollector) collectLocalRouterMetrics(ch chan<- prometheus.Metric, localRouter *sacloud.LocalRouter, now time.Time) {
+func (c *LocalRouterCollector) collectLocalRouterMetrics(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter, now time.Time) {
 	values, err := c.client.Monitor(c.ctx, localRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)

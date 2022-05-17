@@ -23,8 +23,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // DatabaseCollector collects metrics about all databases.
@@ -32,7 +32,7 @@ type DatabaseCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.DatabaseClient
+	client platform.DatabaseClient
 
 	Up               *prometheus.Desc
 	DatabaseInfo     *prometheus.Desc
@@ -53,7 +53,7 @@ type DatabaseCollector struct {
 }
 
 // NewDatabaseCollector returns a new DatabaseCollector.
-func NewDatabaseCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.DatabaseClient) *DatabaseCollector {
+func NewDatabaseCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.DatabaseClient) *DatabaseCollector {
 	errors.WithLabelValues("database").Add(0)
 
 	databaseLabels := []string{"id", "name", "zone"}
@@ -188,7 +188,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(databases))
 
 	for i := range databases {
-		func(database *iaas.Database) {
+		func(database *platform.Database) {
 			defer wg.Done()
 
 			databaseLabels := c.databaseLabels(database)
@@ -253,7 +253,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *DatabaseCollector) databaseLabels(database *iaas.Database) []string {
+func (c *DatabaseCollector) databaseLabels(database *platform.Database) []string {
 	return []string{
 		database.ID.String(),
 		database.Name,
@@ -270,7 +270,7 @@ var databasePlanLabels = map[types.ID]string{
 	types.DatabasePlans.DB1TB:   "1TB",
 }
 
-func (c *DatabaseCollector) databaseInfoLabels(database *iaas.Database) []string {
+func (c *DatabaseCollector) databaseInfoLabels(database *platform.Database) []string {
 	labels := c.databaseLabels(database)
 
 	instanceHost := "-"
@@ -303,7 +303,7 @@ func (c *DatabaseCollector) databaseInfoLabels(database *iaas.Database) []string
 	)
 }
 
-func (c *DatabaseCollector) nicInfoLabels(database *iaas.Database) []string {
+func (c *DatabaseCollector) nicInfoLabels(database *platform.Database) []string {
 	labels := c.databaseLabels(database)
 
 	var upstreamType, upstreamID, upstreamName string
@@ -334,7 +334,7 @@ func (c *DatabaseCollector) nicInfoLabels(database *iaas.Database) []string {
 	)
 }
 
-func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
+func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database *platform.Database, now time.Time) {
 	values, err := c.client.MonitorCPU(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
@@ -358,7 +358,7 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
+func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, database *platform.Database, now time.Time) {
 	values, err := c.client.MonitorDisk(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
@@ -388,7 +388,7 @@ func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, data
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
+func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, database *platform.Database, now time.Time) {
 	values, err := c.client.MonitorNIC(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
@@ -419,7 +419,7 @@ func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, datab
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, database *iaas.Database, now time.Time) {
+func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, database *platform.Database, now time.Time) {
 	values, err := c.client.MonitorDatabase(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)

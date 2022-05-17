@@ -21,34 +21,34 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyVPCRouterClient struct {
-	find          []*iaas.VPCRouter
+	find          []*platform.VPCRouter
 	findErr       error
-	status        *sacloud.VPCRouterStatus
+	status        *iaas.VPCRouterStatus
 	statusErr     error
-	monitor       *sacloud.MonitorInterfaceValue
+	monitor       *iaas.MonitorInterfaceValue
 	monitorErr    error
-	monitorCPU    *sacloud.MonitorCPUTimeValue
+	monitorCPU    *iaas.MonitorCPUTimeValue
 	monitorCPUErr error
 }
 
-func (d *dummyVPCRouterClient) Find(ctx context.Context) ([]*iaas.VPCRouter, error) {
+func (d *dummyVPCRouterClient) Find(ctx context.Context) ([]*platform.VPCRouter, error) {
 	return d.find, d.findErr
 }
-func (d *dummyVPCRouterClient) Status(ctx context.Context, zone string, id types.ID) (*sacloud.VPCRouterStatus, error) {
+func (d *dummyVPCRouterClient) Status(ctx context.Context, zone string, id types.ID) (*iaas.VPCRouterStatus, error) {
 	return d.status, d.statusErr
 }
-func (d *dummyVPCRouterClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (d *dummyVPCRouterClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitor, d.monitorErr
 }
 
-func (d *dummyVPCRouterClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+func (d *dummyVPCRouterClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error) {
 	return d.monitorCPU, d.monitorCPUErr
 }
 
@@ -79,7 +79,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.VPCRouterClient
+		in             platform.VPCRouterClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -101,17 +101,17 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 		{
 			name: "a VPCRouter with activity monitor",
 			in: &dummyVPCRouterClient{
-				find: []*iaas.VPCRouter{
+				find: []*platform.VPCRouter{
 					{
 						ZoneName: "is1a",
-						VPCRouter: &sacloud.VPCRouter{
+						VPCRouter: &iaas.VPCRouter{
 							ID:             101,
 							Name:           "router",
 							Description:    "desc",
 							Tags:           types.Tags{"tag1", "tag2"},
 							PlanID:         types.VPCRouterPlans.Premium,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
-							Interfaces: []*sacloud.VPCRouterInterface{
+							Interfaces: []*iaas.VPCRouterInterface{
 								{
 									Index: 0,
 									ID:    200,
@@ -121,10 +121,10 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 									ID:    201,
 								},
 							},
-							Settings: &sacloud.VPCRouterSetting{
+							Settings: &iaas.VPCRouterSetting{
 								VRID:                      1,
 								InternetConnectionEnabled: true,
-								Interfaces: []*sacloud.VPCRouterInterfaceSetting{
+								Interfaces: []*iaas.VPCRouterInterfaceSetting{
 									{
 										VirtualIPAddress: "192.168.0.1",
 										IPAddress:        []string{"192.168.0.11", "192.168.0.12"},
@@ -142,41 +142,41 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				status: &sacloud.VPCRouterStatus{
+				status: &iaas.VPCRouterStatus{
 					SessionCount: 100,
-					DHCPServerLeases: []*sacloud.VPCRouterDHCPServerLease{
+					DHCPServerLeases: []*iaas.VPCRouterDHCPServerLease{
 						{
 							IPAddress:  "172.16.0.1",
 							MACAddress: "aa:bb:cc:dd:ee:ff",
 						},
 					},
-					L2TPIPsecServerSessions: []*sacloud.VPCRouterL2TPIPsecServerSession{
+					L2TPIPsecServerSessions: []*iaas.VPCRouterL2TPIPsecServerSession{
 						{
 							User:      "user1",
 							IPAddress: "172.16.1.1",
 							TimeSec:   10,
 						},
 					},
-					PPTPServerSessions: []*sacloud.VPCRouterPPTPServerSession{
+					PPTPServerSessions: []*iaas.VPCRouterPPTPServerSession{
 						{
 							User:      "user2",
 							IPAddress: "172.16.2.1",
 							TimeSec:   20,
 						},
 					},
-					SiteToSiteIPsecVPNPeers: []*sacloud.VPCRouterSiteToSiteIPsecVPNPeer{
+					SiteToSiteIPsecVPNPeers: []*iaas.VPCRouterSiteToSiteIPsecVPNPeer{
 						{
 							Status: "UP",
 							Peer:   "172.16.3.1",
 						},
 					},
-					SessionAnalysis: &sacloud.VPCRouterSessionAnalysis{
-						SourceAddress: []*sacloud.VPCRouterStatisticsValue{
+					SessionAnalysis: &iaas.VPCRouterSessionAnalysis{
+						SourceAddress: []*iaas.VPCRouterStatisticsValue{
 							{Name: "localhost", Count: 4},
 						},
 					},
 				},
-				monitor: &sacloud.MonitorInterfaceValue{
+				monitor: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 100,
 					Send:    200,
@@ -318,23 +318,23 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 		{
 			name: "APIs return error",
 			in: &dummyVPCRouterClient{
-				find: []*iaas.VPCRouter{
+				find: []*platform.VPCRouter{
 					{
 						ZoneName: "is1a",
-						VPCRouter: &sacloud.VPCRouter{
+						VPCRouter: &iaas.VPCRouter{
 							ID:             101,
 							Name:           "router",
 							Description:    "desc",
 							Tags:           types.Tags{"tag1", "tag2"},
 							PlanID:         types.VPCRouterPlans.Premium,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
-							Interfaces: []*sacloud.VPCRouterInterface{
+							Interfaces: []*iaas.VPCRouterInterface{
 								{Index: 0, ID: 200},
 							},
-							Settings: &sacloud.VPCRouterSetting{
+							Settings: &iaas.VPCRouterSetting{
 								VRID:                      1,
 								InternetConnectionEnabled: true,
-								Interfaces: []*sacloud.VPCRouterInterfaceSetting{
+								Interfaces: []*iaas.VPCRouterInterfaceSetting{
 									{
 										VirtualIPAddress: "192.168.0.1",
 										IPAddress:        []string{"192.168.0.11", "192.168.0.12"},

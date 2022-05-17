@@ -19,7 +19,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 func flattenStringSlice(values []string) string {

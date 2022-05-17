@@ -21,30 +21,30 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 // TODO test certificates(common name and expire date)
 
 type dummyProxyLBClient struct {
-	find       []*sacloud.ProxyLB
+	find       []*iaas.ProxyLB
 	findErr    error
-	cert       *sacloud.ProxyLBCertificates
+	cert       *iaas.ProxyLBCertificates
 	certErr    error
-	monitor    *sacloud.MonitorConnectionValue
+	monitor    *iaas.MonitorConnectionValue
 	monitorErr error
 }
 
-func (d *dummyProxyLBClient) Find(ctx context.Context) ([]*sacloud.ProxyLB, error) {
+func (d *dummyProxyLBClient) Find(ctx context.Context) ([]*iaas.ProxyLB, error) {
 	return d.find, d.findErr
 }
-func (d *dummyProxyLBClient) GetCertificate(ctx context.Context, id types.ID) (*sacloud.ProxyLBCertificates, error) {
+func (d *dummyProxyLBClient) GetCertificate(ctx context.Context, id types.ID) (*iaas.ProxyLBCertificates, error) {
 	return d.cert, d.certErr
 }
-func (d *dummyProxyLBClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorConnectionValue, error) {
+func (d *dummyProxyLBClient) Monitor(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorConnectionValue, error) {
 	return d.monitor, d.monitorErr
 }
 
@@ -72,7 +72,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		in             iaas.ProxyLBClient
+		in             platform.ProxyLBClient
 		wantLogs       []string
 		wantErrCounter float64
 		wantMetrics    []*collectedMetric
@@ -94,7 +94,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 		{
 			name: "a proxyLB",
 			in: &dummyProxyLBClient{
-				find: []*sacloud.ProxyLB{
+				find: []*iaas.ProxyLB{
 					{
 						ID:           101,
 						Name:         "proxylb",
@@ -102,16 +102,16 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 						Tags:         types.Tags{"tag1", "tag2"},
 						Availability: types.Availabilities.Available,
 						Plan:         types.ProxyLBPlans.CPS100,
-						HealthCheck: &sacloud.ProxyLBHealthCheck{
+						HealthCheck: &iaas.ProxyLBHealthCheck{
 							Protocol:  types.ProxyLBProtocols.HTTP,
 							Path:      "/",
 							DelayLoop: 10,
 						},
-						SorryServer: &sacloud.ProxyLBSorryServer{
+						SorryServer: &iaas.ProxyLBSorryServer{
 							IPAddress: "192.168.0.21",
 							Port:      80,
 						},
-						BindPorts: []*sacloud.ProxyLBBindPort{
+						BindPorts: []*iaas.ProxyLBBindPort{
 							{
 								ProxyMode: types.ProxyLBProxyModes.HTTP,
 								Port:      80,
@@ -121,7 +121,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 								Port:      443,
 							},
 						},
-						Servers: []*sacloud.ProxyLBServer{
+						Servers: []*iaas.ProxyLBServer{
 							{
 								IPAddress: "192.168.0.101",
 								Port:      80,
@@ -135,8 +135,8 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 						VirtualIPAddress: "192.0.2.1",
 					},
 				},
-				cert: &sacloud.ProxyLBCertificates{
-					PrimaryCert: &sacloud.ProxyLBPrimaryCert{
+				cert: &iaas.ProxyLBCertificates{
+					PrimaryCert: &iaas.ProxyLBPrimaryCert{
 						ServerCertificate:       "",
 						IntermediateCertificate: "",
 						PrivateKey:              "",
@@ -144,7 +144,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 						CertificateCommonName:   "",
 					},
 				},
-				monitor: &sacloud.MonitorConnectionValue{
+				monitor: &iaas.MonitorConnectionValue{
 					Time:              monitorTime,
 					ActiveConnections: 100,
 					ConnectionsPerSec: 200,
@@ -223,7 +223,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 		{
 			name: "activity monitor APIs return error",
 			in: &dummyProxyLBClient{
-				find: []*sacloud.ProxyLB{
+				find: []*iaas.ProxyLB{
 					{
 						ID:           101,
 						Name:         "proxylb",
@@ -231,16 +231,16 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 						Tags:         types.Tags{"tag1", "tag2"},
 						Availability: types.Availabilities.Available,
 						Plan:         types.ProxyLBPlans.CPS100,
-						HealthCheck: &sacloud.ProxyLBHealthCheck{
+						HealthCheck: &iaas.ProxyLBHealthCheck{
 							Protocol:  types.ProxyLBProtocols.HTTP,
 							Path:      "/",
 							DelayLoop: 10,
 						},
-						SorryServer: &sacloud.ProxyLBSorryServer{
+						SorryServer: &iaas.ProxyLBSorryServer{
 							IPAddress: "192.168.0.21",
 							Port:      80,
 						},
-						BindPorts: []*sacloud.ProxyLBBindPort{
+						BindPorts: []*iaas.ProxyLBBindPort{
 							{
 								ProxyMode: types.ProxyLBProxyModes.HTTP,
 								Port:      80,
@@ -250,7 +250,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 								Port:      443,
 							},
 						},
-						Servers: []*sacloud.ProxyLBServer{
+						Servers: []*iaas.ProxyLBServer{
 							{
 								IPAddress: "192.168.0.101",
 								Port:      80,

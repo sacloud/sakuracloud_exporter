@@ -25,8 +25,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // ProxyLBCollector collects metrics about all proxyLBs.
@@ -34,7 +34,7 @@ type ProxyLBCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.ProxyLBClient
+	client platform.ProxyLBClient
 
 	Up          *prometheus.Desc
 	ProxyLBInfo *prometheus.Desc
@@ -51,7 +51,7 @@ type ProxyLBCollector struct {
 }
 
 // NewProxyLBCollector returns a new ProxyLBCollector.
-func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.ProxyLBClient) *ProxyLBCollector {
+func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ProxyLBClient) *ProxyLBCollector {
 	errors.WithLabelValues("proxylb").Add(0)
 
 	proxyLBLabels := []string{"id", "name"}
@@ -139,7 +139,7 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(proxyLBs))
 
 	for i := range proxyLBs {
-		func(proxyLB *sacloud.ProxyLB) {
+		func(proxyLB *iaas.ProxyLB) {
 			defer wg.Done()
 
 			proxyLBLabels := c.proxyLBLabels(proxyLB)
@@ -198,14 +198,14 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *ProxyLBCollector) proxyLBLabels(proxyLB *sacloud.ProxyLB) []string {
+func (c *ProxyLBCollector) proxyLBLabels(proxyLB *iaas.ProxyLB) []string {
 	return []string{
 		proxyLB.ID.String(),
 		proxyLB.Name,
 	}
 }
 
-func (c *ProxyLBCollector) collectProxyLBInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB) {
+func (c *ProxyLBCollector) collectProxyLBInfo(ch chan<- prometheus.Metric, proxyLB *iaas.ProxyLB) {
 	sorryServerPort := ""
 	if proxyLB.SorryServer.Port > 0 {
 		sorryServerPort = fmt.Sprintf("%d", proxyLB.SorryServer.Port)
@@ -230,7 +230,7 @@ func (c *ProxyLBCollector) collectProxyLBInfo(ch chan<- prometheus.Metric, proxy
 	)
 }
 
-func (c *ProxyLBCollector) collectProxyLBBindPortInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, index int) {
+func (c *ProxyLBCollector) collectProxyLBBindPortInfo(ch chan<- prometheus.Metric, proxyLB *iaas.ProxyLB, index int) {
 	bindPort := proxyLB.BindPorts[index]
 	labels := append(c.proxyLBLabels(proxyLB),
 		fmt.Sprintf("%d", index),
@@ -246,7 +246,7 @@ func (c *ProxyLBCollector) collectProxyLBBindPortInfo(ch chan<- prometheus.Metri
 	)
 }
 
-func (c *ProxyLBCollector) collectProxyLBServerInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, index int) {
+func (c *ProxyLBCollector) collectProxyLBServerInfo(ch chan<- prometheus.Metric, proxyLB *iaas.ProxyLB, index int) {
 	server := proxyLB.Servers[index]
 	var enabled = "0"
 	if server.Enabled {
@@ -266,7 +266,7 @@ func (c *ProxyLBCollector) collectProxyLBServerInfo(ch chan<- prometheus.Metric,
 	)
 }
 
-func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB) {
+func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, proxyLB *iaas.ProxyLB) {
 	cert, err := c.client.GetCertificate(c.ctx, proxyLB.ID)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
@@ -343,7 +343,7 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 	}
 }
 
-func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, proxyLB *sacloud.ProxyLB, now time.Time) {
+func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, proxyLB *iaas.ProxyLB, now time.Time) {
 	values, err := c.client.Monitor(c.ctx, proxyLB.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)

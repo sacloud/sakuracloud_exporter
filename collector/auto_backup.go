@@ -24,8 +24,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // AutoBackupCollector collects metrics about all auto_backups.
@@ -33,7 +33,7 @@ type AutoBackupCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.AutoBackupClient
+	client platform.AutoBackupClient
 
 	Info *prometheus.Desc
 
@@ -43,7 +43,7 @@ type AutoBackupCollector struct {
 }
 
 // NewAutoBackupCollector returns a new AutoBackupCollector.
-func NewAutoBackupCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.AutoBackupClient) *AutoBackupCollector {
+func NewAutoBackupCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.AutoBackupClient) *AutoBackupCollector {
 	errors.WithLabelValues("auto_backup").Add(0)
 
 	labels := []string{"id", "name", "disk_id"}
@@ -101,7 +101,7 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 	var wg sync.WaitGroup
 
 	for i := range autoBackups {
-		func(autoBackup *sacloud.AutoBackup) {
+		func(autoBackup *iaas.AutoBackup) {
 			ch <- prometheus.MustNewConstMetric(
 				c.Info,
 				prometheus.GaugeValue,
@@ -121,7 +121,7 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *AutoBackupCollector) autoBackupLabels(autoBackup *sacloud.AutoBackup) []string {
+func (c *AutoBackupCollector) autoBackupLabels(autoBackup *iaas.AutoBackup) []string {
 	return []string{
 		autoBackup.ID.String(),
 		autoBackup.Name,
@@ -129,7 +129,7 @@ func (c *AutoBackupCollector) autoBackupLabels(autoBackup *sacloud.AutoBackup) [
 	}
 }
 
-func (c *AutoBackupCollector) autoBackupInfoLabels(autoBackup *sacloud.AutoBackup) []string {
+func (c *AutoBackupCollector) autoBackupInfoLabels(autoBackup *iaas.AutoBackup) []string {
 	labels := c.autoBackupLabels(autoBackup)
 
 	return append(labels,
@@ -140,7 +140,7 @@ func (c *AutoBackupCollector) autoBackupInfoLabels(autoBackup *sacloud.AutoBacku
 	)
 }
 
-func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *sacloud.AutoBackup, archive *sacloud.Archive) []string {
+func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *iaas.AutoBackup, archive *iaas.Archive) []string {
 	labels := c.autoBackupLabels(autoBackup)
 	return append(labels,
 		archive.ID.String(),
@@ -150,7 +150,7 @@ func (c *AutoBackupCollector) archiveInfoLabels(autoBackup *sacloud.AutoBackup, 
 	)
 }
 
-func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, autoBackup *sacloud.AutoBackup, now time.Time) {
+func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, autoBackup *iaas.AutoBackup, now time.Time) {
 	archives, err := c.client.ListBackups(c.ctx, autoBackup.ZoneName, autoBackup.ID)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)

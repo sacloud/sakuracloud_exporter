@@ -24,9 +24,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-	"github.com/sacloud/sakuracloud_exporter/iaas"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
 // LoadBalancerCollector collects metrics about all servers.
@@ -34,7 +34,7 @@ type LoadBalancerCollector struct {
 	ctx    context.Context
 	logger log.Logger
 	errors *prometheus.CounterVec
-	client iaas.LoadBalancerClient
+	client platform.LoadBalancerClient
 
 	Up               *prometheus.Desc
 	LoadBalancerInfo *prometheus.Desc
@@ -51,7 +51,7 @@ type LoadBalancerCollector struct {
 }
 
 // NewLoadBalancerCollector returns a new LoadBalancerCollector.
-func NewLoadBalancerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client iaas.LoadBalancerClient) *LoadBalancerCollector {
+func NewLoadBalancerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.LoadBalancerClient) *LoadBalancerCollector {
 	errors.WithLabelValues("loadbalancer").Add(0)
 
 	lbLabels := []string{"id", "name", "zone"}
@@ -149,7 +149,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(lbs))
 
 	for i := range lbs {
-		func(lb *iaas.LoadBalancer) {
+		func(lb *platform.LoadBalancer) {
 			defer wg.Done()
 
 			lbLabels := c.lbLabels(lb)
@@ -202,7 +202,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *LoadBalancerCollector) lbLabels(lb *iaas.LoadBalancer) []string {
+func (c *LoadBalancerCollector) lbLabels(lb *platform.LoadBalancer) []string {
 	return []string{
 		lb.ID.String(),
 		lb.Name,
@@ -215,7 +215,7 @@ var loadBalancerPlanMapping = map[types.ID]string{
 	types.LoadBalancerPlans.HighSpec: "highspec",
 }
 
-func (c *LoadBalancerCollector) lbInfoLabels(lb *iaas.LoadBalancer) []string {
+func (c *LoadBalancerCollector) lbInfoLabels(lb *platform.LoadBalancer) []string {
 	labels := c.lbLabels(lb)
 
 	isHA := "0"
@@ -241,7 +241,7 @@ func (c *LoadBalancerCollector) lbInfoLabels(lb *iaas.LoadBalancer) []string {
 	)
 }
 
-func (c *LoadBalancerCollector) vipLabels(lb *iaas.LoadBalancer, index int) []string {
+func (c *LoadBalancerCollector) vipLabels(lb *platform.LoadBalancer, index int) []string {
 	if len(lb.VirtualIPAddresses) <= index {
 		return nil
 	}
@@ -252,7 +252,7 @@ func (c *LoadBalancerCollector) vipLabels(lb *iaas.LoadBalancer, index int) []st
 	)
 }
 
-func (c *LoadBalancerCollector) vipInfoLabels(lb *iaas.LoadBalancer, index int) []string {
+func (c *LoadBalancerCollector) vipInfoLabels(lb *platform.LoadBalancer, index int) []string {
 	if len(lb.VirtualIPAddresses) <= index {
 		return nil
 	}
@@ -266,7 +266,7 @@ func (c *LoadBalancerCollector) vipInfoLabels(lb *iaas.LoadBalancer, index int) 
 	)
 }
 
-func (c *LoadBalancerCollector) serverLabels(lb *iaas.LoadBalancer, vipIndex int, serverIndex int) []string {
+func (c *LoadBalancerCollector) serverLabels(lb *platform.LoadBalancer, vipIndex int, serverIndex int) []string {
 	if len(lb.VirtualIPAddresses) < vipIndex {
 		return nil
 	}
@@ -283,7 +283,7 @@ func (c *LoadBalancerCollector) serverLabels(lb *iaas.LoadBalancer, vipIndex int
 	)
 }
 
-func (c *LoadBalancerCollector) serverInfoLabels(lb *iaas.LoadBalancer, vipIndex int, serverIndex int) []string {
+func (c *LoadBalancerCollector) serverInfoLabels(lb *platform.LoadBalancer, vipIndex int, serverIndex int) []string {
 	if len(lb.VirtualIPAddresses) < vipIndex {
 		return nil
 	}
@@ -301,7 +301,7 @@ func (c *LoadBalancerCollector) serverInfoLabels(lb *iaas.LoadBalancer, vipIndex
 	)
 }
 
-func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, lb *iaas.LoadBalancer, now time.Time) {
+func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, lb *platform.LoadBalancer, now time.Time) {
 	values, err := c.client.MonitorNIC(c.ctx, lb.ZoneName, lb.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
@@ -340,7 +340,7 @@ func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, l
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func getVIPStatus(status []*sacloud.LoadBalancerStatus, vip string) *sacloud.LoadBalancerStatus {
+func getVIPStatus(status []*iaas.LoadBalancerStatus, vip string) *iaas.LoadBalancerStatus {
 	for _, s := range status {
 		if s.VirtualIPAddress == vip {
 			return s
@@ -349,7 +349,7 @@ func getVIPStatus(status []*sacloud.LoadBalancerStatus, vip string) *sacloud.Loa
 	return nil
 }
 
-func getServerStatus(status []*sacloud.LoadBalancerServerStatus, ip string) *sacloud.LoadBalancerServerStatus {
+func getServerStatus(status []*iaas.LoadBalancerServerStatus, ip string) *iaas.LoadBalancerServerStatus {
 	for _, s := range status {
 		if s.IPAddress == ip {
 			return s
@@ -358,7 +358,7 @@ func getServerStatus(status []*sacloud.LoadBalancerServerStatus, ip string) *sac
 	return nil
 }
 
-func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb *iaas.LoadBalancer) {
+func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb *platform.LoadBalancer) {
 	status, err := c.client.Status(c.ctx, lb.ZoneName, lb.ID)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)

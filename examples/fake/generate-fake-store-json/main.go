@@ -21,19 +21,18 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/sacloud/libsacloud/v2/helper/builder/disk"
-	"github.com/sacloud/libsacloud/v2/helper/builder/server"
-	"github.com/sacloud/libsacloud/v2/helper/query"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/fake"
-	"github.com/sacloud/libsacloud/v2/sacloud/ostype"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/fake"
+	"github.com/sacloud/iaas-api-go/helper/query"
+	"github.com/sacloud/iaas-api-go/ostype"
+	"github.com/sacloud/iaas-api-go/types"
+	diskBuilders "github.com/sacloud/iaas-service-go/disk/builder"
+	serverBuilders "github.com/sacloud/iaas-service-go/server/builder"
 )
 
 const fakeStoreFileName = "example-fake-store.json"
 
 func main() {
-
 	log.Println("generate example fake-store.json: start")
 	curDir, err := os.Getwd()
 	if err != nil {
@@ -45,11 +44,10 @@ func main() {
 	// switch sacloud client to fake driver
 	fake.SwitchFactoryFuncToFake()
 
-	caller := sacloud.NewClient("dummy-token", "dummy-secret")
-	createFuncs := []func(caller sacloud.APICaller){
+	caller := iaas.NewClient("dummy-token", "dummy-secret")
+	createFuncs := []func(caller iaas.APICaller){
 		createAutoBackup,
 		createDatabase,
-		//createESME, // TODO implememts this after supported ESME by libsacloud's fake driver
 		createInternet,
 		createLoadBalancer,
 		createMobileGateway,
@@ -62,7 +60,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(len(createFuncs))
 	for _, f := range createFuncs {
-		go func(f func(caller sacloud.APICaller)) {
+		go func(f func(caller iaas.APICaller)) {
 			f(caller)
 			wg.Done()
 		}(f)
@@ -72,9 +70,9 @@ func main() {
 	log.Println("Done.")
 }
 
-func createAutoBackup(caller sacloud.APICaller) {
-	diskOp := sacloud.NewDiskOp(caller)
-	disk, err := diskOp.Create(context.Background(), "is1a", &sacloud.DiskCreateRequest{
+func createAutoBackup(caller iaas.APICaller) {
+	diskOp := iaas.NewDiskOp(caller)
+	disk, err := diskOp.Create(context.Background(), "is1a", &iaas.DiskCreateRequest{
 		Name:        "example-disk-for-auto-backup",
 		DiskPlanID:  types.DiskPlans.SSD,
 		SizeMB:      40 * 1024,
@@ -85,8 +83,8 @@ func createAutoBackup(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	backupOp := sacloud.NewAutoBackupOp(caller)
-	_, err = backupOp.Create(context.Background(), "is1a", &sacloud.AutoBackupCreateRequest{
+	backupOp := iaas.NewAutoBackupOp(caller)
+	_, err = backupOp.Create(context.Background(), "is1a", &iaas.AutoBackupCreateRequest{
 		Name:   "example",
 		DiskID: disk.ID,
 		BackupSpanWeekdays: []types.EBackupSpanWeekday{
@@ -103,9 +101,9 @@ func createAutoBackup(caller sacloud.APICaller) {
 	}
 }
 
-func createDatabase(caller sacloud.APICaller) {
-	swOp := sacloud.NewSwitchOp(caller)
-	sw, err := swOp.Create(context.Background(), "is1a", &sacloud.SwitchCreateRequest{
+func createDatabase(caller iaas.APICaller) {
+	swOp := iaas.NewSwitchOp(caller)
+	sw, err := swOp.Create(context.Background(), "is1a", &iaas.SwitchCreateRequest{
 		Name:        "example-switch-for-database",
 		Description: "desc",
 		Tags:        types.Tags{"example", "database"},
@@ -114,27 +112,27 @@ func createDatabase(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	dbOp := sacloud.NewDatabaseOp(caller)
-	db, err := dbOp.Create(context.Background(), "is1a", &sacloud.DatabaseCreateRequest{
+	dbOp := iaas.NewDatabaseOp(caller)
+	db, err := dbOp.Create(context.Background(), "is1a", &iaas.DatabaseCreateRequest{
 		PlanID:         types.DatabasePlans.DB30GB,
 		SwitchID:       sw.ID,
 		IPAddresses:    []string{"192.168.0.11"},
 		NetworkMaskLen: 24,
 		DefaultRoute:   "192.168.0.1",
-		Conf: &sacloud.DatabaseRemarkDBConfCommon{
+		Conf: &iaas.DatabaseRemarkDBConfCommon{
 			DatabaseName:     types.RDBMSVersions[types.RDBMSTypesPostgreSQL].Name,
 			DatabaseVersion:  types.RDBMSVersions[types.RDBMSTypesPostgreSQL].Version,
 			DatabaseRevision: types.RDBMSVersions[types.RDBMSTypesPostgreSQL].Revision,
 			DefaultUser:      "user01",
 			UserPassword:     "dummy-password-01",
 		},
-		CommonSetting: &sacloud.DatabaseSettingCommon{
+		CommonSetting: &iaas.DatabaseSettingCommon{
 			ServicePort:   5432,
 			SourceNetwork: []string{"192.168.0.0/24", "192.168.1.0/24"},
 			DefaultUser:   "user01",
 			UserPassword:  "dummy-password-01",
 		},
-		BackupSetting: &sacloud.DatabaseSettingBackup{
+		BackupSetting: &iaas.DatabaseSettingBackup{
 			Rotate: 3,
 			Time:   "00:00",
 			DayOfWeek: []types.EBackupSpanWeekday{
@@ -149,7 +147,7 @@ func createDatabase(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	waiter := sacloud.WaiterForApplianceUp(func() (interface{}, error) {
+	waiter := iaas.WaiterForApplianceUp(func() (interface{}, error) {
 		return dbOp.Read(context.Background(), "is1a", db.ID)
 	}, 10)
 	if _, err := waiter.WaitForState(context.Background()); err != nil {
@@ -158,31 +156,9 @@ func createDatabase(caller sacloud.APICaller) {
 
 }
 
-// TODO implememts this after supported ESME by libsacloud's fake driver
-//func createESME(caller sacloud.APICaller) {
-//	op := sacloud.NewESMEOp(caller)
-//	esme, err := op.Create(context.Background(), &sacloud.ESMECreateRequest{
-//		Name:           "example",
-//		Description:    "desc",
-//		Tags:           types.Tags{"example", "esme"},
-//	})
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	// send dummy SMS
-//	_ , err = op.SendMessageWithGeneratedOTP(context.Background(), esme.ID, &sacloud.ESMESendMessageWithGeneratedOTPRequest{
-//		Destination: "819012345678",
-//		Sender:      "sakuracloud_exporter",
-//	})
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//}
-
-func createInternet(caller sacloud.APICaller) {
-	op := sacloud.NewInternetOp(caller)
-	_, err := op.Create(context.Background(), "is1a", &sacloud.InternetCreateRequest{
+func createInternet(caller iaas.APICaller) {
+	op := iaas.NewInternetOp(caller)
+	_, err := op.Create(context.Background(), "is1a", &iaas.InternetCreateRequest{
 		Name:           "example",
 		Description:    "desc",
 		Tags:           types.Tags{"example", "switch+router"},
@@ -194,9 +170,9 @@ func createInternet(caller sacloud.APICaller) {
 	}
 }
 
-func createLoadBalancer(caller sacloud.APICaller) {
-	swOp := sacloud.NewSwitchOp(caller)
-	sw, err := swOp.Create(context.Background(), "is1a", &sacloud.SwitchCreateRequest{
+func createLoadBalancer(caller iaas.APICaller) {
+	swOp := iaas.NewSwitchOp(caller)
+	sw, err := swOp.Create(context.Background(), "is1a", &iaas.SwitchCreateRequest{
 		Name:        "example-switch-for-load-balancer-standard",
 		Description: "dest",
 		Tags:        types.Tags{"example", "load-balancer", "plan=standard"},
@@ -205,8 +181,8 @@ func createLoadBalancer(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	lbOp := sacloud.NewLoadBalancerOp(caller)
-	lb, err := lbOp.Create(context.Background(), "is1a", &sacloud.LoadBalancerCreateRequest{
+	lbOp := iaas.NewLoadBalancerOp(caller)
+	lb, err := lbOp.Create(context.Background(), "is1a", &iaas.LoadBalancerCreateRequest{
 		SwitchID:       sw.ID,
 		PlanID:         types.LoadBalancerPlans.Standard,
 		VRID:           10,
@@ -216,19 +192,19 @@ func createLoadBalancer(caller sacloud.APICaller) {
 		Name:           "example",
 		Description:    "desc",
 		Tags:           types.Tags{"example", "load-balancer", "plan=standard"},
-		VirtualIPAddresses: []*sacloud.LoadBalancerVirtualIPAddress{
+		VirtualIPAddresses: []*iaas.LoadBalancerVirtualIPAddress{
 			{
 				VirtualIPAddress: "192.168.0.101",
 				Port:             80,
 				DelayLoop:        10,
 				SorryServer:      "192.168.0.21",
 				Description:      "desc",
-				Servers: []*sacloud.LoadBalancerServer{
+				Servers: []*iaas.LoadBalancerServer{
 					{
 						IPAddress: "192.168.0.201",
 						Port:      80,
 						Enabled:   true,
-						HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+						HealthCheck: &iaas.LoadBalancerServerHealthCheck{
 							Protocol:     types.LoadBalancerHealthCheckProtocols.HTTP,
 							Path:         "/status",
 							ResponseCode: 200,
@@ -238,7 +214,7 @@ func createLoadBalancer(caller sacloud.APICaller) {
 						IPAddress: "192.168.0.202",
 						Port:      80,
 						Enabled:   true,
-						HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+						HealthCheck: &iaas.LoadBalancerServerHealthCheck{
 							Protocol:     types.LoadBalancerHealthCheckProtocols.HTTP,
 							Path:         "/status",
 							ResponseCode: 200,
@@ -253,7 +229,7 @@ func createLoadBalancer(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	waiter := sacloud.WaiterForApplianceUp(func() (interface{}, error) {
+	waiter := iaas.WaiterForApplianceUp(func() (interface{}, error) {
 		return lbOp.Read(context.Background(), "is1a", lb.ID)
 	}, 10)
 	if _, err := waiter.WaitForState(context.Background()); err != nil {
@@ -261,9 +237,9 @@ func createLoadBalancer(caller sacloud.APICaller) {
 	}
 }
 
-func createMobileGateway(caller sacloud.APICaller) {
-	simOp := sacloud.NewSIMOp(caller)
-	sim, err := simOp.Create(context.Background(), &sacloud.SIMCreateRequest{
+func createMobileGateway(caller iaas.APICaller) {
+	simOp := iaas.NewSIMOp(caller)
+	sim, err := simOp.Create(context.Background(), &iaas.SIMCreateRequest{
 		Name:        "example",
 		Description: "desc",
 		Tags:        types.Tags{"example", "mobile-gateway"},
@@ -274,8 +250,8 @@ func createMobileGateway(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	mgwOp := sacloud.NewMobileGatewayOp(caller)
-	mgw, err := mgwOp.Create(context.Background(), "is1a", &sacloud.MobileGatewayCreateRequest{
+	mgwOp := iaas.NewMobileGatewayOp(caller)
+	mgw, err := mgwOp.Create(context.Background(), "is1a", &iaas.MobileGatewayCreateRequest{
 		Name:                            "example",
 		Description:                     "desc",
 		Tags:                            types.Tags{"example", "mobile-gateway"},
@@ -286,14 +262,14 @@ func createMobileGateway(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	_, err = sacloud.WaiterForReady(func() (interface{}, error) {
+	_, err = iaas.WaiterForReady(func() (interface{}, error) {
 		return mgwOp.Read(context.Background(), "is1a", mgw.ID)
 	}).WaitForState(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err := mgwOp.SetTrafficConfig(context.Background(), "is1a", mgw.ID, &sacloud.MobileGatewayTrafficControl{
+	if err := mgwOp.SetTrafficConfig(context.Background(), "is1a", mgw.ID, &iaas.MobileGatewayTrafficControl{
 		TrafficQuotaInMB:       1024,
 		BandWidthLimitInKbps:   64,
 		EmailNotifyEnabled:     true,
@@ -304,26 +280,26 @@ func createMobileGateway(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	if err := mgwOp.SetDNS(context.Background(), "is1a", mgw.ID, &sacloud.MobileGatewayDNSSetting{
+	if err := mgwOp.SetDNS(context.Background(), "is1a", mgw.ID, &iaas.MobileGatewayDNSSetting{
 		DNS1: "133.242.0.1",
 		DNS2: "133.242.0.2",
 	}); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := mgwOp.AddSIM(context.Background(), "is1a", mgw.ID, &sacloud.MobileGatewayAddSIMRequest{
+	if err := mgwOp.AddSIM(context.Background(), "is1a", mgw.ID, &iaas.MobileGatewayAddSIMRequest{
 		SIMID: sim.ID.String(),
 	}); err != nil {
 		log.Fatal(err)
 	}
-	if err := simOp.AssignIP(context.Background(), sim.ID, &sacloud.SIMAssignIPRequest{IP: "10.0.0.123"}); err != nil {
+	if err := simOp.AssignIP(context.Background(), sim.ID, &iaas.SIMAssignIPRequest{IP: "10.0.0.123"}); err != nil {
 		log.Fatal(err)
 	}
 
 	if err := mgwOp.Boot(context.Background(), "is1a", mgw.ID); err != nil {
 		log.Fatal(err)
 	}
-	_, err = sacloud.WaiterForApplianceUp(func() (interface{}, error) {
+	_, err = iaas.WaiterForApplianceUp(func() (interface{}, error) {
 		return mgwOp.Read(context.Background(), "is1a", mgw.ID)
 	}, 10).WaitForState(context.Background())
 	if err != nil {
@@ -331,9 +307,9 @@ func createMobileGateway(caller sacloud.APICaller) {
 	}
 }
 
-func createNFS(caller sacloud.APICaller) {
-	swOp := sacloud.NewSwitchOp(caller)
-	sw, err := swOp.Create(context.Background(), "is1a", &sacloud.SwitchCreateRequest{
+func createNFS(caller iaas.APICaller) {
+	swOp := iaas.NewSwitchOp(caller)
+	sw, err := swOp.Create(context.Background(), "is1a", &iaas.SwitchCreateRequest{
 		Name:        "example-for-nfs",
 		Description: "desc",
 		Tags:        types.Tags{"example", "nfs"},
@@ -342,13 +318,13 @@ func createNFS(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	nfsOp := sacloud.NewNFSOp(caller)
-	planID, err := query.FindNFSPlanID(context.Background(), sacloud.NewNoteOp(caller), types.NFSPlans.HDD, types.NFSHDDSizes.Size100GB)
+	nfsOp := iaas.NewNFSOp(caller)
+	planID, err := query.FindNFSPlanID(context.Background(), iaas.NewNoteOp(caller), types.NFSPlans.HDD, types.NFSHDDSizes.Size100GB)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	n, err := nfsOp.Create(context.Background(), "is1a", &sacloud.NFSCreateRequest{
+	n, err := nfsOp.Create(context.Background(), "is1a", &iaas.NFSCreateRequest{
 		SwitchID:       sw.ID,
 		PlanID:         planID,
 		IPAddresses:    []string{"192.168.0.11"},
@@ -362,28 +338,28 @@ func createNFS(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	if _, err := sacloud.WaiterForApplianceUp(func() (interface{}, error) {
+	if _, err := iaas.WaiterForApplianceUp(func() (interface{}, error) {
 		return nfsOp.Read(context.Background(), "is1a", n.ID)
 	}, 10).WaitForState(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func createProxyLB(caller sacloud.APICaller) {
-	lbOp := sacloud.NewProxyLBOp(caller)
+func createProxyLB(caller iaas.APICaller) {
+	lbOp := iaas.NewProxyLBOp(caller)
 
-	_, err := lbOp.Create(context.Background(), &sacloud.ProxyLBCreateRequest{
+	_, err := lbOp.Create(context.Background(), &iaas.ProxyLBCreateRequest{
 		Plan: types.ProxyLBPlans.CPS500,
-		HealthCheck: &sacloud.ProxyLBHealthCheck{
+		HealthCheck: &iaas.ProxyLBHealthCheck{
 			Protocol:  types.ProxyLBProtocols.HTTP,
 			Path:      "/status",
 			DelayLoop: 10,
 		},
-		SorryServer: &sacloud.ProxyLBSorryServer{
+		SorryServer: &iaas.ProxyLBSorryServer{
 			IPAddress: "192.168.0.1",
 			Port:      80,
 		},
-		BindPorts: []*sacloud.ProxyLBBindPort{
+		BindPorts: []*iaas.ProxyLBBindPort{
 			{
 				ProxyMode:       types.ProxyLBProxyModes.HTTP,
 				Port:            80,
@@ -395,7 +371,7 @@ func createProxyLB(caller sacloud.APICaller) {
 				SupportHTTP2: true,
 			},
 		},
-		Servers: []*sacloud.ProxyLBServer{
+		Servers: []*iaas.ProxyLBServer{
 			{
 				IPAddress: "192.0.2.1",
 				Port:      80,
@@ -407,11 +383,11 @@ func createProxyLB(caller sacloud.APICaller) {
 				Enabled:   true,
 			},
 		},
-		LetsEncrypt: &sacloud.ProxyLBACMESetting{
+		LetsEncrypt: &iaas.ProxyLBACMESetting{
 			CommonName: "example.com",
 			Enabled:    true,
 		},
-		StickySession: &sacloud.ProxyLBStickySession{
+		StickySession: &iaas.ProxyLBStickySession{
 			Enabled: true,
 		},
 		UseVIPFailover: true,
@@ -426,9 +402,9 @@ func createProxyLB(caller sacloud.APICaller) {
 	}
 }
 
-func createServer(caller sacloud.APICaller) {
-	swOp := sacloud.NewSwitchOp(caller)
-	sw, err := swOp.Create(context.Background(), "is1a", &sacloud.SwitchCreateRequest{
+func createServer(caller iaas.APICaller) {
+	swOp := iaas.NewSwitchOp(caller)
+	sw, err := swOp.Create(context.Background(), "is1a", &iaas.SwitchCreateRequest{
 		Name:        "example-for-server",
 		Description: "desc",
 		Tags:        types.Tags{"example", "server"},
@@ -437,7 +413,7 @@ func createServer(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	builder := &server.Builder{
+	builder := &serverBuilders.Builder{
 		Name:            "example",
 		CPU:             2,
 		MemoryGB:        4,
@@ -445,12 +421,12 @@ func createServer(caller sacloud.APICaller) {
 		Description:     "desc",
 		Tags:            types.Tags{"example", "server"},
 		BootAfterCreate: true,
-		NIC:             &server.SharedNICSetting{},
-		AdditionalNICs: []server.AdditionalNICSettingHolder{
-			&server.ConnectedNICSetting{SwitchID: sw.ID},
+		NIC:             &serverBuilders.SharedNICSetting{},
+		AdditionalNICs: []serverBuilders.AdditionalNICSettingHolder{
+			&serverBuilders.ConnectedNICSetting{SwitchID: sw.ID},
 		},
-		DiskBuilders: []disk.Builder{
-			&disk.FromUnixBuilder{
+		DiskBuilders: []diskBuilders.Builder{
+			&diskBuilders.FromUnixBuilder{
 				OSType:      ostype.Ubuntu,
 				Name:        "example-disk-for-server",
 				SizeGB:      20,
@@ -459,19 +435,19 @@ func createServer(caller sacloud.APICaller) {
 				Connection:  types.DiskConnections.VirtIO,
 				Description: "desc",
 				Tags:        types.Tags{"example", "server"},
-				Client:      disk.NewBuildersAPIClient(caller),
+				Client:      diskBuilders.NewBuildersAPIClient(caller),
 			},
 		},
-		Client: server.NewBuildersAPIClient(caller),
+		Client: serverBuilders.NewBuildersAPIClient(caller),
 	}
 	if _, err := builder.Build(context.Background(), "is1a"); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func createVPCRouter(caller sacloud.APICaller) {
-	routerOp := sacloud.NewInternetOp(caller)
-	router, err := routerOp.Create(context.Background(), "is1a", &sacloud.InternetCreateRequest{
+func createVPCRouter(caller iaas.APICaller) {
+	routerOp := iaas.NewInternetOp(caller)
+	router, err := routerOp.Create(context.Background(), "is1a", &iaas.InternetCreateRequest{
 		Name:           "example-router-for-vpc",
 		Description:    "desc",
 		Tags:           types.Tags{"example", "vpc-router"},
@@ -482,24 +458,24 @@ func createVPCRouter(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	swOp := sacloud.NewSwitchOp(caller)
+	swOp := iaas.NewSwitchOp(caller)
 	sw, err := swOp.Read(context.Background(), "is1a", router.Switch.ID)
 	if err != nil {
 		log.Fatal(err)
 	}
 	ipaddresses := sw.Subnets[0].GetAssignedIPAddresses()
 
-	vpcOp := sacloud.NewVPCRouterOp(caller)
-	vpcRouter, err := vpcOp.Create(context.Background(), "is1a", &sacloud.VPCRouterCreateRequest{
+	vpcOp := iaas.NewVPCRouterOp(caller)
+	vpcRouter, err := vpcOp.Create(context.Background(), "is1a", &iaas.VPCRouterCreateRequest{
 		Name:        "example",
 		Description: "desc",
 		Tags:        types.Tags{"example", "vpc-router"},
 		PlanID:      types.VPCRouterPlans.HighSpec,
-		Switch:      &sacloud.ApplianceConnectedSwitch{ID: router.Switch.ID},
-		Settings: &sacloud.VPCRouterSetting{
+		Switch:      &iaas.ApplianceConnectedSwitch{ID: router.Switch.ID},
+		Settings: &iaas.VPCRouterSetting{
 			VRID:                      5,
 			InternetConnectionEnabled: true,
-			Interfaces: []*sacloud.VPCRouterInterfaceSetting{
+			Interfaces: []*iaas.VPCRouterInterfaceSetting{
 				{
 					IPAddress:        []string{ipaddresses[1], ipaddresses[2]},
 					VirtualIPAddress: ipaddresses[0],
@@ -513,7 +489,7 @@ func createVPCRouter(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	_, err = sacloud.WaiterForReady(func() (interface{}, error) {
+	_, err = iaas.WaiterForReady(func() (interface{}, error) {
 		return vpcOp.Read(context.Background(), "is1a", vpcRouter.ID)
 	}).WaitForState(context.Background())
 	if err != nil {
@@ -524,7 +500,7 @@ func createVPCRouter(caller sacloud.APICaller) {
 		log.Fatal(err)
 	}
 
-	_, err = sacloud.WaiterForApplianceUp(func() (interface{}, error) {
+	_, err = iaas.WaiterForApplianceUp(func() (interface{}, error) {
 		return vpcOp.Read(context.Background(), "is1a", vpcRouter.ID)
 	}, 10).WaitForState(context.Background())
 	if err != nil {

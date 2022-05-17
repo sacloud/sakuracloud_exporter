@@ -12,33 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
 	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
-// ZoneClient calls SakuraCloud zone API
-type ZoneClient interface {
-	Find(ctx context.Context) ([]*sacloud.Zone, error)
+type authStatusClient interface {
+	Read(context.Context) (*iaas.AuthStatus, error)
 }
 
-func getZoneClient(caller sacloud.APICaller) ZoneClient {
-	return &zoneClient{
-		client: sacloud.NewZoneOp(caller),
-	}
-}
-
-type zoneClient struct {
-	client sacloud.ZoneAPI
-}
-
-func (c *zoneClient) Find(ctx context.Context) ([]*sacloud.Zone, error) {
-	res, err := c.client.Find(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	return res.Zones, nil
+func getAuthStatusClient(caller iaas.APICaller) authStatusClient {
+	return iaas.NewAuthStatusOp(caller)
 }

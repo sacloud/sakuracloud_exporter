@@ -12,35 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package iaas
+package platform
 
 import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type SIMClient interface {
-	Find(ctx context.Context) ([]*sacloud.SIM, error)
-	GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*sacloud.SIMNetworkOperatorConfig, error)
-	MonitorTraffic(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorLinkValue, error)
+	Find(ctx context.Context) ([]*iaas.SIM, error)
+	GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*iaas.SIMNetworkOperatorConfig, error)
+	MonitorTraffic(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorLinkValue, error)
 }
 
-func getSIMClient(caller sacloud.APICaller) SIMClient {
+func getSIMClient(caller iaas.APICaller) SIMClient {
 	return &simClient{
-		client: sacloud.NewSIMOp(caller),
+		client: iaas.NewSIMOp(caller),
 	}
 }
 
 type simClient struct {
-	client sacloud.SIMAPI
+	client iaas.SIMAPI
 }
 
-func (c *simClient) Find(ctx context.Context) ([]*sacloud.SIM, error) {
-	var results []*sacloud.SIM
-	res, err := c.client.Find(ctx, &sacloud.FindCondition{
+func (c *simClient) Find(ctx context.Context) ([]*iaas.SIM, error) {
+	var results []*iaas.SIM
+	res, err := c.client.Find(ctx, &iaas.FindCondition{
 		Include: []string{"*", "Status.sim"},
 		Count:   10000,
 	})
@@ -50,11 +50,11 @@ func (c *simClient) Find(ctx context.Context) ([]*sacloud.SIM, error) {
 	return res.SIMs, nil
 }
 
-func (c *simClient) GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*sacloud.SIMNetworkOperatorConfig, error) {
+func (c *simClient) GetNetworkOperatorConfig(ctx context.Context, id types.ID) ([]*iaas.SIMNetworkOperatorConfig, error) {
 	return c.client.GetNetworkOperator(ctx, id)
 }
 
-func (c *simClient) MonitorTraffic(ctx context.Context, id types.ID, end time.Time) (*sacloud.MonitorLinkValue, error) {
+func (c *simClient) MonitorTraffic(ctx context.Context, id types.ID, end time.Time) (*iaas.MonitorLinkValue, error) {
 	mvs, err := c.client.MonitorSIM(ctx, id, monitorCondition(end))
 	if err != nil {
 		return nil, err
