@@ -70,7 +70,7 @@ func main() {
 		"goVersion", GoVersion,
 	)
 
-	client := platform.NewSakuraCloucClient(c, Version)
+	client := platform.NewSakuraCloudClient(c, Version)
 	if !client.HasValidAPIKeys(context.TODO()) {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}

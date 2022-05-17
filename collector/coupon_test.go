@@ -21,17 +21,17 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyCouponClient struct {
-	coupons []*sacloud.Coupon
+	coupons []*iaas.Coupon
 	err     error
 }
 
-func (d *dummyCouponClient) Find(ctx context.Context) ([]*sacloud.Coupon, error) {
+func (d *dummyCouponClient) Find(ctx context.Context) ([]*iaas.Coupon, error) {
 	return d.coupons, d.err
 }
 
@@ -77,7 +77,7 @@ func TestCouponCollector_Collect(t *testing.T) {
 		{
 			name: "a coupon",
 			in: &dummyCouponClient{
-				coupons: []*sacloud.Coupon{
+				coupons: []*iaas.Coupon{
 					{
 						ID:         101,
 						MemberID:   "memberID",

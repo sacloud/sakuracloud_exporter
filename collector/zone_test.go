@@ -19,17 +19,17 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyZoneClient struct {
-	zones []*sacloud.Zone
+	zones []*iaas.Zone
 	err   error
 }
 
-func (d *dummyZoneClient) Find(ctx context.Context) ([]*sacloud.Zone, error) {
+func (d *dummyZoneClient) Find(ctx context.Context) ([]*iaas.Zone, error) {
 	return d.zones, d.err
 }
 
@@ -71,12 +71,12 @@ func TestZoneCollector_Collect(t *testing.T) {
 		{
 			name: "with single zone info",
 			in: &dummyZoneClient{
-				zones: []*sacloud.Zone{
+				zones: []*iaas.Zone{
 					{
 						ID:          1,
 						Name:        "zone",
 						Description: "desc",
-						Region: &sacloud.Region{
+						Region: &iaas.Region{
 							ID:   2,
 							Name: "region",
 						},
@@ -101,12 +101,12 @@ func TestZoneCollector_Collect(t *testing.T) {
 		{
 			name: "with multiple zone info",
 			in: &dummyZoneClient{
-				zones: []*sacloud.Zone{
+				zones: []*iaas.Zone{
 					{
 						ID:          1,
 						Name:        "zone1",
 						Description: "desc1",
-						Region: &sacloud.Region{
+						Region: &iaas.Region{
 							ID:   2,
 							Name: "region2",
 						},
@@ -115,7 +115,7 @@ func TestZoneCollector_Collect(t *testing.T) {
 						ID:          3,
 						Name:        "zone3",
 						Description: "desc3",
-						Region: &sacloud.Region{
+						Region: &iaas.Region{
 							ID:   4,
 							Name: "region4",
 						},

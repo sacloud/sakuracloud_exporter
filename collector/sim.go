@@ -24,7 +24,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -104,7 +104,7 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(sims))
 
 	for i := range sims {
-		func(sim *sacloud.SIM) {
+		func(sim *iaas.SIM) {
 			defer wg.Done()
 
 			simLabels := c.simLabels(sim)
@@ -141,14 +141,14 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *SIMCollector) simLabels(sim *sacloud.SIM) []string {
+func (c *SIMCollector) simLabels(sim *iaas.SIM) []string {
 	return []string{
 		sim.ID.String(),
 		sim.Name,
 	}
 }
 
-func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.SIM) {
+func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *iaas.SIM) {
 	simConfigs, err := c.client.GetNetworkOperatorConfig(c.ctx, sim.ID)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
@@ -203,7 +203,7 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *sacloud.
 	)
 }
 
-func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *sacloud.SIM, now time.Time) {
+func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *iaas.SIM, now time.Time) {
 	values, err := c.client.MonitorTraffic(c.ctx, sim.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)

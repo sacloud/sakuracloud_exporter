@@ -18,36 +18,36 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type LoadBalancer struct {
-	*sacloud.LoadBalancer
+	*iaas.LoadBalancer
 	ZoneName string
 }
 
 type LoadBalancerClient interface {
 	Find(ctx context.Context) ([]*LoadBalancer, error)
-	Status(ctx context.Context, zone string, id types.ID) ([]*sacloud.LoadBalancerStatus, error)
-	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	Status(ctx context.Context, zone string, id types.ID) ([]*iaas.LoadBalancerStatus, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
 }
 
-func getLoadBalancerClient(caller sacloud.APICaller, zones []string) LoadBalancerClient {
+func getLoadBalancerClient(caller iaas.APICaller, zones []string) LoadBalancerClient {
 	return &loadBalancerClient{
-		client: sacloud.NewLoadBalancerOp(caller),
+		client: iaas.NewLoadBalancerOp(caller),
 		zones:  zones,
 	}
 }
 
 type loadBalancerClient struct {
-	client sacloud.LoadBalancerAPI
+	client iaas.LoadBalancerAPI
 	zones  []string
 }
 
 func (c *loadBalancerClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+	res, err := c.client.Find(ctx, zone, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -74,7 +74,7 @@ func (c *loadBalancerClient) Find(ctx context.Context) ([]*LoadBalancer, error) 
 	return results, nil
 }
 
-func (c *loadBalancerClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (c *loadBalancerClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	mvs, err := c.client.MonitorInterface(ctx, zone, id, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (c *loadBalancerClient) MonitorNIC(ctx context.Context, zone string, id typ
 	return monitorInterfaceValue(mvs.Values), nil
 }
 
-func (c *loadBalancerClient) Status(ctx context.Context, zone string, id types.ID) ([]*sacloud.LoadBalancerStatus, error) {
+func (c *loadBalancerClient) Status(ctx context.Context, zone string, id types.ID) ([]*iaas.LoadBalancerStatus, error) {
 	res, err := c.client.Status(ctx, zone, id)
 	if err != nil {
 		return nil, err

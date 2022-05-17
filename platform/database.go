@@ -18,38 +18,38 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type Database struct {
-	*sacloud.Database
+	*iaas.Database
 	ZoneName string
 }
 
 type DatabaseClient interface {
 	Find(ctx context.Context) ([]*Database, error)
-	MonitorDatabase(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDatabaseValue, error)
-	MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error)
-	MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
-	MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error)
+	MonitorDatabase(ctx context.Context, zone string, diskID types.ID, end time.Time) (*iaas.MonitorDatabaseValue, error)
+	MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error)
+	MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
+	MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorDiskValue, error)
 }
 
-func getDatabaseClient(caller sacloud.APICaller, zones []string) DatabaseClient {
+func getDatabaseClient(caller iaas.APICaller, zones []string) DatabaseClient {
 	return &databaseClient{
-		client: sacloud.NewDatabaseOp(caller),
+		client: iaas.NewDatabaseOp(caller),
 		zones:  zones,
 	}
 }
 
 type databaseClient struct {
-	client sacloud.DatabaseAPI
+	client iaas.DatabaseAPI
 	zones  []string
 }
 
 func (c *databaseClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+	res, err := c.client.Find(ctx, zone, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -76,7 +76,7 @@ func (c *databaseClient) Find(ctx context.Context) ([]*Database, error) {
 	return results, nil
 }
 
-func (c *databaseClient) MonitorDatabase(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDatabaseValue, error) {
+func (c *databaseClient) MonitorDatabase(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorDatabaseValue, error) {
 	mvs, err := c.client.MonitorDatabase(ctx, zone, databaseID, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (c *databaseClient) MonitorDatabase(ctx context.Context, zone string, datab
 	return monitorDatabaseValue(mvs.Values), nil
 }
 
-func (c *databaseClient) MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+func (c *databaseClient) MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error) {
 	mvs, err := c.client.MonitorCPU(ctx, zone, databaseID, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (c *databaseClient) MonitorCPU(ctx context.Context, zone string, databaseID
 	return monitorCPUTimeValue(mvs.Values), nil
 }
 
-func (c *databaseClient) MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error) {
+func (c *databaseClient) MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorDiskValue, error) {
 	mvs, err := c.client.MonitorDisk(ctx, zone, databaseID, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (c *databaseClient) MonitorDisk(ctx context.Context, zone string, databaseI
 	return monitorDiskValue(mvs.Values), nil
 }
 
-func (c *databaseClient) MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (c *databaseClient) MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	mvs, err := c.client.MonitorInterface(ctx, zone, databaseID, monitorCondition(end))
 	if err != nil {
 		return nil, err

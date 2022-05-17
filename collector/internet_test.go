@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +30,7 @@ import (
 type dummyInternetClient struct {
 	find       []*platform.Internet
 	findErr    error
-	monitor    *sacloud.MonitorRouterValue
+	monitor    *iaas.MonitorRouterValue
 	monitorErr error
 }
 
@@ -38,7 +38,7 @@ func (d *dummyInternetClient) Find(ctx context.Context) ([]*platform.Internet, e
 	return d.find, d.findErr
 }
 
-func (d *dummyInternetClient) MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*sacloud.MonitorRouterValue, error) {
+func (d *dummyInternetClient) MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*iaas.MonitorRouterValue, error) {
 	return d.monitor, d.monitorErr
 }
 
@@ -86,12 +86,12 @@ func TestInternetCollector_Collect(t *testing.T) {
 				find: []*platform.Internet{
 					{
 						ZoneName: "is1a",
-						Internet: &sacloud.Internet{
+						Internet: &iaas.Internet{
 							ID:          101,
 							Name:        "internet",
 							Description: "desc",
 							Tags:        types.Tags{"tag1", "tag2"},
-							Switch: &sacloud.SwitchInfo{
+							Switch: &iaas.SwitchInfo{
 								ID:   201,
 								Name: "switch",
 							},
@@ -99,7 +99,7 @@ func TestInternetCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				monitor: &sacloud.MonitorRouterValue{
+				monitor: &iaas.MonitorRouterValue{
 					Time: monitorTime,
 					In:   1000,
 					Out:  2000,

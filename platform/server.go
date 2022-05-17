@@ -18,44 +18,44 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/helper/newsfeed"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 )
 
 type ServerClient interface {
 	Find(ctx context.Context) ([]*Server, error)
-	ReadDisk(ctx context.Context, zone string, diskID types.ID) (*sacloud.Disk, error)
-	MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error)
-	MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error)
-	MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	ReadDisk(ctx context.Context, zone string, diskID types.ID) (*iaas.Disk, error)
+	MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error)
+	MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*iaas.MonitorDiskValue, error)
+	MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
 	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
 type Server struct {
-	*sacloud.Server
+	*iaas.Server
 	ZoneName string
 }
 
-func getServerClient(caller sacloud.APICaller, zones []string) ServerClient {
+func getServerClient(caller iaas.APICaller, zones []string) ServerClient {
 	return &serverClient{
-		serverOp:    sacloud.NewServerOp(caller),
-		diskOp:      sacloud.NewDiskOp(caller),
-		interfaceOp: sacloud.NewInterfaceOp(caller),
+		serverOp:    iaas.NewServerOp(caller),
+		diskOp:      iaas.NewDiskOp(caller),
+		interfaceOp: iaas.NewInterfaceOp(caller),
 		zones:       zones,
 	}
 }
 
 type serverClient struct {
-	serverOp    sacloud.ServerAPI
-	diskOp      sacloud.DiskAPI
-	interfaceOp sacloud.InterfaceAPI
+	serverOp    iaas.ServerAPI
+	diskOp      iaas.DiskAPI
+	interfaceOp iaas.InterfaceAPI
 	zones       []string
 }
 
 func (c *serverClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.serverOp.Find(ctx, zone, &sacloud.FindCondition{
+	res, err := c.serverOp.Find(ctx, zone, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -82,11 +82,11 @@ func (c *serverClient) Find(ctx context.Context) ([]*Server, error) {
 	return results, nil
 }
 
-func (c *serverClient) ReadDisk(ctx context.Context, zone string, diskID types.ID) (*sacloud.Disk, error) {
+func (c *serverClient) ReadDisk(ctx context.Context, zone string, diskID types.ID) (*iaas.Disk, error) {
 	return c.diskOp.Read(ctx, zone, diskID)
 }
 
-func (c *serverClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+func (c *serverClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error) {
 	mvs, err := c.serverOp.Monitor(ctx, zone, id, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (c *serverClient) MonitorCPU(ctx context.Context, zone string, id types.ID,
 	return monitorCPUTimeValue(mvs.Values), nil
 }
 
-func (c *serverClient) MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error) {
+func (c *serverClient) MonitorDisk(ctx context.Context, zone string, diskID types.ID, end time.Time) (*iaas.MonitorDiskValue, error) {
 	mvs, err := c.diskOp.Monitor(ctx, zone, diskID, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (c *serverClient) MonitorDisk(ctx context.Context, zone string, diskID type
 	return monitorDiskValue(mvs.Values), nil
 }
 
-func (c *serverClient) MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (c *serverClient) MonitorNIC(ctx context.Context, zone string, nicID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	mvs, err := c.interfaceOp.Monitor(ctx, zone, nicID, monitorCondition(end))
 	if err != nil {
 		return nil, err

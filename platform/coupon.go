@@ -19,31 +19,31 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 // CouponClient calls SakuraCloud coupon API
 type CouponClient interface {
-	Find(context.Context) ([]*sacloud.Coupon, error)
+	Find(context.Context) ([]*iaas.Coupon, error)
 }
 
-func getCouponClient(caller sacloud.APICaller) CouponClient {
+func getCouponClient(caller iaas.APICaller) CouponClient {
 	return &couponClient{caller: caller}
 }
 
 type couponClient struct {
-	caller    sacloud.APICaller
+	caller    iaas.APICaller
 	accountID types.ID
 	once      sync.Once
 }
 
-func (c *couponClient) Find(ctx context.Context) ([]*sacloud.Coupon, error) {
+func (c *couponClient) Find(ctx context.Context) ([]*iaas.Coupon, error) {
 	var err error
 	c.once.Do(func() {
-		var auth *sacloud.AuthStatus
+		var auth *iaas.AuthStatus
 
-		authStatusOp := sacloud.NewAuthStatusOp(c.caller)
+		authStatusOp := iaas.NewAuthStatusOp(c.caller)
 		auth, err = authStatusOp.Read(ctx)
 		if err != nil {
 			return
@@ -57,7 +57,7 @@ func (c *couponClient) Find(ctx context.Context) ([]*sacloud.Coupon, error) {
 		return nil, errors.New("getting AccountID is failed. please check your API Key settings")
 	}
 
-	couponOp := sacloud.NewCouponOp(c.caller)
+	couponOp := iaas.NewCouponOp(c.caller)
 	searched, err := couponOp.Find(ctx, c.accountID)
 	if err != nil {
 		return nil, err

@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
@@ -31,19 +31,19 @@ import (
 type dummyLoadBalancerClient struct {
 	find       []*platform.LoadBalancer
 	findErr    error
-	status     []*sacloud.LoadBalancerStatus
+	status     []*iaas.LoadBalancerStatus
 	statusErr  error
-	monitor    *sacloud.MonitorInterfaceValue
+	monitor    *iaas.MonitorInterfaceValue
 	monitorErr error
 }
 
 func (d *dummyLoadBalancerClient) Find(ctx context.Context) ([]*platform.LoadBalancer, error) {
 	return d.find, d.findErr
 }
-func (d *dummyLoadBalancerClient) Status(ctx context.Context, zone string, id types.ID) ([]*sacloud.LoadBalancerStatus, error) {
+func (d *dummyLoadBalancerClient) Status(ctx context.Context, zone string, id types.ID) ([]*iaas.LoadBalancerStatus, error) {
 	return d.status, d.statusErr
 }
-func (d *dummyLoadBalancerClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (d *dummyLoadBalancerClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitor, d.monitorErr
 }
 
@@ -98,7 +98,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 				find: []*platform.LoadBalancer{
 					{
 						ZoneName: "is1a",
-						LoadBalancer: &sacloud.LoadBalancer{
+						LoadBalancer: &iaas.LoadBalancer{
 							ID:             101,
 							Name:           "loadbalancer",
 							Tags:           types.Tags{"tag1", "tag2"},
@@ -147,7 +147,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 				find: []*platform.LoadBalancer{
 					{
 						ZoneName: "is1a",
-						LoadBalancer: &sacloud.LoadBalancer{
+						LoadBalancer: &iaas.LoadBalancer{
 							ID:             101,
 							Name:           "loadbalancer",
 							Tags:           types.Tags{"tag1", "tag2"},
@@ -158,19 +158,19 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 							DefaultRoute:   "192.168.0.1",
 							NetworkMaskLen: 24,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
-							VirtualIPAddresses: []*sacloud.LoadBalancerVirtualIPAddress{
+							VirtualIPAddresses: []*iaas.LoadBalancerVirtualIPAddress{
 								{
 									VirtualIPAddress: "192.168.0.101",
 									Port:             80,
 									DelayLoop:        100,
 									SorryServer:      "192.168.0.21",
 									Description:      "vip-desc",
-									Servers: []*sacloud.LoadBalancerServer{
+									Servers: []*iaas.LoadBalancerServer{
 										{
 											IPAddress: "192.168.0.201",
 											Port:      80,
 											Enabled:   true,
-											HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+											HealthCheck: &iaas.LoadBalancerServerHealthCheck{
 												Protocol:     types.LoadBalancerHealthCheckProtocols.HTTP,
 												ResponseCode: http.StatusOK,
 												Path:         "/index.html",
@@ -182,12 +182,12 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				status: []*sacloud.LoadBalancerStatus{
+				status: []*iaas.LoadBalancerStatus{
 					{
 						VirtualIPAddress: "192.168.0.101",
 						Port:             80,
 						CPS:              100,
-						Servers: []*sacloud.LoadBalancerServerStatus{
+						Servers: []*iaas.LoadBalancerServerStatus{
 							{
 								IPAddress:  "192.168.0.201",
 								Port:       80,
@@ -198,7 +198,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				monitor: &sacloud.MonitorInterfaceValue{
+				monitor: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 100,
 					Send:    200,
@@ -329,7 +329,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 				find: []*platform.LoadBalancer{
 					{
 						ZoneName: "is1a",
-						LoadBalancer: &sacloud.LoadBalancer{
+						LoadBalancer: &iaas.LoadBalancer{
 							ID:             101,
 							Name:           "loadbalancer",
 							Tags:           types.Tags{"tag1", "tag2"},
@@ -340,19 +340,19 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 							DefaultRoute:   "192.168.0.1",
 							NetworkMaskLen: 24,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
-							VirtualIPAddresses: []*sacloud.LoadBalancerVirtualIPAddress{
+							VirtualIPAddresses: []*iaas.LoadBalancerVirtualIPAddress{
 								{
 									VirtualIPAddress: "192.168.0.101",
 									Port:             80,
 									DelayLoop:        100,
 									SorryServer:      "192.168.0.21",
 									Description:      "vip-desc",
-									Servers: []*sacloud.LoadBalancerServer{
+									Servers: []*iaas.LoadBalancerServer{
 										{
 											IPAddress: "192.168.0.201",
 											Port:      80,
 											Enabled:   true,
-											HealthCheck: &sacloud.LoadBalancerServerHealthCheck{
+											HealthCheck: &iaas.LoadBalancerServerHealthCheck{
 												Protocol:     types.LoadBalancerHealthCheckProtocols.HTTP,
 												ResponseCode: http.StatusOK,
 												Path:         "/index.html",

@@ -18,20 +18,19 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/testutil"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/testutil"
 )
 
 var testZone string
-var testCaller *sacloud.Client
+var testCaller *iaas.Client
 
 func TestMain(m *testing.M) {
-	// this is for to use fake driver on libsacloud
+	// this is for to use fake driver on iaas-api-go
 	os.Setenv("TESTACC", "")
 
 	testZone = testutil.TestZone()
-	testCaller = testutil.SingletonAPICaller().(*sacloud.Client)
-	testCaller.UserAgent = "test-sakuracloud_exporter/dev"
+	testCaller = testutil.SingletonAPICaller().(*iaas.Client)
 
 	ret := m.Run()
 	os.Exit(ret)

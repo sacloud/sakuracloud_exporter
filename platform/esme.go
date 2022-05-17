@@ -17,35 +17,35 @@ package platform
 import (
 	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type ESMEClient interface {
-	Find(ctx context.Context) ([]*sacloud.ESME, error)
-	Logs(ctx context.Context, esmeID types.ID) ([]*sacloud.ESMELogs, error)
+	Find(ctx context.Context) ([]*iaas.ESME, error)
+	Logs(ctx context.Context, esmeID types.ID) ([]*iaas.ESMELogs, error)
 }
 
-func getESMEClient(caller sacloud.APICaller) ESMEClient {
+func getESMEClient(caller iaas.APICaller) ESMEClient {
 	return &esmeClient{
 		caller: caller,
 	}
 }
 
 type esmeClient struct {
-	caller sacloud.APICaller
+	caller iaas.APICaller
 }
 
-func (c *esmeClient) Find(ctx context.Context) ([]*sacloud.ESME, error) {
-	client := sacloud.NewESMEOp(c.caller)
-	searched, err := client.Find(ctx, &sacloud.FindCondition{})
+func (c *esmeClient) Find(ctx context.Context) ([]*iaas.ESME, error) {
+	client := iaas.NewESMEOp(c.caller)
+	searched, err := client.Find(ctx, &iaas.FindCondition{})
 	if err != nil {
 		return nil, err
 	}
 	return searched.ESME, nil
 }
 
-func (c *esmeClient) Logs(ctx context.Context, esmeID types.ID) ([]*sacloud.ESMELogs, error) {
-	client := sacloud.NewESMEOp(c.caller)
+func (c *esmeClient) Logs(ctx context.Context, esmeID types.ID) ([]*iaas.ESMELogs, error) {
+	client := iaas.NewESMEOp(c.caller)
 	return client.Logs(ctx, esmeID)
 }

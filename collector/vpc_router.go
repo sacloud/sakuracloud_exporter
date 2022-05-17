@@ -24,8 +24,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -248,7 +248,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 							)
 						}
 						if status.SessionAnalysis != nil {
-							sessionAnalysis := map[string][]*sacloud.VPCRouterStatisticsValue{
+							sessionAnalysis := map[string][]*iaas.VPCRouterStatisticsValue{
 								"SourceAndDestination": status.SessionAnalysis.SourceAndDestination,
 								"DestinationAddress":   status.SessionAnalysis.DestinationAddress,
 								"DestinationPort":      status.SessionAnalysis.DestinationPort,
@@ -272,7 +272,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 					for _, nic := range vpcRouter.Interfaces {
 						// NIC(Receive/Send)
 						wg.Add(1)
-						go func(nic *sacloud.VPCRouterInterface) {
+						go func(nic *iaas.VPCRouterInterface) {
 							c.collectNICMetrics(ch, vpcRouter, nic.Index, now)
 							wg.Done()
 						}(nic)
@@ -345,7 +345,7 @@ func (c *VPCRouterCollector) vpcRouterInfoLabels(vpcRouter *platform.VPCRouter) 
 	)
 }
 
-func findVPCRouterInterfaceSettingByIndex(settings []*sacloud.VPCRouterInterfaceSetting, index int) *sacloud.VPCRouterInterfaceSetting {
+func findVPCRouterInterfaceSettingByIndex(settings []*iaas.VPCRouterInterfaceSetting, index int) *iaas.VPCRouterInterfaceSetting {
 	for _, s := range settings {
 		if s.Index == index {
 			return s
@@ -354,7 +354,7 @@ func findVPCRouterInterfaceSettingByIndex(settings []*sacloud.VPCRouterInterface
 	return nil
 }
 
-func getInterfaceByIndex(interfaces []*sacloud.VPCRouterInterfaceSetting, index int) *sacloud.VPCRouterInterfaceSetting {
+func getInterfaceByIndex(interfaces []*iaas.VPCRouterInterfaceSetting, index int) *iaas.VPCRouterInterfaceSetting {
 	for _, nic := range interfaces {
 		if nic.Index == index {
 			return nic

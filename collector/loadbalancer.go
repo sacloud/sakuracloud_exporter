@@ -24,8 +24,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -340,7 +340,7 @@ func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, l
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
 }
 
-func getVIPStatus(status []*sacloud.LoadBalancerStatus, vip string) *sacloud.LoadBalancerStatus {
+func getVIPStatus(status []*iaas.LoadBalancerStatus, vip string) *iaas.LoadBalancerStatus {
 	for _, s := range status {
 		if s.VirtualIPAddress == vip {
 			return s
@@ -349,7 +349,7 @@ func getVIPStatus(status []*sacloud.LoadBalancerStatus, vip string) *sacloud.Loa
 	return nil
 }
 
-func getServerStatus(status []*sacloud.LoadBalancerServerStatus, ip string) *sacloud.LoadBalancerServerStatus {
+func getServerStatus(status []*iaas.LoadBalancerServerStatus, ip string) *iaas.LoadBalancerServerStatus {
 	for _, s := range status {
 		if s.IPAddress == ip {
 			return s

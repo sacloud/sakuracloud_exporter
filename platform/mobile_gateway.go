@@ -18,37 +18,37 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type MobileGateway struct {
-	*sacloud.MobileGateway
+	*iaas.MobileGateway
 	ZoneName string
 }
 
 type MobileGatewayClient interface {
 	Find(ctx context.Context) ([]*MobileGateway, error)
-	TrafficStatus(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficStatus, error)
-	TrafficControl(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficControl, error)
-	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error)
+	TrafficStatus(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficStatus, error)
+	TrafficControl(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficControl, error)
+	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error)
 }
 
-func getMobileGatewayClient(caller sacloud.APICaller, zones []string) MobileGatewayClient {
+func getMobileGatewayClient(caller iaas.APICaller, zones []string) MobileGatewayClient {
 	return &mobileGatewayClient{
-		client: sacloud.NewMobileGatewayOp(caller),
+		client: iaas.NewMobileGatewayOp(caller),
 		zones:  zones,
 	}
 }
 
 type mobileGatewayClient struct {
-	client sacloud.MobileGatewayAPI
+	client iaas.MobileGatewayAPI
 	zones  []string
 }
 
 func (c *mobileGatewayClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+	res, err := c.client.Find(ctx, zone, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *mobileGatewayClient) Find(ctx context.Context) ([]*MobileGateway, error
 	return results, nil
 }
 
-func (c *mobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (c *mobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	mvs, err := c.client.MonitorInterface(ctx, zone, id, index, monitorCondition(end))
 	if err != nil {
 		return nil, err
@@ -83,10 +83,10 @@ func (c *mobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id ty
 	return monitorInterfaceValue(mvs.Values), nil
 }
 
-func (c *mobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficStatus, error) {
+func (c *mobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficStatus, error) {
 	return c.client.TrafficStatus(ctx, zone, id)
 }
 
-func (c *mobileGatewayClient) TrafficControl(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficControl, error) {
+func (c *mobileGatewayClient) TrafficControl(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficControl, error) {
 	return c.client.GetTrafficConfig(ctx, zone, id)
 }

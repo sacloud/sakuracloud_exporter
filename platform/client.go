@@ -20,8 +20,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sacloud/libsacloud/v2/helper/api"
-	"github.com/sacloud/libsacloud/v2/sacloud/fake"
+	client "github.com/sacloud/api-client-go"
+	"github.com/sacloud/iaas-api-go/fake"
+	"github.com/sacloud/iaas-api-go/helper/api"
 	"github.com/sacloud/sakuracloud_exporter/config"
 )
 
@@ -43,26 +44,28 @@ type Client struct {
 	Zone          ZoneClient
 }
 
-func NewSakuraCloucClient(c config.Config, version string) *Client {
+func NewSakuraCloudClient(c config.Config, version string) *Client {
 	fakeStorePath := c.FakeMode
 	if stat, err := os.Stat(fakeStorePath); err == nil {
 		if stat.IsDir() {
 			fakeStorePath = filepath.Join(fakeStorePath, "fake-store.json")
 		}
 	}
-	caller := api.NewCaller(&api.CallerOptions{
-		AccessToken:          c.Token,
-		AccessTokenSecret:    c.Secret,
-		HTTPRequestTimeout:   0,
-		HTTPRequestRateLimit: c.RateLimit,
-		UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
-		RetryMax:             9,
-		RetryWaitMin:         1,
-		RetryWaitMax:         5,
-		TraceAPI:             c.Debug,
-		TraceHTTP:            c.Trace,
-		FakeMode:             c.FakeMode != "",
-		FakeStorePath:        fakeStorePath,
+	caller := api.NewCallerWithOptions(&api.CallerOptions{
+		Options: &client.Options{
+			AccessToken:          c.Token,
+			AccessTokenSecret:    c.Secret,
+			HttpRequestTimeout:   0,
+			HttpRequestRateLimit: c.RateLimit,
+			UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
+			RetryMax:             9,
+			RetryWaitMin:         1,
+			RetryWaitMax:         5,
+			Trace:                c.Trace,
+		},
+		TraceAPI:      c.Debug,
+		FakeMode:      c.FakeMode != "",
+		FakeStorePath: fakeStorePath,
 	})
 	if c.FakeMode != "" {
 		fake.InitDataStore()

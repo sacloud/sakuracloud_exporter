@@ -18,35 +18,35 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 )
 
 type Internet struct {
-	*sacloud.Internet
+	*iaas.Internet
 	ZoneName string
 }
 
 type InternetClient interface {
 	Find(ctx context.Context) ([]*Internet, error)
-	MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*sacloud.MonitorRouterValue, error)
+	MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*iaas.MonitorRouterValue, error)
 }
 
-func getInternetClient(caller sacloud.APICaller, zones []string) InternetClient {
+func getInternetClient(caller iaas.APICaller, zones []string) InternetClient {
 	return &internetClient{
-		client: sacloud.NewInternetOp(caller),
+		client: iaas.NewInternetOp(caller),
 		zones:  zones,
 	}
 }
 
 type internetClient struct {
-	client sacloud.InternetAPI
+	client iaas.InternetAPI
 	zones  []string
 }
 
 func (c *internetClient) find(ctx context.Context, zone string) ([]interface{}, error) {
 	var results []interface{}
-	res, err := c.client.Find(ctx, zone, &sacloud.FindCondition{
+	res, err := c.client.Find(ctx, zone, &iaas.FindCondition{
 		Count: 10000,
 	})
 	if err != nil {
@@ -73,7 +73,7 @@ func (c *internetClient) Find(ctx context.Context) ([]*Internet, error) {
 	return results, nil
 }
 
-func (c *internetClient) MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*sacloud.MonitorRouterValue, error) {
+func (c *internetClient) MonitorTraffic(ctx context.Context, zone string, internetID types.ID, end time.Time) (*iaas.MonitorRouterValue, error) {
 	mvs, err := c.client.Monitor(ctx, zone, internetID, monitorCondition(end))
 	if err != nil {
 		return nil, err

@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
@@ -30,24 +30,24 @@ import (
 type dummyMobileGatewayClient struct {
 	find              []*platform.MobileGateway
 	findErr           error
-	trafficStatus     *sacloud.MobileGatewayTrafficStatus
+	trafficStatus     *iaas.MobileGatewayTrafficStatus
 	trafficStatusErr  error
-	trafficControl    *sacloud.MobileGatewayTrafficControl
+	trafficControl    *iaas.MobileGatewayTrafficControl
 	trafficControlErr error
-	monitor           *sacloud.MonitorInterfaceValue
+	monitor           *iaas.MonitorInterfaceValue
 	monitorErr        error
 }
 
 func (d *dummyMobileGatewayClient) Find(ctx context.Context) ([]*platform.MobileGateway, error) {
 	return d.find, d.findErr
 }
-func (d *dummyMobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficStatus, error) {
+func (d *dummyMobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficStatus, error) {
 	return d.trafficStatus, d.trafficStatusErr
 }
-func (d *dummyMobileGatewayClient) TrafficControl(ctx context.Context, zone string, id types.ID) (*sacloud.MobileGatewayTrafficControl, error) {
+func (d *dummyMobileGatewayClient) TrafficControl(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficControl, error) {
 	return d.trafficControl, d.trafficControlErr
 }
-func (d *dummyMobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (d *dummyMobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitor, d.monitorErr
 }
 
@@ -100,7 +100,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
-						MobileGateway: &sacloud.MobileGateway{
+						MobileGateway: &iaas.MobileGateway{
 							ID:                              101,
 							Name:                            "mobile-gateway",
 							Tags:                            types.Tags{"tag1", "tag2"},
@@ -141,7 +141,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
-						MobileGateway: &sacloud.MobileGateway{
+						MobileGateway: &iaas.MobileGateway{
 							ID:                              101,
 							Name:                            "mobile-gateway",
 							Tags:                            types.Tags{"tag1", "tag2"},
@@ -153,7 +153,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				trafficControl: &sacloud.MobileGatewayTrafficControl{
+				trafficControl: &iaas.MobileGatewayTrafficControl{
 					TrafficQuotaInMB:       1024,
 					BandWidthLimitInKbps:   64,
 					EmailNotifyEnabled:     true,
@@ -161,7 +161,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 					SlackNotifyWebhooksURL: "https://example.com",
 					AutoTrafficShaping:     true,
 				},
-				trafficStatus: &sacloud.MobileGatewayTrafficStatus{
+				trafficStatus: &iaas.MobileGatewayTrafficStatus{
 					UplinkBytes:    100,
 					DownlinkBytes:  200,
 					TrafficShaping: true,
@@ -234,7 +234,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
-						MobileGateway: &sacloud.MobileGateway{
+						MobileGateway: &iaas.MobileGateway{
 							ID:                              101,
 							Name:                            "mobile-gateway",
 							Tags:                            types.Tags{"tag1", "tag2"},
@@ -243,7 +243,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 							Availability:                    types.Availabilities.Available,
 							InternetConnectionEnabled:       true,
 							InterDeviceCommunicationEnabled: true,
-							Interfaces: []*sacloud.MobileGatewayInterface{
+							Interfaces: []*iaas.MobileGatewayInterface{
 								{
 									IPAddress:            "192.168.0.1",
 									SubnetNetworkMaskLen: 24,
@@ -256,7 +256,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 						},
 					},
 				},
-				trafficControl: &sacloud.MobileGatewayTrafficControl{
+				trafficControl: &iaas.MobileGatewayTrafficControl{
 					TrafficQuotaInMB:       1024,
 					BandWidthLimitInKbps:   64,
 					EmailNotifyEnabled:     true,
@@ -264,12 +264,12 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 					SlackNotifyWebhooksURL: "https://example.com",
 					AutoTrafficShaping:     true,
 				},
-				trafficStatus: &sacloud.MobileGatewayTrafficStatus{
+				trafficStatus: &iaas.MobileGatewayTrafficStatus{
 					UplinkBytes:    100,
 					DownlinkBytes:  200,
 					TrafficShaping: true,
 				},
-				monitor: &sacloud.MonitorInterfaceValue{
+				monitor: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 100,
 					Send:    200,
@@ -386,7 +386,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 				find: []*platform.MobileGateway{
 					{
 						ZoneName: "is1a",
-						MobileGateway: &sacloud.MobileGateway{
+						MobileGateway: &iaas.MobileGateway{
 							ID:                              101,
 							Name:                            "mobile-gateway",
 							Tags:                            types.Tags{"tag1", "tag2"},
@@ -395,7 +395,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 							Availability:                    types.Availabilities.Available,
 							InternetConnectionEnabled:       true,
 							InterDeviceCommunicationEnabled: true,
-							Interfaces: []*sacloud.MobileGatewayInterface{
+							Interfaces: []*iaas.MobileGatewayInterface{
 								{
 									IPAddress:            "192.168.0.1",
 									SubnetNetworkMaskLen: 24,

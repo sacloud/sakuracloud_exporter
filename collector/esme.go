@@ -22,7 +22,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -85,7 +85,7 @@ func (c *ESMECollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Add(len(searched))
 
 	for i := range searched {
-		func(esme *sacloud.ESME) {
+		func(esme *iaas.ESME) {
 			defer wg.Done()
 
 			c.collectESMEInfo(ch, esme)
@@ -101,14 +101,14 @@ func (c *ESMECollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 }
 
-func (c *ESMECollector) esmeLabels(esme *sacloud.ESME) []string {
+func (c *ESMECollector) esmeLabels(esme *iaas.ESME) []string {
 	return []string{
 		esme.ID.String(),
 		esme.Name,
 	}
 }
 
-func (c *ESMECollector) collectESMEInfo(ch chan<- prometheus.Metric, esme *sacloud.ESME) {
+func (c *ESMECollector) collectESMEInfo(ch chan<- prometheus.Metric, esme *iaas.ESME) {
 	labels := append(c.esmeLabels(esme),
 		flattenStringSlice(esme.Tags),
 		esme.Description,
@@ -122,7 +122,7 @@ func (c *ESMECollector) collectESMEInfo(ch chan<- prometheus.Metric, esme *saclo
 	)
 }
 
-func (c *ESMECollector) collectLogs(ch chan<- prometheus.Metric, esme *sacloud.ESME) {
+func (c *ESMECollector) collectLogs(ch chan<- prometheus.Metric, esme *iaas.ESME) {
 	logs, err := c.client.Logs(c.ctx, esme.ID)
 	if err != nil {
 		c.errors.WithLabelValues("esme").Add(1)

@@ -17,13 +17,13 @@ package platform
 import (
 	"context"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
 type authStatusClient interface {
-	Read(context.Context) (*sacloud.AuthStatus, error)
+	Read(context.Context) (*iaas.AuthStatus, error)
 }
 
-func getAuthStatusClient(caller sacloud.APICaller) authStatusClient {
-	return sacloud.NewAuthStatusOp(caller)
+func getAuthStatusClient(caller iaas.APICaller) authStatusClient {
+	return iaas.NewAuthStatusOp(caller)
 }

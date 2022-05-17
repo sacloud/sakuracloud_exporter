@@ -21,25 +21,24 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyAutoBackupClient struct {
-	autoBackup     []*sacloud.AutoBackup
+	autoBackup     []*iaas.AutoBackup
 	findErr        error
-	archives       []*sacloud.Archive
+	archives       []*iaas.Archive
 	listBackupsErr error
 }
 
-func (d *dummyAutoBackupClient) Find(ctx context.Context) ([]*sacloud.AutoBackup, error) {
+func (d *dummyAutoBackupClient) Find(ctx context.Context) ([]*iaas.AutoBackup, error) {
 	return d.autoBackup, d.findErr
 }
 
-func (d *dummyAutoBackupClient) ListBackups(ctx context.Context, zone string, autoBackupID types.ID) ([]*sacloud.Archive, error) {
+func (d *dummyAutoBackupClient) ListBackups(ctx context.Context, zone string, autoBackupID types.ID) ([]*iaas.Archive, error) {
 	return d.archives, d.listBackupsErr
 }
 
@@ -84,7 +83,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 		{
 			name: "a auto-backup: list archives is failed ",
 			in: &dummyAutoBackupClient{
-				autoBackup: []*sacloud.AutoBackup{
+				autoBackup: []*iaas.AutoBackup{
 					{
 						ID:                      101,
 						Name:                    "AutoBackup",
@@ -121,7 +120,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 		{
 			name: "a auto-backup without archives",
 			in: &dummyAutoBackupClient{
-				autoBackup: []*sacloud.AutoBackup{
+				autoBackup: []*iaas.AutoBackup{
 					{
 						ID:                      101,
 						Name:                    "AutoBackup",
@@ -171,7 +170,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 		{
 			name: "a auto-backup with archives",
 			in: &dummyAutoBackupClient{
-				autoBackup: []*sacloud.AutoBackup{
+				autoBackup: []*iaas.AutoBackup{
 					{
 						ID:                      101,
 						Name:                    "AutoBackup",
@@ -186,7 +185,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 						Description: "desc",
 					},
 				},
-				archives: []*sacloud.Archive{
+				archives: []*iaas.Archive{
 					{
 						ID:          301,
 						Name:        "Archive1",

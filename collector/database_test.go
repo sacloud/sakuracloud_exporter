@@ -21,9 +21,8 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/libsacloud/v2/sacloud/types"
-
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
@@ -31,29 +30,29 @@ import (
 type dummyDatabaseClient struct {
 	find           []*platform.Database
 	findErr        error
-	monitorDB      *sacloud.MonitorDatabaseValue
+	monitorDB      *iaas.MonitorDatabaseValue
 	monitorDBErr   error
-	monitorCPU     *sacloud.MonitorCPUTimeValue
+	monitorCPU     *iaas.MonitorCPUTimeValue
 	monitorCPUErr  error
-	monitorNIC     *sacloud.MonitorInterfaceValue
+	monitorNIC     *iaas.MonitorInterfaceValue
 	monitorNICErr  error
-	monitorDisk    *sacloud.MonitorDiskValue
+	monitorDisk    *iaas.MonitorDiskValue
 	monitorDiskErr error
 }
 
 func (d *dummyDatabaseClient) Find(ctx context.Context) ([]*platform.Database, error) {
 	return d.find, d.findErr
 }
-func (d *dummyDatabaseClient) MonitorDatabase(ctx context.Context, zone string, diskID types.ID, end time.Time) (*sacloud.MonitorDatabaseValue, error) {
+func (d *dummyDatabaseClient) MonitorDatabase(ctx context.Context, zone string, diskID types.ID, end time.Time) (*iaas.MonitorDatabaseValue, error) {
 	return d.monitorDB, d.monitorDBErr
 }
-func (d *dummyDatabaseClient) MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorCPUTimeValue, error) {
+func (d *dummyDatabaseClient) MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error) {
 	return d.monitorCPU, d.monitorCPUErr
 }
-func (d *dummyDatabaseClient) MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorInterfaceValue, error) {
+func (d *dummyDatabaseClient) MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitorNIC, d.monitorNICErr
 }
-func (d *dummyDatabaseClient) MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*sacloud.MonitorDiskValue, error) {
+func (d *dummyDatabaseClient) MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorDiskValue, error) {
 	return d.monitorDisk, d.monitorDiskErr
 }
 
@@ -88,7 +87,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 
 	var (
 		dbValue = &platform.Database{
-			Database: &sacloud.Database{
+			Database: &iaas.Database{
 				ID:               101,
 				Name:             "database",
 				Description:      "desc",
@@ -96,12 +95,12 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 				InstanceStatus:   types.ServerInstanceStatuses.Up,
 				InstanceHostName: "sacXXXX",
 				PlanID:           types.DatabasePlans.DB10GB,
-				Conf: &sacloud.DatabaseRemarkDBConfCommon{
+				Conf: &iaas.DatabaseRemarkDBConfCommon{
 					DatabaseName:     types.RDBMSVersions[types.RDBMSTypesMariaDB].Name,
 					DatabaseVersion:  types.RDBMSVersions[types.RDBMSTypesMariaDB].Version,
 					DatabaseRevision: types.RDBMSVersions[types.RDBMSTypesMariaDB].Revision,
 				},
-				Interfaces: []*sacloud.InterfaceView{
+				Interfaces: []*iaas.InterfaceView{
 					{
 						ID:           201,
 						UpstreamType: types.UpstreamNetworkTypes.Switch,
@@ -231,21 +230,21 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 				find: []*platform.Database{
 					dbValue,
 				},
-				monitorCPU: &sacloud.MonitorCPUTimeValue{
+				monitorCPU: &iaas.MonitorCPUTimeValue{
 					Time:    monitorTime,
 					CPUTime: 101,
 				},
-				monitorDisk: &sacloud.MonitorDiskValue{
+				monitorDisk: &iaas.MonitorDiskValue{
 					Time:  monitorTime,
 					Read:  201,
 					Write: 202,
 				},
-				monitorNIC: &sacloud.MonitorInterfaceValue{
+				monitorNIC: &iaas.MonitorInterfaceValue{
 					Time:    monitorTime,
 					Receive: 301,
 					Send:    302,
 				},
-				monitorDB: &sacloud.MonitorDatabaseValue{
+				monitorDB: &iaas.MonitorDatabaseValue{
 					Time:              monitorTime,
 					UsedMemorySize:    401,
 					TotalMemorySize:   402,

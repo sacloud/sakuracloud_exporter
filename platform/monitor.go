@@ -18,19 +18,19 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sacloud/libsacloud/v2/sacloud"
+	"github.com/sacloud/iaas-api-go"
 )
 
-func monitorCondition(end time.Time) *sacloud.MonitorCondition {
+func monitorCondition(end time.Time) *iaas.MonitorCondition {
 	end = end.Truncate(time.Second)
 	start := end.Add(-time.Hour)
-	return &sacloud.MonitorCondition{
+	return &iaas.MonitorCondition{
 		Start: start,
 		End:   end,
 	}
 }
 
-func monitorDatabaseValue(values []*sacloud.MonitorDatabaseValue) *sacloud.MonitorDatabaseValue {
+func monitorDatabaseValue(values []*iaas.MonitorDatabaseValue) *iaas.MonitorDatabaseValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -39,7 +39,7 @@ func monitorDatabaseValue(values []*sacloud.MonitorDatabaseValue) *sacloud.Monit
 	return nil
 }
 
-func monitorCPUTimeValue(values []*sacloud.MonitorCPUTimeValue) *sacloud.MonitorCPUTimeValue {
+func monitorCPUTimeValue(values []*iaas.MonitorCPUTimeValue) *iaas.MonitorCPUTimeValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -48,7 +48,7 @@ func monitorCPUTimeValue(values []*sacloud.MonitorCPUTimeValue) *sacloud.Monitor
 	return nil
 }
 
-func monitorDiskValue(values []*sacloud.MonitorDiskValue) *sacloud.MonitorDiskValue {
+func monitorDiskValue(values []*iaas.MonitorDiskValue) *iaas.MonitorDiskValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -57,7 +57,7 @@ func monitorDiskValue(values []*sacloud.MonitorDiskValue) *sacloud.MonitorDiskVa
 	return nil
 }
 
-func monitorInterfaceValue(values []*sacloud.MonitorInterfaceValue) *sacloud.MonitorInterfaceValue {
+func monitorInterfaceValue(values []*iaas.MonitorInterfaceValue) *iaas.MonitorInterfaceValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -66,7 +66,7 @@ func monitorInterfaceValue(values []*sacloud.MonitorInterfaceValue) *sacloud.Mon
 	return nil
 }
 
-func monitorRouterValue(values []*sacloud.MonitorRouterValue) *sacloud.MonitorRouterValue {
+func monitorRouterValue(values []*iaas.MonitorRouterValue) *iaas.MonitorRouterValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -75,7 +75,7 @@ func monitorRouterValue(values []*sacloud.MonitorRouterValue) *sacloud.MonitorRo
 	return nil
 }
 
-func monitorFreeDiskSizeValue(values []*sacloud.MonitorFreeDiskSizeValue) *sacloud.MonitorFreeDiskSizeValue {
+func monitorFreeDiskSizeValue(values []*iaas.MonitorFreeDiskSizeValue) *iaas.MonitorFreeDiskSizeValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -84,7 +84,7 @@ func monitorFreeDiskSizeValue(values []*sacloud.MonitorFreeDiskSizeValue) *saclo
 	return nil
 }
 
-func monitorConnectionValue(values []*sacloud.MonitorConnectionValue) *sacloud.MonitorConnectionValue {
+func monitorConnectionValue(values []*iaas.MonitorConnectionValue) *iaas.MonitorConnectionValue {
 	if len(values) > 2 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -93,7 +93,7 @@ func monitorConnectionValue(values []*sacloud.MonitorConnectionValue) *sacloud.M
 	return nil
 }
 
-func monitorLinkValue(values []*sacloud.MonitorLinkValue) *sacloud.MonitorLinkValue {
+func monitorLinkValue(values []*iaas.MonitorLinkValue) *iaas.MonitorLinkValue {
 	if len(values) > 2 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
@@ -102,7 +102,7 @@ func monitorLinkValue(values []*sacloud.MonitorLinkValue) *sacloud.MonitorLinkVa
 	return nil
 }
 
-func monitorLocalRouterValue(values []*sacloud.MonitorLocalRouterValue) *sacloud.MonitorLocalRouterValue {
+func monitorLocalRouterValue(values []*iaas.MonitorLocalRouterValue) *iaas.MonitorLocalRouterValue {
 	if len(values) > 1 {
 		// Descending
 		sort.Slice(values, func(i, j int) bool { return values[i].Time.After(values[j].Time) })
