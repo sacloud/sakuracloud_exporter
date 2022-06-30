@@ -35,7 +35,7 @@ MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
 RUN apk add --update ca-certificates
 
-COPY --from=builder /go/src/github.com/sacloud/sakuracloud_exporter/bin/sakuracloud_exporter /usr/bin/
+COPY --from=builder /go/src/github.com/sacloud/sakuracloud_exporter/sakuracloud_exporter /usr/bin/
 
 EXPOSE 9542
 
