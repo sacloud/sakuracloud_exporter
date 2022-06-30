@@ -245,8 +245,8 @@ func (c *LocalRouterCollector) collectNetworkInfo(ch chan<- prometheus.Metric, l
 }
 
 func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, localRouter *iaas.LocalRouter) {
-	//localRouterPeerLabels := append(localRouterLabels, "peer_index", "peer_id")
-	//localRouterPeerInfoLabels := append(localRouterPeerLabels, "enabled", "description")
+	// localRouterPeerLabels := append(localRouterLabels, "peer_index", "peer_id")
+	// localRouterPeerInfoLabels := append(localRouterPeerLabels, "enabled", "description")
 
 	healthStatus, err := c.client.Health(c.ctx, localRouter.ID)
 	if err != nil {

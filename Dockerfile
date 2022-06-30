@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM golang:1.17 AS builder
+FROM golang:1.18 AS builder
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
 
@@ -30,7 +30,7 @@ RUN ["make", "build"]
 
 #----------
 
-FROM alpine:3.7
+FROM alpine:3.15
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
 RUN apk add --update ca-certificates

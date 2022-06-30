@@ -13,58 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-NAME     := sakuracloud_exporter
-REVISION := $(shell git rev-parse --short HEAD)
-SRCS     := $(shell find . -type f -name '*.go')
-LDFLAGS  := -ldflags="-s -w -X \"main.Revision=$(REVISION)\" -extldflags -static"
+#====================
+AUTHOR         ?= The sacloud/sakuracloud_exporter Authors
+COPYRIGHT_YEAR ?= 2019-2022
 
-PREFIX                  ?= $(shell pwd)/bin
-BIN_DIR                 ?= $(shell pwd)/bin
+BIN            ?= sakuracloud_exporter
+BUILD_LDFLAGS  ?= "-s -w -X \"main.Revision=$(REVISION)\" -extldflags -static"
+REVISION       := $(shell git rev-parse --short HEAD)
 
-AUTHOR          ?="The sakuracloud_exporter Authors"
-COPYRIGHT_YEAR  ?="2019-2022"
-COPYRIGHT_FILES ?=$$(find . -name "*.go" -print | grep -v "/vendor/")
+include includes/go/common.mk
+include includes/go/single.mk
+#====================
 
-GO     := GO111MODULE=on go
-PKGS    = $(shell $(GO) list ./... | grep -v /vendor/)
-
-default: lint test
-all: lint test build
-lint: fmt goimports
-	@echo ">> running golangci-lint"
-	golangci-lint run ./...
-
-test:
-	@echo ">> running tests"
-	@$(GO) test -v $(PKGS)
-
-fmt:
-	@echo ">> formatting code"
-	@$(GO) fmt $(PKGS)
-
-goimports: fmt
-	goimports -l -w $$(find . -type f -name '*.go' -not -path "./vendor/*")
-
-run:
-	@$(GO) run main.go
-
-clean:
-	rm -Rf $(BIN_DIR)/*
-
-build: $(BIN_DIR)/$(NAME)
-
-$(BIN_DIR)/$(NAME): $(SRCS)
-	CGO_ENABLED=0 $(GO) build $(LDFLAGS) -o $(BIN_DIR)/$(NAME)
-
-.PHONY: tools
-tools:
-	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
-	GO111MODULE=off go get github.com/sacloud/addlicense
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/v1.43.0/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.43.0
-
-
-.PHONY: set-license
-set-license:
-	@addlicense -c $(AUTHOR) -y $(COPYRIGHT_YEAR) $(COPYRIGHT_FILES)
-
-.PHONY: all fmt build build-x test goimports clean lint
+default: $(DEFAULT_GOALS)
+tools: dev-tools

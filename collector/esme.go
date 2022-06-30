@@ -149,7 +149,7 @@ func (c *ESMECollector) collectLogs(ch chan<- prometheus.Metric, esme *iaas.ESME
 		if _, ok := statusCounts[l.Status]; !ok {
 			statusCounts[l.Status] = 0
 		}
-		statusCounts[l.Status] = statusCounts[l.Status] + 1
+		statusCounts[l.Status]++
 	}
 
 	for key, v := range statusCounts {

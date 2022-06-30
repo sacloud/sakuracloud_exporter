@@ -219,7 +219,7 @@ func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *iaas.
 
 	uplink := values.UplinkBPS
 	if uplink > 0 {
-		uplink = uplink / 1000
+		uplink /= 1000
 	}
 	m := prometheus.MustNewConstMetric(
 		c.Uplink,
@@ -231,7 +231,7 @@ func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *iaas.
 
 	downlink := values.DownlinkBPS
 	if downlink > 0 {
-		downlink = downlink / 1000
+		downlink /= 1000
 	}
 	m = prometheus.MustNewConstMetric(
 		c.Downlink,
