@@ -233,7 +233,7 @@ func TestServerCollector_Collect(t *testing.T) {
 				//		"storage_class":      "iscsi1204",
 				//		"storage_generation": "100",
 				//	}),
-				//},
+				// },
 				{
 					desc: c.NICBandwidth,
 					metric: createGaugeMetric(1000, map[string]string{
@@ -383,7 +383,7 @@ func TestServerCollector_Collect(t *testing.T) {
 				//		"storage_class":      "iscsi1204",
 				//		"storage_generation": "100",
 				//	}),
-				//},
+				// },
 				{
 					desc: c.NICBandwidth,
 					metric: createGaugeMetric(1000, map[string]string{

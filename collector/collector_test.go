@@ -51,7 +51,7 @@ func collectDescs(collector prometheus.Collector) []*prometheus.Desc {
 type collectResult struct {
 	logged []string
 	errors *dto.Metric
-	//collected []*dto.Metric
+	// collected []*dto.Metric
 	collected []*collectedMetric
 }
 

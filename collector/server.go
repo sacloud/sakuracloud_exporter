@@ -488,7 +488,7 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 
 	read := values.Read
 	if read > 0 {
-		read = read / 1024
+		read /= 1024
 	}
 	m := prometheus.MustNewConstMetric(
 		c.DiskRead,
@@ -500,7 +500,7 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 
 	write := values.Write
 	if write > 0 {
-		write = write / 1024
+		write /= 1024
 	}
 	m = prometheus.MustNewConstMetric(
 		c.DiskWrite,

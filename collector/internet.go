@@ -148,7 +148,7 @@ func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, in
 
 	in := values.In
 	if in > 0 {
-		in = in / 1000
+		in /= 1000
 	}
 	m := prometheus.MustNewConstMetric(
 		c.In,
@@ -160,7 +160,7 @@ func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, in
 
 	out := values.Out
 	if out > 0 {
-		out = out / 1000
+		out /= 1000
 	}
 	m = prometheus.MustNewConstMetric(
 		c.Out,

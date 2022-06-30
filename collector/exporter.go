@@ -36,7 +36,7 @@ type ExporterCollector struct {
 	BuildInfo *prometheus.Desc
 }
 
-//logger, Version, Revision, BuildDate, GoVersion, StartTime
+// logger, Version, Revision, BuildDate, GoVersion, StartTime
 
 // NewExporterCollector returns a new ExporterCollector.
 func NewExporterCollector(ctx context.Context, logger log.Logger, version string, revision string, goVersion string, startTime time.Time) *ExporterCollector {
