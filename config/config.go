@@ -33,7 +33,7 @@ type Config struct {
 	FakeMode  string   `arg:"--fake-mode,env:FAKE_MODE" help:"File path to fetch/store fake data. If this flag is specified, enable fake-mode"`
 	Token     string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN" help:"Token for using the SakuraCloud API"`
 	Secret    string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN_SECRET" help:"Secret for using the SakuraCloud API"`
-	Zones     []string // TODO zones parameter is not implements.
+	Zones     []string `arg:"-"` // TODO zones parameter is not implements.
 	WebAddr   string   `arg:"env:WEB_ADDR"`
 	WebPath   string   `arg:"env:WEB_PATH"`
 	RateLimit int      `arg:"env:SAKURACLOUD_RATE_LIMIT" help:"Rate limit per second for SakuraCloud API calls"`
