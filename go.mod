@@ -3,7 +3,7 @@ module github.com/sacloud/sakuracloud_exporter
 require (
 	github.com/alexflint/go-arg v1.4.3
 	github.com/go-kit/kit v0.12.0
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0
 	github.com/sacloud/api-client-go v0.2.0
 	github.com/sacloud/iaas-api-go v1.2.1
@@ -33,7 +33,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/common v0.30.0 // indirect
+	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/sacloud/go-http v0.1.1 // indirect
 	go.uber.org/ratelimit v0.2.0 // indirect
