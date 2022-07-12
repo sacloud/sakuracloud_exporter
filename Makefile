@@ -27,3 +27,7 @@ include includes/go/single.mk
 
 default: $(DEFAULT_GOALS)
 tools: dev-tools
+
+.PHONY: e2e-test
+e2e-test: install
+	(cd e2e; go test $(TESTARGS) -v -tags=e2e -timeout 240m ./...)
