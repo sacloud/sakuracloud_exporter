@@ -1,7 +1,7 @@
 # sakuracloud_exporter
 
 ![Test Status](https://github.com/sacloud/sakuracloud_exporter/workflows/Tests/badge.svg)
-[![Slack](https://img.shields.io/badge/Slack-Sacloud%20Workspace-brightgreen)](https://join.slack.com/t/sacloud/shared_invite/zt-ohsdpv2t-_Bi1_F0jDAAmWjoMQCmAxg)  
+[![Discord](https://img.shields.io/badge/Discord-SAKURA%20Users-blue)](https://discord.gg/yUEDN8hbMf)
 [![License](https://img.shields.io/github/license/sacloud/sakuracloud_exporter)](LICENSE)
 [![Version](https://img.shields.io/github/v/tag/sacloud/sakuracloud_exporter)](https://github.com/sacloud/sakuracloud_exporter/releases/latest)
 ![Downloads](https://img.shields.io/github/downloads/sacloud/sakuracloud_exporter/total)
