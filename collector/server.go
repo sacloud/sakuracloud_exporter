@@ -62,7 +62,7 @@ func NewServerCollector(ctx context.Context, logger log.Logger, errors *promethe
 	errors.WithLabelValues("server").Add(0)
 
 	serverLabels := []string{"id", "name", "zone"}
-	serverInfoLabels := append(serverLabels, "cpus", "disks", "nics", "memories", "host", "tags", "description")
+	serverInfoLabels := append(serverLabels, "cpus", "disks", "nics", "memories", "host", "tags", "description", "private_host_id")
 	diskLabels := append(serverLabels, "disk_id", "disk_name", "index")
 	diskInfoLabels := append(diskLabels, "plan", "interface", "size", "tags", "description", "storage_id", "storage_generation", "storage_class")
 	nicLabels := append(serverLabels, "interface_id", "index")
@@ -329,6 +329,7 @@ func (c *ServerCollector) serverInfoLabels(server *platform.Server) []string {
 		instanceHost,
 		flattenStringSlice(server.Tags),
 		server.Description,
+		server.PrivateHostID.String(),
 	)
 }
 

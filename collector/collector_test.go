@@ -90,7 +90,7 @@ func requireMetricsEqual(t *testing.T, m1, m2 []*collectedMetric) {
 		}
 		return labelToString(m2[i].metric.Label) < labelToString(m2[j].metric.Label)
 	})
-	require.Equal(t, m1, m2)
+	require.EqualValues(t, m1, m2)
 }
 
 func initLoggerAndErrors() {

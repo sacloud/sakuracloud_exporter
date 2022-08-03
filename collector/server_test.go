@@ -116,6 +116,8 @@ func TestServerCollector_Collect(t *testing.T) {
 					},
 				},
 			},
+			PrivateHostID:   3001,
+			PrivateHostName: "private-host-name",
 			Interfaces: []*iaas.InterfaceView{
 				{
 					ID:           301,
@@ -179,16 +181,17 @@ func TestServerCollector_Collect(t *testing.T) {
 				{
 					desc: c.ServerInfo,
 					metric: createGaugeMetric(1, map[string]string{
-						"id":          "101",
-						"name":        "server",
-						"zone":        "is1a",
-						"cpus":        "2",
-						"disks":       "1",
-						"nics":        "1",
-						"memories":    "4",
-						"host":        "sacXXX",
-						"tags":        ",tag1,tag2,",
-						"description": "desc",
+						"id":              "101",
+						"name":            "server",
+						"zone":            "is1a",
+						"cpus":            "2",
+						"disks":           "1",
+						"nics":            "1",
+						"memories":        "4",
+						"host":            "sacXXX",
+						"tags":            ",tag1,tag2,",
+						"description":     "desc",
+						"private_host_id": "3001",
 					}),
 				},
 				{
@@ -236,7 +239,7 @@ func TestServerCollector_Collect(t *testing.T) {
 				// },
 				{
 					desc: c.NICBandwidth,
-					metric: createGaugeMetric(1000, map[string]string{
+					metric: createGaugeMetric(0, map[string]string{ // 専有ホストの場合は0
 						"id":           "101",
 						"name":         "server",
 						"zone":         "is1a",
@@ -329,16 +332,17 @@ func TestServerCollector_Collect(t *testing.T) {
 				{
 					desc: c.ServerInfo,
 					metric: createGaugeMetric(1, map[string]string{
-						"id":          "101",
-						"name":        "server",
-						"zone":        "is1a",
-						"cpus":        "2",
-						"disks":       "1",
-						"nics":        "1",
-						"memories":    "4",
-						"host":        "sacXXX",
-						"tags":        ",tag1,tag2,",
-						"description": "desc",
+						"id":              "101",
+						"name":            "server",
+						"zone":            "is1a",
+						"cpus":            "2",
+						"disks":           "1",
+						"nics":            "1",
+						"memories":        "4",
+						"host":            "sacXXX",
+						"tags":            ",tag1,tag2,",
+						"description":     "desc",
+						"private_host_id": "3001",
 					}),
 				},
 				{
@@ -386,7 +390,7 @@ func TestServerCollector_Collect(t *testing.T) {
 				// },
 				{
 					desc: c.NICBandwidth,
-					metric: createGaugeMetric(1000, map[string]string{
+					metric: createGaugeMetric(0, map[string]string{
 						"id":           "101",
 						"name":         "server",
 						"zone":         "is1a",
@@ -453,16 +457,17 @@ func TestServerCollector_Collect(t *testing.T) {
 				{
 					desc: c.ServerInfo,
 					metric: createGaugeMetric(1, map[string]string{
-						"id":          "101",
-						"name":        "server",
-						"zone":        "is1a",
-						"cpus":        "2",
-						"disks":       "0",
-						"nics":        "0",
-						"memories":    "4",
-						"host":        "sacXXX",
-						"tags":        "",
-						"description": "",
+						"id":              "101",
+						"name":            "server",
+						"zone":            "is1a",
+						"cpus":            "2",
+						"disks":           "0",
+						"nics":            "0",
+						"memories":        "4",
+						"host":            "sacXXX",
+						"tags":            "",
+						"description":     "",
+						"private_host_id": "",
 					}),
 				},
 				{
