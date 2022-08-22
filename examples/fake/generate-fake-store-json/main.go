@@ -87,10 +87,10 @@ func createAutoBackup(caller iaas.APICaller) {
 	_, err = backupOp.Create(context.Background(), "is1a", &iaas.AutoBackupCreateRequest{
 		Name:   "example",
 		DiskID: disk.ID,
-		BackupSpanWeekdays: []types.EBackupSpanWeekday{
-			types.BackupSpanWeekdays.Monday,
-			types.BackupSpanWeekdays.Wednesday,
-			types.BackupSpanWeekdays.Friday,
+		BackupSpanWeekdays: []types.EDayOfTheWeek{
+			types.DaysOfTheWeek.Monday,
+			types.DaysOfTheWeek.Wednesday,
+			types.DaysOfTheWeek.Friday,
 		},
 		MaximumNumberOfArchives: 5,
 		Description:             "desc",
@@ -135,8 +135,8 @@ func createDatabase(caller iaas.APICaller) {
 		BackupSetting: &iaas.DatabaseSettingBackup{
 			Rotate: 3,
 			Time:   "00:00",
-			DayOfWeek: []types.EBackupSpanWeekday{
-				types.BackupSpanWeekdays.Sunday,
+			DayOfWeek: []types.EDayOfTheWeek{
+				types.DaysOfTheWeek.Sunday,
 			},
 		},
 		Name:        "example",

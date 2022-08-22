@@ -89,10 +89,10 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 						Name:                    "AutoBackup",
 						DiskID:                  201,
 						MaximumNumberOfArchives: 3,
-						BackupSpanWeekdays: []types.EBackupSpanWeekday{
-							types.BackupSpanWeekdays.Sunday,
-							types.BackupSpanWeekdays.Monday,
-							types.BackupSpanWeekdays.Tuesday,
+						BackupSpanWeekdays: []types.EDayOfTheWeek{
+							types.DaysOfTheWeek.Sunday,
+							types.DaysOfTheWeek.Monday,
+							types.DaysOfTheWeek.Tuesday,
 						},
 						Tags:        types.Tags{"tag1", "tag2"},
 						Description: "desc",
@@ -126,10 +126,10 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 						Name:                    "AutoBackup",
 						DiskID:                  201,
 						MaximumNumberOfArchives: 3,
-						BackupSpanWeekdays: []types.EBackupSpanWeekday{
-							types.BackupSpanWeekdays.Sunday,
-							types.BackupSpanWeekdays.Monday,
-							types.BackupSpanWeekdays.Tuesday,
+						BackupSpanWeekdays: []types.EDayOfTheWeek{
+							types.DaysOfTheWeek.Sunday,
+							types.DaysOfTheWeek.Monday,
+							types.DaysOfTheWeek.Tuesday,
 						},
 						Tags:        types.Tags{"tag1", "tag2"},
 						Description: "desc",
@@ -176,10 +176,10 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 						Name:                    "AutoBackup",
 						DiskID:                  201,
 						MaximumNumberOfArchives: 3,
-						BackupSpanWeekdays: []types.EBackupSpanWeekday{
-							types.BackupSpanWeekdays.Sunday,
-							types.BackupSpanWeekdays.Monday,
-							types.BackupSpanWeekdays.Tuesday,
+						BackupSpanWeekdays: []types.EDayOfTheWeek{
+							types.DaysOfTheWeek.Sunday,
+							types.DaysOfTheWeek.Monday,
+							types.DaysOfTheWeek.Tuesday,
 						},
 						Tags:        types.Tags{"tag1", "tag2"},
 						Description: "desc",
