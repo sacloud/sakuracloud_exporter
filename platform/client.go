@@ -55,12 +55,8 @@ func NewSakuraCloudClient(c config.Config, version string) *Client {
 		Options: &client.Options{
 			AccessToken:          c.Token,
 			AccessTokenSecret:    c.Secret,
-			HttpRequestTimeout:   0,
 			HttpRequestRateLimit: c.RateLimit,
 			UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
-			RetryMax:             9,
-			RetryWaitMin:         1,
-			RetryWaitMax:         5,
 			Trace:                c.Trace,
 		},
 		TraceAPI:      c.Debug,
