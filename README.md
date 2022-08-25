@@ -43,7 +43,7 @@ $ docker run -p 9542:9542 -e SAKURACLOUD_ACCESS_TOKEN=<YOUR-TOKEN> -e SAKURACLOU
 ### Flags
 
 | Flag / Environment Variable                    | Required | Default    | Description                                                     |
-| --------------------------------------------   | -------- | ---------- | -------------------------                                       |
+|------------------------------------------------| -------- | ---------- | -------------------------                                       |
 | `--token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯       |            | API Key(Token)                                                  |
 | `--secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯       |            | API Key(Secret)                                                 |
 | `--ratelimit`/ `SAKURACLOUD_RATE_LIMIT`        |          | `5`        | API request rate limit(maximum:10)                              |
@@ -64,6 +64,7 @@ $ docker run -p 9542:9542 -e SAKURACLOUD_ACCESS_TOKEN=<YOUR-TOKEN> -e SAKURACLOU
 | `--no-collector.sim`                           |          | `false`    | Disable the SIM collector                                       |
 | `--no-collector.vpc-router`                    |          | `false`    | Disable the VPCRouter collector                                 |
 | `--no-collector.zone`                          |          | `false`    | Disable the Zone collector                                      |
+| `--no-collector.webaccel`                      |          | `false`    | Disable the WebAccel collector                                      |
 
 
 #### Flags for debug
@@ -81,7 +82,7 @@ Example fake store file(JSON) is here[examples/fake/generate-fake-store-json/exa
 The exporter returns the following metrics:
 
 | Resource Type                   | Metric Name Prefix           |
-| ------                          | -----------                  |
+|---------------------------------|------------------------------|
 | [AutoBackup](#autobackup)       | sakuracloud_auto_backup_*    |
 | [Coupon](#coupon)               | sakuracloud_coupon_*         |
 | [Database](#database)           | sakuracloud_database_*       |
@@ -96,6 +97,7 @@ The exporter returns the following metrics:
 | [SIM](#sim)                     | sakuracloud_sim_*            |
 | [VPCRouter](#vpcrouter)         | sakuracloud_vpc_router_*     |
 | [Zone](#zone)                   | sakuracloud_zone_*           |
+| [WebAccel](#webaccel)           | webaccel_*                   |
 | [Exporter](#exporter)           | sakuracloud_exporter_*       |
 
 
@@ -271,6 +273,20 @@ The exporter returns the following metrics:
 | Metric                | Description                                                    | Labels                                                  |
 | ------                | -----------                                                    | ------                                                  |
 | sakuracloud_zone_info | A metric with a constant '1' value labeled by zone information | `id`, `name`, `description`, `region_id`, `region_name` |
+
+#### WebAccel
+
+| Metric                         | Description                                               | Labels                                             |
+|--------------------------------|-----------------------------------------------------------|----------------------------------------------------|
+| webaccel_site_info             | A metric with a constant '1' value                        | `id`, `name`, `domain_type`, `domain`, `subdomain` |
+| webaccel_access_count          | Access count                                              | `id` |
+| webaccel_bytes_sent            | Bytes sent                                                | `id` |
+| webaccel_cache_miss_bytes_sent | Cache miss bytes sent                                     | `id` |
+| webaccel_cache_hit_ratio       | Cache hit ratio                                           | `id` |
+| webaccel_bytes_cache_hit_ratio | Bytes cache hit ratio                                     | `id` |
+| webaccel_price                 | Price                                                     | `id` |
+| webaccel_cert_expire           | Certificate expiration date in seconds since epoch (1970) | `id` |
+
 
 #### Exporter
 

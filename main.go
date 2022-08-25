@@ -71,8 +71,13 @@ func main() {
 	)
 
 	client := platform.NewSakuraCloudClient(c, Version)
-	if !client.HasValidAPIKeys(context.TODO()) {
+	ctx := context.Background()
+
+	if !client.HasValidAPIKeys(ctx) {
 		panic(errors.New("unauthorized: invalid API key is applied"))
+	}
+	if !c.NoCollectorWebAccel && !client.HasWebAccelPermission(ctx) {
+		logger.Log("warn", "API key doesn't have webaccel permission") // nolint
 	}
 
 	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -85,7 +90,7 @@ func main() {
 		PidFn: func() (int, error) { return os.Getpid(), nil },
 	}))
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 
 	// collector info
 	r.MustRegister(prometheus.NewGoCollector())
@@ -134,6 +139,9 @@ func main() {
 	}
 	if !c.NoCollectorZone {
 		r.MustRegister(collector.NewZoneCollector(ctx, logger, errs, client.Zone))
+	}
+	if !c.NoCollectorWebAccel {
+		r.MustRegister(collector.NewWebAccelCollector(ctx, logger, errs, client.WebAccel))
 	}
 
 	http.Handle(c.WebPath,
