@@ -24,6 +24,7 @@ import (
 	"github.com/sacloud/iaas-api-go/fake"
 	"github.com/sacloud/iaas-api-go/helper/api"
 	"github.com/sacloud/sakuracloud_exporter/config"
+	"github.com/sacloud/webaccel-api-go"
 )
 
 type Client struct {
@@ -42,6 +43,8 @@ type Client struct {
 	SIM           SIMClient
 	VPCRouter     VPCRouterClient
 	Zone          ZoneClient
+
+	WebAccel WebAccelClient
 }
 
 func NewSakuraCloudClient(c config.Config, version string) *Client {
@@ -67,6 +70,16 @@ func NewSakuraCloudClient(c config.Config, version string) *Client {
 		fake.InitDataStore()
 	}
 
+	webaccelCaller := &webaccel.Client{
+		Options: &client.Options{
+			AccessToken:          c.Token,
+			AccessTokenSecret:    c.Secret,
+			HttpRequestRateLimit: c.RateLimit,
+			UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
+			Trace:                c.Trace,
+		},
+	}
+
 	return &Client{
 		authStatus:    getAuthStatusClient(caller),
 		AutoBackup:    getAutoBackupClient(caller, c.Zones),
@@ -83,10 +96,21 @@ func NewSakuraCloudClient(c config.Config, version string) *Client {
 		SIM:           getSIMClient(caller),
 		VPCRouter:     getVPCRouterClient(caller, c.Zones),
 		Zone:          getZoneClient(caller),
+
+		WebAccel: getWebAccelClient(webaccelCaller),
 	}
 }
 
 func (c *Client) HasValidAPIKeys(ctx context.Context) bool {
 	res, err := c.authStatus.Read(ctx)
 	return res != nil && err == nil
+}
+
+func (c *Client) HasWebAccelPermission(ctx context.Context) bool {
+	res, err := c.authStatus.Read(ctx)
+	if res == nil || err != nil {
+		return false
+	}
+
+	return res.ExternalPermission.PermittedWebAccel()
 }

@@ -53,6 +53,7 @@ type Config struct {
 	NoCollectorSIM                     bool `arg:"--no-collector.sim" help:"Disable the SIM collector"`
 	NoCollectorVPCRouter               bool `arg:"--no-collector.vpc-router" help:"Disable the VPCRouter collector"`
 	NoCollectorZone                    bool `arg:"--no-collector.zone" help:"Disable the Zone collector"`
+	NoCollectorWebAccel                bool `arg:"--no-collector.webaccel" help:"Disable the WebAccel collector"`
 }
 
 func InitConfig() (Config, error) {
