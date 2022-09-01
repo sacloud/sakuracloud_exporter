@@ -252,7 +252,7 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 					)
 				}
 
-				if server.InstanceStatus.IsUp() {
+				if server.Availability.IsAvailable() && server.InstanceStatus.IsUp() {
 					// collect metrics per resources under server
 					now := time.Now()
 					// CPU-TIME

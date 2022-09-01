@@ -151,7 +151,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 				float64(1.0),
 				c.mobileGatewayInfoLabels(mobileGateway)...,
 			)
-			if mobileGateway.Availability.IsAvailable() {
+			if mobileGateway.Availability.IsAvailable() && mobileGateway.InstanceStatus.IsUp() {
 				// TrafficControlInfo
 				wg.Add(1)
 				go func() {

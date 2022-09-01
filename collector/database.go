@@ -216,7 +216,7 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 				c.nicInfoLabels(database)...,
 			)
 
-			if database.InstanceStatus.IsUp() {
+			if database.Availability.IsAvailable() && database.InstanceStatus.IsUp() {
 				now := time.Now()
 
 				// system info
