@@ -101,6 +101,7 @@ func TestServerCollector_Collect(t *testing.T) {
 			CPU:              2,
 			MemoryMB:         4 * 1024,
 			InstanceStatus:   types.ServerInstanceStatuses.Up,
+			Availability:     types.Availabilities.Available,
 			InstanceHostName: "sacXXX",
 			Disks: []*iaas.ServerConnectedDisk{
 				{
@@ -431,6 +432,7 @@ func TestServerCollector_Collect(t *testing.T) {
 							CPU:                 2,
 							MemoryMB:            4 * 1024,
 							InstanceStatus:      types.ServerInstanceStatuses.Up,
+							Availability:        types.Availabilities.Available,
 							InstanceHostName:    "sacXXX",
 							InstanceHostInfoURL: "https://maintenance.example.com",
 						},
@@ -556,6 +558,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 			CPU:              2,
 			MemoryMB:         4 * 1024,
 			InstanceStatus:   types.ServerInstanceStatuses.Up,
+			Availability:     types.Availabilities.Available,
 			InstanceHostName: "sacXXX",
 			Disks: []*iaas.ServerConnectedDisk{
 				{
@@ -645,6 +648,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 							CPU:                 2,
 							MemoryMB:            4 * 1024,
 							InstanceStatus:      types.ServerInstanceStatuses.Up,
+							Availability:        types.Availabilities.Available,
 							InstanceHostName:    "sacXXX",
 							InstanceHostInfoURL: "https://maintenance.example.com",
 						},

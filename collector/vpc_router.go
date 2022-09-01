@@ -177,7 +177,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 				c.vpcRouterInfoLabels(vpcRouter)...,
 			)
 
-			if vpcRouter.InstanceStatus.IsUp() {
+			if vpcRouter.Availability.IsAvailable() && vpcRouter.InstanceStatus.IsUp() {
 				// collect metrics per resources under server
 				now := time.Now()
 				// CPU-TIME

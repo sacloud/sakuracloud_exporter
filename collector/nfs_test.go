@@ -101,6 +101,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 							Description:      "desc",
 							InstanceHostName: "sacXXX",
 							InstanceStatus:   types.ServerInstanceStatuses.Up,
+							Availability:     types.Availabilities.Available,
 							IPAddresses:      []string{"192.168.0.11"},
 							DefaultRoute:     "192.168.0.1",
 							NetworkMaskLen:   24,

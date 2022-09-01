@@ -179,7 +179,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 				)
 			}
 
-			if lb.InstanceStatus.IsUp() {
+			if lb.Availability.IsAvailable() && lb.InstanceStatus.IsUp() {
 				now := time.Now()
 
 				// NIC(Receive/Send)

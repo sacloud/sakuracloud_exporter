@@ -105,6 +105,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 							Name:                            "mobile-gateway",
 							Tags:                            types.Tags{"tag1", "tag2"},
 							Description:                     "desc",
+							Availability:                    types.Availabilities.Available,
 							InstanceStatus:                  types.ServerInstanceStatuses.Down,
 							InternetConnectionEnabled:       false,
 							InterDeviceCommunicationEnabled: false,

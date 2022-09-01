@@ -144,7 +144,7 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 				c.nicInfoLabels(nfs)...,
 			)
 
-			if nfs.InstanceStatus.IsUp() {
+			if nfs.Availability.IsAvailable() && nfs.InstanceStatus.IsUp() {
 				now := time.Now()
 				// Free disk size
 				wg.Add(1)

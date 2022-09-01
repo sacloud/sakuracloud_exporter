@@ -111,6 +111,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 							Tags:           types.Tags{"tag1", "tag2"},
 							PlanID:         types.VPCRouterPlans.Premium,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
+							Availability:   types.Availabilities.Available,
 							Interfaces: []*iaas.VPCRouterInterface{
 								{
 									Index: 0,
@@ -328,6 +329,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 							Tags:           types.Tags{"tag1", "tag2"},
 							PlanID:         types.VPCRouterPlans.Premium,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
+							Availability:   types.Availabilities.Available,
 							Interfaces: []*iaas.VPCRouterInterface{
 								{Index: 0, ID: 200},
 							},

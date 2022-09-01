@@ -108,6 +108,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 							IPAddresses:    []string{"192.168.0.11"},
 							DefaultRoute:   "192.168.0.1",
 							NetworkMaskLen: 24,
+							Availability:   types.Availabilities.Available,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
 						},
 					},
@@ -157,6 +158,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 							IPAddresses:    []string{"192.168.0.11", "192.168.0.12"},
 							DefaultRoute:   "192.168.0.1",
 							NetworkMaskLen: 24,
+							Availability:   types.Availabilities.Available,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
 							VirtualIPAddresses: []*iaas.LoadBalancerVirtualIPAddress{
 								{
@@ -339,6 +341,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 							IPAddresses:    []string{"192.168.0.11", "192.168.0.12"},
 							DefaultRoute:   "192.168.0.1",
 							NetworkMaskLen: 24,
+							Availability:   types.Availabilities.Available,
 							InstanceStatus: types.ServerInstanceStatuses.Up,
 							VirtualIPAddresses: []*iaas.LoadBalancerVirtualIPAddress{
 								{

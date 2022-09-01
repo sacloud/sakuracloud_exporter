@@ -92,6 +92,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 				Name:             "database",
 				Description:      "desc",
 				Tags:             types.Tags{"tag1", "tag2"},
+				Availability:     types.Availabilities.Available,
 				InstanceStatus:   types.ServerInstanceStatuses.Up,
 				InstanceHostName: "sacXXXX",
 				PlanID:           types.DatabasePlans.DB10GB,
