@@ -101,6 +101,9 @@ func main() {
 	if !c.NoCollectorAutoBackup {
 		r.MustRegister(collector.NewAutoBackupCollector(ctx, logger, errs, client.AutoBackup))
 	}
+	if !c.NoCollectorBill {
+		r.MustRegister(collector.NewBillCollector(ctx, logger, errs, client.Bill))
+	}
 	if !c.NoCollectorCoupon {
 		r.MustRegister(collector.NewCouponCollector(ctx, logger, errs, client.Coupon))
 	}
