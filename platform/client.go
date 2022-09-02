@@ -30,6 +30,7 @@ import (
 type Client struct {
 	authStatus    authStatusClient
 	AutoBackup    AutoBackupClient
+	Bill          BillClient
 	Coupon        CouponClient
 	Database      DatabaseClient
 	ESME          ESMEClient
@@ -83,6 +84,7 @@ func NewSakuraCloudClient(c config.Config, version string) *Client {
 	return &Client{
 		authStatus:    getAuthStatusClient(caller),
 		AutoBackup:    getAutoBackupClient(caller, c.Zones),
+		Bill:          getBillClient(caller),
 		Coupon:        getCouponClient(caller),
 		Database:      getDatabaseClient(caller, c.Zones),
 		ESME:          getESMEClient(caller),

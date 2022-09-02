@@ -43,13 +43,14 @@ $ docker run -p 9542:9542 -e SAKURACLOUD_ACCESS_TOKEN=<YOUR-TOKEN> -e SAKURACLOU
 ### Flags
 
 | Flag / Environment Variable                    | Required | Default    | Description                                                     |
-|------------------------------------------------| -------- | ---------- | -------------------------                                       |
+|------------------------------------------------| -------- | ---------- |-----------------------------------------------------------------|
 | `--token` / `SAKURACLOUD_ACCESS_TOKEN`         | ◯       |            | API Key(Token)                                                  |
 | `--secret` / `SAKURACLOUD_ACCESS_TOKEN_SECRET` | ◯       |            | API Key(Secret)                                                 |
 | `--ratelimit`/ `SAKURACLOUD_RATE_LIMIT`        |          | `5`        | API request rate limit(maximum:10)                              |
 | `--webaddr` / `WEB_ADDR`                       |          | `:9542`    | Exporter's listen address                                       |
 | `--webpath`/ `WEB_PATH`                        |          | `/metrics` | Metrics request path                                            |
 | `--no-collector.auto-backup`                   |          | `false`    | Disable the AutoBackup collector                                |
+| `--no-collector.bill`                          |          | `false`    | Disable the Bill collector                                      |
 | `--no-collector.coupon`                        |          | `false`    | Disable the Coupon collector                                    |
 | `--no-collector.database`                      |          | `false`    | Disable the Database collector                                  |
 | `--no-collector.esme`                          |          | `false`    | Disable the ESME collector                                      |
@@ -64,7 +65,7 @@ $ docker run -p 9542:9542 -e SAKURACLOUD_ACCESS_TOKEN=<YOUR-TOKEN> -e SAKURACLOU
 | `--no-collector.sim`                           |          | `false`    | Disable the SIM collector                                       |
 | `--no-collector.vpc-router`                    |          | `false`    | Disable the VPCRouter collector                                 |
 | `--no-collector.zone`                          |          | `false`    | Disable the Zone collector                                      |
-| `--no-collector.webaccel`                      |          | `false`    | Disable the WebAccel collector                                      |
+| `--no-collector.webaccel`                      |          | `false`    | Disable the WebAccel collector                                  |
 
 
 #### Flags for debug
@@ -84,6 +85,7 @@ The exporter returns the following metrics:
 | Resource Type                   | Metric Name Prefix           |
 |---------------------------------|------------------------------|
 | [AutoBackup](#autobackup)       | sakuracloud_auto_backup_*    |
+| [Bill](#bill)                   | sakuracloud_bill_*           |
 | [Coupon](#coupon)               | sakuracloud_coupon_*         |
 | [Database](#database)           | sakuracloud_database_*       |
 | [ESME](#esme)                   | sakuracloud_esme_*           |
@@ -109,6 +111,12 @@ The exporter returns the following metrics:
 | sakuracloud_auto_backup_count        | A count of archives created by AutoBackup                                  | `id`, `name`, `disk_id`                                                                      |
 | sakuracloud_auto_backup_last_time    | Last backup time in seconds since epoch (1970)                             | `id`, `name`, `disk_id`                                                                      |
 | sakuracloud_auto_backup_archive_info | A metric with a constant '1' value labeled by backuped archive information | `id`, `name`, `disk_id`, `archive_id`, `archive_name`, `archive_tags`, `archive_description` |
+
+#### Bill
+
+| Metric                   | Description                 | Labels      |
+|--------------------------|-----------------------------|-------------|
+| sakuracloud_bill_amount  | Amount billed for the month | `member_id` |
 
 #### Coupon
 

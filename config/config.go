@@ -39,6 +39,7 @@ type Config struct {
 	RateLimit int      `arg:"env:SAKURACLOUD_RATE_LIMIT" help:"Rate limit per second for SakuraCloud API calls"`
 
 	NoCollectorAutoBackup              bool `arg:"--no-collector.auto-backup" help:"Disable the AutoBackup collector"`
+	NoCollectorBill                    bool `arg:"--no-collector.bill" help:"Disable the Bill collector"`
 	NoCollectorCoupon                  bool `arg:"--no-collector.coupon" help:"Disable the Coupon collector"`
 	NoCollectorDatabase                bool `arg:"--no-collector.database" help:"Disable the Database collector"`
 	NoCollectorESME                    bool `arg:"--no-collector.esme" help:"Disable the ESME collector"`
