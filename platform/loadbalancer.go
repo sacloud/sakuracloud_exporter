@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 )
 
 type LoadBalancer struct {
@@ -31,6 +32,7 @@ type LoadBalancerClient interface {
 	Find(ctx context.Context) ([]*LoadBalancer, error)
 	Status(ctx context.Context, zone string, id types.ID) ([]*iaas.LoadBalancerStatus, error)
 	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
+	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
 func getLoadBalancerClient(caller iaas.APICaller, zones []string) LoadBalancerClient {
@@ -88,4 +90,8 @@ func (c *loadBalancerClient) Status(ctx context.Context, zone string, id types.I
 		return nil, err
 	}
 	return res.Status, nil
+}
+
+func (c *loadBalancerClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return newsfeed.GetByURL(infoURL)
 }

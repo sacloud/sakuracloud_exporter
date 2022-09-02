@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
@@ -38,6 +39,8 @@ type dummyDatabaseClient struct {
 	monitorNICErr  error
 	monitorDisk    *iaas.MonitorDiskValue
 	monitorDiskErr error
+	maintenance    *newsfeed.FeedItem
+	maintenanceErr error
 }
 
 func (d *dummyDatabaseClient) Find(ctx context.Context) ([]*platform.Database, error) {
@@ -54,6 +57,9 @@ func (d *dummyDatabaseClient) MonitorNIC(ctx context.Context, zone string, datab
 }
 func (d *dummyDatabaseClient) MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorDiskValue, error) {
 	return d.monitorDisk, d.monitorDiskErr
+}
+func (d *dummyDatabaseClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return d.maintenance, d.maintenanceErr
 }
 
 func TestDatabaseCollector_Describe(t *testing.T) {
@@ -78,6 +84,10 @@ func TestDatabaseCollector_Describe(t *testing.T) {
 		c.DiskRead,
 		c.DiskWrite,
 		c.ReplicationDelay,
+		c.MaintenanceScheduled,
+		c.MaintenanceInfo,
+		c.MaintenanceStartTime,
+		c.MaintenanceEndTime,
 	}))
 }
 
@@ -190,6 +200,10 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 					desc:   c.NICInfo,
 					metric: createGaugeMetric(1, nicInfoLabels),
 				},
+				{
+					desc:   c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, dbLabels),
+				},
 			},
 		},
 		{
@@ -216,6 +230,10 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 					desc:   c.NICInfo,
 					metric: createGaugeMetric(1, nicInfoLabels),
 				},
+				{
+					desc:   c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, dbLabels),
+				},
 			},
 			wantLogs: []string{
 				`level=warn msg="can't get database's NIC metrics: DatabaseID=101" err=dummy`,
@@ -226,10 +244,41 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 			wantErrCounter: 4,
 		},
 		{
-			name: "activity monitor returns error",
+			name: "all metrics without errors",
 			in: &dummyDatabaseClient{
 				find: []*platform.Database{
-					dbValue,
+					{
+						Database: &iaas.Database{
+							ID:           101,
+							Name:         "database",
+							Description:  "desc",
+							Tags:         types.Tags{"tag1", "tag2"},
+							Availability: types.Availabilities.Available,
+
+							InstanceStatus:      types.ServerInstanceStatuses.Up,
+							InstanceHostName:    "sacXXXX",
+							InstanceHostInfoURL: "http://example.com/maintenance-info-dummy-url",
+
+							PlanID: types.DatabasePlans.DB10GB,
+							Conf: &iaas.DatabaseRemarkDBConfCommon{
+								DatabaseName:     types.RDBMSVersions[types.RDBMSTypesMariaDB].Name,
+								DatabaseVersion:  types.RDBMSVersions[types.RDBMSTypesMariaDB].Version,
+								DatabaseRevision: types.RDBMSVersions[types.RDBMSTypesMariaDB].Revision,
+							},
+							Interfaces: []*iaas.InterfaceView{
+								{
+									ID:           201,
+									UpstreamType: types.UpstreamNetworkTypes.Switch,
+									SwitchID:     301,
+									SwitchName:   "switch",
+								},
+							},
+							IPAddresses:    []string{"192.168.0.11"},
+							NetworkMaskLen: 24,
+							DefaultRoute:   "192.168.0.1",
+						},
+						ZoneName: "is1a",
+					},
 				},
 				monitorCPU: &iaas.MonitorCPUTimeValue{
 					Time:    monitorTime,
@@ -255,6 +304,14 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 					TotalDisk2Size:    406,
 					BinlogUsedSizeKiB: 407,
 					DelayTimeSec:      408,
+				},
+				maintenance: &newsfeed.FeedItem{
+					StrDate:       "947430000", // 2000-01-10
+					Description:   "desc",
+					StrEventStart: "946652400", // 2000-01-01
+					StrEventEnd:   "949244400", // 2000-01-31
+					Title:         "dummy-title",
+					URL:           "http://example.com/maintenance",
 				},
 			},
 			wantMetrics: []*collectedMetric{
@@ -321,6 +378,31 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 				{
 					desc:   c.ReplicationDelay,
 					metric: createGaugeWithTimestamp(float64(408), dbLabels, monitorTime),
+				},
+				{
+					desc:   c.MaintenanceScheduled,
+					metric: createGaugeMetric(1, dbLabels),
+				},
+				{
+					desc: c.MaintenanceInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"name":        "database",
+						"zone":        "is1a",
+						"info_url":    "http://example.com/maintenance",
+						"info_title":  "dummy-title",
+						"description": "desc",
+						"start_date":  "946652400",
+						"end_date":    "949244400",
+					}),
+				},
+				{
+					desc:   c.MaintenanceStartTime,
+					metric: createGaugeMetric(946652400, dbLabels),
+				},
+				{
+					desc:   c.MaintenanceEndTime,
+					metric: createGaugeMetric(949244400, dbLabels),
 				},
 			},
 		},

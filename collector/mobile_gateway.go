@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -43,6 +44,11 @@ type MobileGatewayCollector struct {
 	TrafficUplink   *prometheus.Desc
 	TrafficDownlink *prometheus.Desc
 	TrafficShaping  *prometheus.Desc
+
+	MaintenanceScheduled *prometheus.Desc
+	MaintenanceInfo      *prometheus.Desc
+	MaintenanceStartTime *prometheus.Desc
+	MaintenanceEndTime   *prometheus.Desc
 }
 
 // NewMobileGatewayCollector returns a new MobileGatewayCollector.
@@ -99,6 +105,26 @@ func NewMobileGatewayCollector(ctx context.Context, logger log.Logger, errors *p
 			"If 1 the traffic is shaped, 0 otherwise",
 			mobileGatewayLabels, nil,
 		),
+		MaintenanceScheduled: prometheus.NewDesc(
+			"sakuracloud_mobile_gateway_maintenance_scheduled",
+			"If 1 the mobile gateway has scheduled maintenance info, 0 otherwise",
+			mobileGatewayLabels, nil,
+		),
+		MaintenanceInfo: prometheus.NewDesc(
+			"sakuracloud_mobile_gateway_maintenance_info",
+			"A metric with a constant '1' value labeled by maintenance information",
+			append(mobileGatewayLabels, "info_url", "info_title", "description", "start_date", "end_date"), nil,
+		),
+		MaintenanceStartTime: prometheus.NewDesc(
+			"sakuracloud_mobile_gateway_maintenance_start",
+			"Scheduled maintenance start time in seconds since epoch (1970)",
+			mobileGatewayLabels, nil,
+		),
+		MaintenanceEndTime: prometheus.NewDesc(
+			"sakuracloud_mobile_gateway_maintenance_end",
+			"Scheduled maintenance end time in seconds since epoch (1970)",
+			mobileGatewayLabels, nil,
+		),
 	}
 }
 
@@ -113,6 +139,11 @@ func (c *MobileGatewayCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.TrafficUplink
 	ch <- c.TrafficDownlink
 	ch <- c.TrafficShaping
+
+	ch <- c.MaintenanceScheduled
+	ch <- c.MaintenanceInfo
+	ch <- c.MaintenanceStartTime
+	ch <- c.MaintenanceEndTime
 }
 
 // Collect is called by the Prometheus registry when collecting metrics.
@@ -166,19 +197,34 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 					wg.Done()
 				}()
 
-				if mobileGateway.InstanceStatus.IsUp() {
-					// collect metrics
-					now := time.Now()
+				// collect metrics
+				now := time.Now()
 
-					for i := range mobileGateway.Interfaces {
-						// NIC(Receive/Send)
-						wg.Add(1)
-						go func(i int) {
-							c.collectNICMetrics(ch, mobileGateway, i, now)
-							wg.Done()
-						}(i)
-					}
+				for i := range mobileGateway.Interfaces {
+					// NIC(Receive/Send)
+					wg.Add(1)
+					go func(i int) {
+						c.collectNICMetrics(ch, mobileGateway, i, now)
+						wg.Done()
+					}(i)
 				}
+
+				// maintenance info
+				var maintenanceScheduled float64
+				if mobileGateway.InstanceHostInfoURL != "" {
+					maintenanceScheduled = 1.0
+					wg.Add(1)
+					go func() {
+						c.collectMaintenanceInfo(ch, mobileGateway)
+						wg.Done()
+					}()
+				}
+				ch <- prometheus.MustNewConstMetric(
+					c.MaintenanceScheduled,
+					prometheus.GaugeValue,
+					maintenanceScheduled,
+					mobileGatewayLabels...,
+				)
 			}
 		}(mobileGateways[i])
 	}
@@ -292,6 +338,9 @@ func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metri
 		)
 		return
 	}
+	if status == nil {
+		return
+	}
 
 	labels := c.mobileGatewayLabels(mobileGateway)
 
@@ -356,4 +405,55 @@ func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, 
 		c.nicLabels(mobileGateway, index)...,
 	)
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+}
+
+func (c *MobileGatewayCollector) maintenanceInfoLabels(resource *platform.MobileGateway, info *newsfeed.FeedItem) []string {
+	labels := c.mobileGatewayLabels(resource)
+
+	return append(labels,
+		info.URL,
+		info.Title,
+		info.Description,
+		fmt.Sprintf("%d", info.EventStart().Unix()),
+		fmt.Sprintf("%d", info.EventEnd().Unix()),
+	)
+}
+
+func (c *MobileGatewayCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, resource *platform.MobileGateway) {
+	if resource.InstanceHostInfoURL == "" {
+		return
+	}
+	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
+	if err != nil {
+		c.errors.WithLabelValues("mobile_gateway").Add(1)
+		level.Warn(c.logger).Log( // nolint
+			"msg", fmt.Sprintf("can't get mobile gateway's maintenance info: ID=%d", resource.ID),
+			"err", err,
+		)
+		return
+	}
+
+	infoLabels := c.maintenanceInfoLabels(resource, info)
+
+	// info
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceInfo,
+		prometheus.GaugeValue,
+		1.0,
+		infoLabels...,
+	)
+	// start
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceStartTime,
+		prometheus.GaugeValue,
+		float64(info.EventStart().Unix()),
+		c.mobileGatewayLabels(resource)...,
+	)
+	// end
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceEndTime,
+		prometheus.GaugeValue,
+		float64(info.EventEnd().Unix()),
+		c.mobileGatewayLabels(resource)...,
+	)
 }

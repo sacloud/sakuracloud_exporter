@@ -24,17 +24,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyLoadBalancerClient struct {
-	find       []*platform.LoadBalancer
-	findErr    error
-	status     []*iaas.LoadBalancerStatus
-	statusErr  error
-	monitor    *iaas.MonitorInterfaceValue
-	monitorErr error
+	find           []*platform.LoadBalancer
+	findErr        error
+	status         []*iaas.LoadBalancerStatus
+	statusErr      error
+	monitor        *iaas.MonitorInterfaceValue
+	monitorErr     error
+	maintenance    *newsfeed.FeedItem
+	maintenanceErr error
 }
 
 func (d *dummyLoadBalancerClient) Find(ctx context.Context) ([]*platform.LoadBalancer, error) {
@@ -45,6 +48,9 @@ func (d *dummyLoadBalancerClient) Status(ctx context.Context, zone string, id ty
 }
 func (d *dummyLoadBalancerClient) MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitor, d.monitorErr
+}
+func (d *dummyLoadBalancerClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return d.maintenance, d.maintenanceErr
 }
 
 func TestLoadBalancerCollector_Describe(t *testing.T) {
@@ -63,6 +69,10 @@ func TestLoadBalancerCollector_Describe(t *testing.T) {
 		c.ServerUp,
 		c.ServerConnection,
 		c.ServerCPS,
+		c.MaintenanceScheduled,
+		c.MaintenanceInfo,
+		c.MaintenanceStartTime,
+		c.MaintenanceEndTime,
 	}))
 }
 
@@ -138,6 +148,14 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 						"nw_mask_len": "24",
 						"tags":        ",tag1,tag2,",
 						"description": "desc",
+					}),
+				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
 					}),
 				},
 			},
@@ -323,6 +341,14 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 						"ipaddress":    "192.168.0.201",
 					}),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
+					}),
+				},
 			},
 		},
 		{
@@ -410,12 +436,116 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 						"description":  "vip-desc",
 					}),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
+					}),
+				},
 			},
 			wantLogs: []string{
 				`level=warn msg="can't fetch loadbalancer's status: ID: 101" err=dummy1`,
 				`level=warn msg="can't get loadbalancer's NIC metrics: ID=101" err=dummy2`,
 			},
 			wantErrCounter: 2,
+		},
+		{
+			name: "a load balancer with maintenance info",
+			in: &dummyLoadBalancerClient{
+				find: []*platform.LoadBalancer{
+					{
+						ZoneName: "is1a",
+						LoadBalancer: &iaas.LoadBalancer{
+							ID:                  101,
+							Name:                "loadbalancer",
+							Tags:                types.Tags{"tag1", "tag2"},
+							Description:         "desc",
+							PlanID:              types.LoadBalancerPlans.Standard,
+							VRID:                1,
+							IPAddresses:         []string{"192.168.0.11"},
+							DefaultRoute:        "192.168.0.1",
+							NetworkMaskLen:      24,
+							Availability:        types.Availabilities.Available,
+							InstanceStatus:      types.ServerInstanceStatuses.Up,
+							InstanceHostInfoURL: "http://example.com/maintenance-info-dummy-url",
+						},
+					},
+				},
+				maintenance: &newsfeed.FeedItem{
+					StrDate:       "947430000", // 2000-01-10
+					Description:   "desc",
+					StrEventStart: "946652400", // 2000-01-01
+					StrEventEnd:   "949244400", // 2000-01-31
+					Title:         "dummy-title",
+					URL:           "http://example.com/maintenance",
+				},
+			},
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.Up,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.LoadBalancerInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"name":        "loadbalancer",
+						"zone":        "is1a",
+						"plan":        "standard",
+						"ha":          "0",
+						"vrid":        "1",
+						"ipaddress1":  "192.168.0.11",
+						"ipaddress2":  "",
+						"gateway":     "192.168.0.1",
+						"nw_mask_len": "24",
+						"tags":        ",tag1,tag2,",
+						"description": "desc",
+					}),
+				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"name":        "loadbalancer",
+						"zone":        "is1a",
+						"info_url":    "http://example.com/maintenance",
+						"info_title":  "dummy-title",
+						"description": "desc",
+						"start_date":  "946652400",
+						"end_date":    "949244400",
+					}),
+				},
+				{
+					desc: c.MaintenanceStartTime,
+					metric: createGaugeMetric(946652400, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceEndTime,
+					metric: createGaugeMetric(949244400, map[string]string{
+						"id":   "101",
+						"name": "loadbalancer",
+						"zone": "is1a",
+					}),
+				},
+			},
 		},
 	}
 

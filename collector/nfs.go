@@ -23,6 +23,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -41,6 +42,11 @@ type NFSCollector struct {
 	NICInfo    *prometheus.Desc
 	NICReceive *prometheus.Desc
 	NICSend    *prometheus.Desc
+
+	MaintenanceScheduled *prometheus.Desc
+	MaintenanceInfo      *prometheus.Desc
+	MaintenanceStartTime *prometheus.Desc
+	MaintenanceEndTime   *prometheus.Desc
 }
 
 // NewNFSCollector returns a new NFSCollector.
@@ -86,6 +92,26 @@ func NewNFSCollector(ctx context.Context, logger log.Logger, errors *prometheus.
 			"NIC's send bytes(unit: Kbps)",
 			nfsLabels, nil,
 		),
+		MaintenanceScheduled: prometheus.NewDesc(
+			"sakuracloud_nfs_maintenance_scheduled",
+			"If 1 the nfs has scheduled maintenance info, 0 otherwise",
+			nfsLabels, nil,
+		),
+		MaintenanceInfo: prometheus.NewDesc(
+			"sakuracloud_nfs_maintenance_info",
+			"A metric with a constant '1' value labeled by maintenance information",
+			append(nfsLabels, "info_url", "info_title", "description", "start_date", "end_date"), nil,
+		),
+		MaintenanceStartTime: prometheus.NewDesc(
+			"sakuracloud_nfs_maintenance_start",
+			"Scheduled maintenance start time in seconds since epoch (1970)",
+			nfsLabels, nil,
+		),
+		MaintenanceEndTime: prometheus.NewDesc(
+			"sakuracloud_nfs_maintenance_end",
+			"Scheduled maintenance end time in seconds since epoch (1970)",
+			nfsLabels, nil,
+		),
 	}
 }
 
@@ -98,6 +124,11 @@ func (c *NFSCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.NICInfo
 	ch <- c.NICReceive
 	ch <- c.NICSend
+
+	ch <- c.MaintenanceScheduled
+	ch <- c.MaintenanceInfo
+	ch <- c.MaintenanceStartTime
+	ch <- c.MaintenanceEndTime
 }
 
 // Collect is called by the Prometheus registry when collecting metrics.
@@ -159,6 +190,23 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 					c.collectNICMetrics(ch, nfs, now)
 					wg.Done()
 				}()
+
+				// maintenance info
+				var maintenanceScheduled float64
+				if nfs.InstanceHostInfoURL != "" {
+					maintenanceScheduled = 1.0
+					wg.Add(1)
+					go func() {
+						c.collectMaintenanceInfo(ch, nfs)
+						wg.Done()
+					}()
+				}
+				ch <- prometheus.MustNewConstMetric(
+					c.MaintenanceScheduled,
+					prometheus.GaugeValue,
+					maintenanceScheduled,
+					nfsLabels...,
+				)
 			}
 		}(nfss[i])
 	}
@@ -289,4 +337,55 @@ func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *platf
 		c.nfsLabels(nfs)...,
 	)
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+}
+
+func (c *NFSCollector) maintenanceInfoLabels(resource *platform.NFS, info *newsfeed.FeedItem) []string {
+	labels := c.nfsLabels(resource)
+
+	return append(labels,
+		info.URL,
+		info.Title,
+		info.Description,
+		fmt.Sprintf("%d", info.EventStart().Unix()),
+		fmt.Sprintf("%d", info.EventEnd().Unix()),
+	)
+}
+
+func (c *NFSCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, resource *platform.NFS) {
+	if resource.InstanceHostInfoURL == "" {
+		return
+	}
+	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
+	if err != nil {
+		c.errors.WithLabelValues("nfs").Add(1)
+		level.Warn(c.logger).Log( // nolint
+			"msg", fmt.Sprintf("can't get nfs's maintenance info: ID=%d", resource.ID),
+			"err", err,
+		)
+		return
+	}
+
+	infoLabels := c.maintenanceInfoLabels(resource, info)
+
+	// info
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceInfo,
+		prometheus.GaugeValue,
+		1.0,
+		infoLabels...,
+	)
+	// start
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceStartTime,
+		prometheus.GaugeValue,
+		float64(info.EventStart().Unix()),
+		c.nfsLabels(resource)...,
+	)
+	// end
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceEndTime,
+		prometheus.GaugeValue,
+		float64(info.EventEnd().Unix()),
+		c.nfsLabels(resource)...,
+	)
 }

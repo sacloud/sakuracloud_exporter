@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
@@ -36,6 +37,8 @@ type dummyMobileGatewayClient struct {
 	trafficControlErr error
 	monitor           *iaas.MonitorInterfaceValue
 	monitorErr        error
+	maintenance       *newsfeed.FeedItem
+	maintenanceErr    error
 }
 
 func (d *dummyMobileGatewayClient) Find(ctx context.Context) ([]*platform.MobileGateway, error) {
@@ -49,6 +52,9 @@ func (d *dummyMobileGatewayClient) TrafficControl(ctx context.Context, zone stri
 }
 func (d *dummyMobileGatewayClient) MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error) {
 	return d.monitor, d.monitorErr
+}
+func (d *dummyMobileGatewayClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return d.maintenance, d.maintenanceErr
 }
 
 func TestMobileGatewayCollector_Describe(t *testing.T) {
@@ -65,6 +71,10 @@ func TestMobileGatewayCollector_Describe(t *testing.T) {
 		c.TrafficUplink,
 		c.TrafficDownlink,
 		c.TrafficShaping,
+		c.MaintenanceScheduled,
+		c.MaintenanceInfo,
+		c.MaintenanceStartTime,
+		c.MaintenanceEndTime,
 	}))
 }
 
@@ -227,6 +237,14 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 						"zone": "is1a",
 					}),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
 			},
 		},
 		{
@@ -379,6 +397,14 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 						"nw_mask_len": "28",
 					}, monitorTime),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
 			},
 		},
 		{
@@ -434,6 +460,14 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 						"description":                "desc",
 					}),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
 			},
 			wantLogs: []string{
 				`level=warn msg="can't get mobile_gateway's receive bytes: ID=101, NICIndex=0" err=dummy3`,
@@ -442,6 +476,94 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 				`level=warn msg="can't get mobile_gateway's traffic status: ID=101" err=dummy2`,
 			},
 			wantErrCounter: 4, // traffic control + traffic status + nic monitor*2
+		},
+		{
+			name: "with maintenance info",
+			in: &dummyMobileGatewayClient{
+				find: []*platform.MobileGateway{
+					{
+						ZoneName: "is1a",
+						MobileGateway: &iaas.MobileGateway{
+							ID:                              101,
+							Name:                            "mobile-gateway",
+							Tags:                            types.Tags{"tag1", "tag2"},
+							Description:                     "desc",
+							Availability:                    types.Availabilities.Available,
+							InstanceStatus:                  types.ServerInstanceStatuses.Up,
+							InstanceHostInfoURL:             "http://example.com/maintenance-info-dummy-url",
+							InternetConnectionEnabled:       false,
+							InterDeviceCommunicationEnabled: false,
+						},
+					},
+				},
+				maintenance: &newsfeed.FeedItem{
+					StrDate:       "947430000", // 2000-01-10
+					Description:   "desc",
+					StrEventStart: "946652400", // 2000-01-01
+					StrEventEnd:   "949244400", // 2000-01-31
+					Title:         "dummy-title",
+					URL:           "http://example.com/maintenance",
+				},
+			},
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.Up,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MobileGatewayInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":                         "101",
+						"name":                       "mobile-gateway",
+						"zone":                       "is1a",
+						"internet_connection":        "0",
+						"inter_device_communication": "0",
+						"tags":                       ",tag1,tag2,",
+						"description":                "desc",
+					}),
+				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"name":        "mobile-gateway",
+						"zone":        "is1a",
+						"info_url":    "http://example.com/maintenance",
+						"info_title":  "dummy-title",
+						"description": "desc",
+						"start_date":  "946652400",
+						"end_date":    "949244400",
+					}),
+				},
+				{
+					desc: c.MaintenanceStartTime,
+					metric: createGaugeMetric(946652400, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceEndTime,
+					metric: createGaugeMetric(949244400, map[string]string{
+						"id":   "101",
+						"name": "mobile-gateway",
+						"zone": "is1a",
+					}),
+				},
+			},
 		},
 	}
 

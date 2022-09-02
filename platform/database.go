@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 )
 
 type Database struct {
@@ -33,6 +34,7 @@ type DatabaseClient interface {
 	MonitorCPU(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error)
 	MonitorNIC(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
 	MonitorDisk(ctx context.Context, zone string, databaseID types.ID, end time.Time) (*iaas.MonitorDiskValue, error)
+	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
 func getDatabaseClient(caller iaas.APICaller, zones []string) DatabaseClient {
@@ -106,4 +108,8 @@ func (c *databaseClient) MonitorNIC(ctx context.Context, zone string, databaseID
 		return nil, err
 	}
 	return monitorInterfaceValue(mvs.Values), nil
+}
+
+func (c *databaseClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return newsfeed.GetByURL(infoURL)
 }

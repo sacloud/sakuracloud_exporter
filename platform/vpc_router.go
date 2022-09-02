@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 )
 
 type VPCRouter struct {
@@ -32,6 +33,7 @@ type VPCRouterClient interface {
 	Status(ctx context.Context, zone string, id types.ID) (*iaas.VPCRouterStatus, error)
 	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error)
 	MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error)
+	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
 func getVPCRouterClient(caller iaas.APICaller, zones []string) VPCRouterClient {
@@ -93,4 +95,8 @@ func (c *vpcRouterClient) MonitorCPU(ctx context.Context, zone string, id types.
 
 func (c *vpcRouterClient) Status(ctx context.Context, zone string, id types.ID) (*iaas.VPCRouterStatus, error) {
 	return c.client.Status(ctx, zone, id)
+}
+
+func (c *vpcRouterClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return newsfeed.GetByURL(infoURL)
 }

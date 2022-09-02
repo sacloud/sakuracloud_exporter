@@ -83,6 +83,10 @@ func TestServerCollector_Describe(t *testing.T) {
 		c.NICBandwidth,
 		c.NICReceive,
 		c.NICSend,
+		c.MaintenanceScheduled,
+		c.MaintenanceInfo,
+		c.MaintenanceStartTime,
+		c.MaintenanceEndTime,
 	}))
 }
 
