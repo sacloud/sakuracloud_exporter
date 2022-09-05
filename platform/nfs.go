@@ -21,6 +21,7 @@ import (
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/helper/query"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 )
 
 type NFS struct {
@@ -34,6 +35,7 @@ type NFSClient interface {
 	Find(ctx context.Context) ([]*NFS, error)
 	MonitorFreeDiskSize(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorFreeDiskSizeValue, error)
 	MonitorNIC(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorInterfaceValue, error)
+	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
 func getNFSClient(caller iaas.APICaller, zones []string) NFSClient {
@@ -106,4 +108,8 @@ func (c *nfsClient) MonitorNIC(ctx context.Context, zone string, id types.ID, en
 		return nil, err
 	}
 	return monitorInterfaceValue(mvs.Values), nil
+}
+
+func (c *nfsClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return newsfeed.GetByURL(infoURL)
 }

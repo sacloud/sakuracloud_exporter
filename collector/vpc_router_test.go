@@ -23,19 +23,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )
 
 type dummyVPCRouterClient struct {
-	find          []*platform.VPCRouter
-	findErr       error
-	status        *iaas.VPCRouterStatus
-	statusErr     error
-	monitor       *iaas.MonitorInterfaceValue
-	monitorErr    error
-	monitorCPU    *iaas.MonitorCPUTimeValue
-	monitorCPUErr error
+	find           []*platform.VPCRouter
+	findErr        error
+	status         *iaas.VPCRouterStatus
+	statusErr      error
+	monitor        *iaas.MonitorInterfaceValue
+	monitorErr     error
+	monitorCPU     *iaas.MonitorCPUTimeValue
+	monitorCPUErr  error
+	maintenance    *newsfeed.FeedItem
+	maintenanceErr error
 }
 
 func (d *dummyVPCRouterClient) Find(ctx context.Context) ([]*platform.VPCRouter, error) {
@@ -50,6 +53,9 @@ func (d *dummyVPCRouterClient) MonitorNIC(ctx context.Context, zone string, id t
 
 func (d *dummyVPCRouterClient) MonitorCPU(ctx context.Context, zone string, id types.ID, end time.Time) (*iaas.MonitorCPUTimeValue, error) {
 	return d.monitorCPU, d.monitorCPUErr
+}
+func (d *dummyVPCRouterClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return d.maintenance, d.maintenanceErr
 }
 
 func TestVPCRouterCollector_Describe(t *testing.T) {
@@ -69,6 +75,10 @@ func TestVPCRouterCollector_Describe(t *testing.T) {
 		c.Receive,
 		c.Send,
 		c.SessionAnalysis,
+		c.MaintenanceScheduled,
+		c.MaintenanceInfo,
+		c.MaintenanceStartTime,
+		c.MaintenanceEndTime,
 	}))
 }
 
@@ -314,6 +324,14 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 						"nw_mask_len": "24",
 					}, monitorTime),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "router",
+						"zone": "is1a",
+					}),
+				},
 			},
 		},
 		{
@@ -378,12 +396,141 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 						"description":         "desc",
 					}),
 				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(0, map[string]string{
+						"id":   "101",
+						"name": "router",
+						"zone": "is1a",
+					}),
+				},
 			},
 			wantLogs: []string{
 				`level=warn msg="can't fetch vpc_router's status" err=dummy1`,
 				`level=warn msg="can't get vpc_router's receive bytes: ID=101, NICIndex=0" err=dummy2`,
 			},
 			wantErrCounter: 2,
+		},
+		{
+			name: "a VPCRouter with maintenance info",
+			in: &dummyVPCRouterClient{
+				find: []*platform.VPCRouter{
+					{
+						ZoneName: "is1a",
+						VPCRouter: &iaas.VPCRouter{
+							ID:                  101,
+							Name:                "router",
+							Description:         "desc",
+							Tags:                types.Tags{"tag1", "tag2"},
+							PlanID:              types.VPCRouterPlans.Premium,
+							InstanceStatus:      types.ServerInstanceStatuses.Up,
+							InstanceHostInfoURL: "http://example.com/maintenance-info-dummy-url",
+							Availability:        types.Availabilities.Available,
+							Interfaces: []*iaas.VPCRouterInterface{
+								{
+									Index: 0,
+									ID:    200,
+								},
+								{
+									Index: 1,
+									ID:    201,
+								},
+							},
+							Settings: &iaas.VPCRouterSetting{
+								VRID:                      1,
+								InternetConnectionEnabled: true,
+								Interfaces: []*iaas.VPCRouterInterfaceSetting{
+									{
+										VirtualIPAddress: "192.168.0.1",
+										IPAddress:        []string{"192.168.0.11", "192.168.0.12"},
+										NetworkMaskLen:   24,
+										Index:            0,
+									},
+									{
+										VirtualIPAddress: "192.168.1.1",
+										IPAddress:        []string{"192.168.1.11", "192.168.1.12"},
+										NetworkMaskLen:   24,
+										Index:            1,
+									},
+								},
+							},
+						},
+					},
+				},
+				maintenance: &newsfeed.FeedItem{
+					StrDate:       "947430000", // 2000-01-10
+					Description:   "desc",
+					StrEventStart: "946652400", // 2000-01-01
+					StrEventEnd:   "949244400", // 2000-01-31
+					Title:         "dummy-title",
+					URL:           "http://example.com/maintenance",
+				},
+			},
+			wantMetrics: []*collectedMetric{
+				{
+					desc: c.Up,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "router",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.VPCRouterInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":                  "101",
+						"name":                "router",
+						"zone":                "is1a",
+						"plan":                "premium",
+						"ha":                  "1",
+						"vrid":                "1",
+						"vip":                 "192.168.0.1",
+						"ipaddress1":          "192.168.0.11",
+						"ipaddress2":          "192.168.0.12",
+						"nw_mask_len":         "24",
+						"internet_connection": "1",
+						"tags":                ",tag1,tag2,",
+						"description":         "desc",
+					}),
+				},
+				{
+					desc: c.MaintenanceScheduled,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":   "101",
+						"name": "router",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceInfo,
+					metric: createGaugeMetric(1, map[string]string{
+						"id":          "101",
+						"name":        "router",
+						"zone":        "is1a",
+						"info_url":    "http://example.com/maintenance",
+						"info_title":  "dummy-title",
+						"description": "desc",
+						"start_date":  "946652400",
+						"end_date":    "949244400",
+					}),
+				},
+				{
+					desc: c.MaintenanceStartTime,
+					metric: createGaugeMetric(946652400, map[string]string{
+						"id":   "101",
+						"name": "router",
+						"zone": "is1a",
+					}),
+				},
+				{
+					desc: c.MaintenanceEndTime,
+					metric: createGaugeMetric(949244400, map[string]string{
+						"id":   "101",
+						"name": "router",
+						"zone": "is1a",
+					}),
+				},
+			},
 		},
 	}
 

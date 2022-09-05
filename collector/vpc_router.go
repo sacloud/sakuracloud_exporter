@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -49,6 +50,11 @@ type VPCRouterCollector struct {
 	SiteToSitePeerStatus *prometheus.Desc
 
 	SessionAnalysis *prometheus.Desc
+
+	MaintenanceScheduled *prometheus.Desc
+	MaintenanceInfo      *prometheus.Desc
+	MaintenanceStartTime *prometheus.Desc
+	MaintenanceEndTime   *prometheus.Desc
 }
 
 // NewVPCRouterCollector returns a new VPCRouterCollector.
@@ -121,6 +127,26 @@ func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prome
 			"Session statistics for VPC routers",
 			sessionAnalysisLabels, nil,
 		),
+		MaintenanceScheduled: prometheus.NewDesc(
+			"sakuracloud_vpc_router_maintenance_scheduled",
+			"If 1 the vpc router has scheduled maintenance info, 0 otherwise",
+			vpcRouterLabels, nil,
+		),
+		MaintenanceInfo: prometheus.NewDesc(
+			"sakuracloud_vpc_router_maintenance_info",
+			"A metric with a constant '1' value labeled by maintenance information",
+			append(vpcRouterLabels, "info_url", "info_title", "description", "start_date", "end_date"), nil,
+		),
+		MaintenanceStartTime: prometheus.NewDesc(
+			"sakuracloud_vpc_router_maintenance_start",
+			"Scheduled maintenance start time in seconds since epoch (1970)",
+			vpcRouterLabels, nil,
+		),
+		MaintenanceEndTime: prometheus.NewDesc(
+			"sakuracloud_vpc_router_maintenance_end",
+			"Scheduled maintenance end time in seconds since epoch (1970)",
+			vpcRouterLabels, nil,
+		),
 	}
 }
 
@@ -138,6 +164,11 @@ func (c *VPCRouterCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.Receive
 	ch <- c.Send
 	ch <- c.SessionAnalysis
+
+	ch <- c.MaintenanceScheduled
+	ch <- c.MaintenanceInfo
+	ch <- c.MaintenanceStartTime
+	ch <- c.MaintenanceEndTime
 }
 
 // Collect is called by the Prometheus registry when collecting metrics.
@@ -198,6 +229,9 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 								"msg", "can't fetch vpc_router's status",
 								"err", err,
 							)
+							return
+						}
+						if status == nil {
 							return
 						}
 
@@ -278,6 +312,23 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 						}(nic)
 					}
 				}
+
+				// maintenance info
+				var maintenanceScheduled float64
+				if vpcRouter.InstanceHostInfoURL != "" {
+					maintenanceScheduled = 1.0
+					wg.Add(1)
+					go func() {
+						c.collectMaintenanceInfo(ch, vpcRouter)
+						wg.Done()
+					}()
+				}
+				ch <- prometheus.MustNewConstMetric(
+					c.MaintenanceScheduled,
+					prometheus.GaugeValue,
+					maintenanceScheduled,
+					vpcRouterLabels...,
+				)
 			}
 		}(vpcRouters[i])
 	}
@@ -453,4 +504,55 @@ func (c *VPCRouterCollector) collectCPUTime(ch chan<- prometheus.Metric, vpcRout
 	)
 
 	ch <- prometheus.NewMetricWithTimestamp(values.Time, m)
+}
+
+func (c *VPCRouterCollector) maintenanceInfoLabels(resource *platform.VPCRouter, info *newsfeed.FeedItem) []string {
+	labels := c.vpcRouterLabels(resource)
+
+	return append(labels,
+		info.URL,
+		info.Title,
+		info.Description,
+		fmt.Sprintf("%d", info.EventStart().Unix()),
+		fmt.Sprintf("%d", info.EventEnd().Unix()),
+	)
+}
+
+func (c *VPCRouterCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, resource *platform.VPCRouter) {
+	if resource.InstanceHostInfoURL == "" {
+		return
+	}
+	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
+	if err != nil {
+		c.errors.WithLabelValues("vpc_router").Add(1)
+		level.Warn(c.logger).Log( // nolint
+			"msg", fmt.Sprintf("can't get vpc router's maintenance info: ID=%d", resource.ID),
+			"err", err,
+		)
+		return
+	}
+
+	infoLabels := c.maintenanceInfoLabels(resource, info)
+
+	// info
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceInfo,
+		prometheus.GaugeValue,
+		1.0,
+		infoLabels...,
+	)
+	// start
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceStartTime,
+		prometheus.GaugeValue,
+		float64(info.EventStart().Unix()),
+		c.vpcRouterLabels(resource)...,
+	)
+	// end
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceEndTime,
+		prometheus.GaugeValue,
+		float64(info.EventEnd().Unix()),
+		c.vpcRouterLabels(resource)...,
+	)
 }

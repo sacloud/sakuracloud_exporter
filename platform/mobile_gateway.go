@@ -20,6 +20,7 @@ import (
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 )
 
 type MobileGateway struct {
@@ -32,6 +33,7 @@ type MobileGatewayClient interface {
 	TrafficStatus(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficStatus, error)
 	TrafficControl(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficControl, error)
 	MonitorNIC(ctx context.Context, zone string, id types.ID, index int, end time.Time) (*iaas.MonitorInterfaceValue, error)
+	MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error)
 }
 
 func getMobileGatewayClient(caller iaas.APICaller, zones []string) MobileGatewayClient {
@@ -89,4 +91,8 @@ func (c *mobileGatewayClient) TrafficStatus(ctx context.Context, zone string, id
 
 func (c *mobileGatewayClient) TrafficControl(ctx context.Context, zone string, id types.ID) (*iaas.MobileGatewayTrafficControl, error) {
 	return c.client.GetTrafficConfig(ctx, zone, id)
+}
+
+func (c *mobileGatewayClient) MaintenanceInfo(infoURL string) (*newsfeed.FeedItem, error) {
+	return newsfeed.GetByURL(infoURL)
 }

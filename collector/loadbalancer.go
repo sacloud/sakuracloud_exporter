@@ -26,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
@@ -48,6 +49,11 @@ type LoadBalancerCollector struct {
 	ServerUp         *prometheus.Desc
 	ServerConnection *prometheus.Desc
 	ServerCPS        *prometheus.Desc
+
+	MaintenanceScheduled *prometheus.Desc
+	MaintenanceInfo      *prometheus.Desc
+	MaintenanceStartTime *prometheus.Desc
+	MaintenanceEndTime   *prometheus.Desc
 }
 
 // NewLoadBalancerCollector returns a new LoadBalancerCollector.
@@ -116,6 +122,26 @@ func NewLoadBalancerCollector(ctx context.Context, logger log.Logger, errors *pr
 			"Connection count per second",
 			serverLabels, nil,
 		),
+		MaintenanceScheduled: prometheus.NewDesc(
+			"sakuracloud_loadbalancer_maintenance_scheduled",
+			"If 1 the loadbalancer has scheduled maintenance info, 0 otherwise",
+			lbLabels, nil,
+		),
+		MaintenanceInfo: prometheus.NewDesc(
+			"sakuracloud_loadbalancer_maintenance_info",
+			"A metric with a constant '1' value labeled by maintenance information",
+			append(lbLabels, "info_url", "info_title", "description", "start_date", "end_date"), nil,
+		),
+		MaintenanceStartTime: prometheus.NewDesc(
+			"sakuracloud_loadbalancer_maintenance_start",
+			"Scheduled maintenance start time in seconds since epoch (1970)",
+			lbLabels, nil,
+		),
+		MaintenanceEndTime: prometheus.NewDesc(
+			"sakuracloud_loadbalancer_maintenance_end",
+			"Scheduled maintenance end time in seconds since epoch (1970)",
+			lbLabels, nil,
+		),
 	}
 }
 
@@ -132,6 +158,11 @@ func (c *LoadBalancerCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.ServerUp
 	ch <- c.ServerConnection
 	ch <- c.ServerCPS
+
+	ch <- c.MaintenanceScheduled
+	ch <- c.MaintenanceInfo
+	ch <- c.MaintenanceStartTime
+	ch <- c.MaintenanceEndTime
 }
 
 // Collect is called by the Prometheus registry when collecting metrics.
@@ -195,6 +226,23 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 					c.collectLBStatus(ch, lb)
 					wg.Done()
 				}()
+
+				// maintenance info
+				var maintenanceScheduled float64
+				if lb.InstanceHostInfoURL != "" {
+					maintenanceScheduled = 1.0
+					wg.Add(1)
+					go func() {
+						c.collectMaintenanceInfo(ch, lb)
+						wg.Done()
+					}()
+				}
+				ch <- prometheus.MustNewConstMetric(
+					c.MaintenanceScheduled,
+					prometheus.GaugeValue,
+					maintenanceScheduled,
+					lbLabels...,
+				)
 			}
 		}(lbs[i])
 	}
@@ -428,4 +476,55 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 			)
 		}
 	}
+}
+
+func (c *LoadBalancerCollector) maintenanceInfoLabels(resource *platform.LoadBalancer, info *newsfeed.FeedItem) []string {
+	labels := c.lbLabels(resource)
+
+	return append(labels,
+		info.URL,
+		info.Title,
+		info.Description,
+		fmt.Sprintf("%d", info.EventStart().Unix()),
+		fmt.Sprintf("%d", info.EventEnd().Unix()),
+	)
+}
+
+func (c *LoadBalancerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, resource *platform.LoadBalancer) {
+	if resource.InstanceHostInfoURL == "" {
+		return
+	}
+	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
+	if err != nil {
+		c.errors.WithLabelValues("loadbalancer").Add(1)
+		level.Warn(c.logger).Log( // nolint
+			"msg", fmt.Sprintf("can't get lb's maintenance info: ID=%d", resource.ID),
+			"err", err,
+		)
+		return
+	}
+
+	infoLabels := c.maintenanceInfoLabels(resource, info)
+
+	// info
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceInfo,
+		prometheus.GaugeValue,
+		1.0,
+		infoLabels...,
+	)
+	// start
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceStartTime,
+		prometheus.GaugeValue,
+		float64(info.EventStart().Unix()),
+		c.lbLabels(resource)...,
+	)
+	// end
+	ch <- prometheus.MustNewConstMetric(
+		c.MaintenanceEndTime,
+		prometheus.GaugeValue,
+		float64(info.EventEnd().Unix()),
+		c.lbLabels(resource)...,
+	)
 }

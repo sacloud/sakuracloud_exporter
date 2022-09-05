@@ -175,6 +175,11 @@ func (c *ServerCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.NICBandwidth
 	ch <- c.NICReceive
 	ch <- c.NICSend
+
+	ch <- c.MaintenanceScheduled
+	ch <- c.MaintenanceInfo
+	ch <- c.MaintenanceStartTime
+	ch <- c.MaintenanceEndTime
 }
 
 // Collect is called by the Prometheus registry when collecting metrics.
@@ -333,7 +338,7 @@ func (c *ServerCollector) serverInfoLabels(server *platform.Server) []string {
 	)
 }
 
-func (c *ServerCollector) serverMaintenanceInfoLabels(server *platform.Server, info *newsfeed.FeedItem) []string {
+func (c *ServerCollector) maintenanceInfoLabels(server *platform.Server, info *newsfeed.FeedItem) []string {
 	labels := c.serverLabels(server)
 
 	return append(labels,
@@ -570,7 +575,7 @@ func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, se
 		return
 	}
 
-	infoLabels := c.serverMaintenanceInfoLabels(server, info)
+	infoLabels := c.maintenanceInfoLabels(server, info)
 
 	// info
 	ch <- prometheus.MustNewConstMetric(
