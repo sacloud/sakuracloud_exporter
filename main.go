@@ -62,7 +62,7 @@ func main() {
 		"caller", log.DefaultCaller,
 	)
 
-	level.Info(logger).Log( // nolint
+	level.Info(logger).Log( //nolint
 		"msg", "starting sakuracloud_exporter",
 		"rate-limit", c.RateLimit,
 		"version", Version,
@@ -77,7 +77,7 @@ func main() {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}
 	if !c.NoCollectorWebAccel && !client.HasWebAccelPermission(ctx) {
-		logger.Log("warn", "API key doesn't have webaccel permission") // nolint
+		logger.Log("warn", "API key doesn't have webaccel permission") //nolint
 	}
 
 	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -161,10 +161,10 @@ func main() {
 			</html>`))
 	})
 
-	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr) // nolint
-	if err := http.ListenAndServe(c.WebAddr, nil); err != nil {
+	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr) //nolint
+	if err := http.ListenAndServe(c.WebAddr, nil); err != nil {   //nolint
 		cancel()
-		level.Error(logger).Log("msg", "http listenandserve error", "err", err) // nolint
+		level.Error(logger).Log("msg", "http listenandserve error", "err", err) //nolint
 		os.Exit(2)
 	}
 }

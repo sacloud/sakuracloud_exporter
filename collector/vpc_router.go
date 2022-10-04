@@ -176,7 +176,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	vpcRouters, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't list vpc routers",
 			"err", err,
 		)
@@ -225,7 +225,7 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 						status, err := c.client.Status(c.ctx, vpcRouter.ZoneName, vpcRouter.ID)
 						if err != nil {
 							c.errors.WithLabelValues("vpc_router").Add(1)
-							level.Warn(c.logger).Log( // nolint
+							level.Warn(c.logger).Log( //nolint
 								"msg", "can't fetch vpc_router's status",
 								"err", err,
 							)
@@ -447,7 +447,7 @@ func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcR
 	values, err := c.client.MonitorNIC(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get vpc_router's receive bytes: ID=%d, NICIndex=%d", vpcRouter.ID, index),
 			"err", err,
 		)
@@ -486,7 +486,7 @@ func (c *VPCRouterCollector) collectCPUTime(ch chan<- prometheus.Metric, vpcRout
 	values, err := c.client.MonitorCPU(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get server's CPU-TIME: ID=%d", vpcRouter.ID),
 			"err", err,
 		)
@@ -525,7 +525,7 @@ func (c *VPCRouterCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric,
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get vpc router's maintenance info: ID=%d", resource.ID),
 			"err", err,
 		)

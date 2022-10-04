@@ -75,7 +75,7 @@ func (c *ESMECollector) Collect(ch chan<- prometheus.Metric) {
 	searched, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("esme").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't list ESME",
 			"err", err,
 		)
@@ -126,7 +126,7 @@ func (c *ESMECollector) collectLogs(ch chan<- prometheus.Metric, esme *iaas.ESME
 	logs, err := c.client.Logs(c.ctx, esme.ID)
 	if err != nil {
 		c.errors.WithLabelValues("esme").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't collect logs of the esme[%s]", esme.ID.String()),
 			"err", err,
 		)

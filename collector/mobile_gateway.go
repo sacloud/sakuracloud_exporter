@@ -151,7 +151,7 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 	mobileGateways, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't list mobile_gateways",
 			"err", err,
 		)
@@ -284,7 +284,7 @@ func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.
 	info, err := c.client.TrafficControl(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get mobile_gateway's traffic control config: ID=%d", mobileGateway.ID),
 			"err", err,
 		)
@@ -332,7 +332,7 @@ func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metri
 	status, err := c.client.TrafficStatus(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get mobile_gateway's traffic status: ID=%d", mobileGateway.ID),
 			"err", err,
 		)
@@ -372,7 +372,7 @@ func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, 
 	values, err := c.client.MonitorNIC(c.ctx, mobileGateway.ZoneName, mobileGateway.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get mobile_gateway's receive bytes: ID=%d, NICIndex=%d", mobileGateway.ID, index),
 			"err", err,
 		)
@@ -426,7 +426,7 @@ func (c *MobileGatewayCollector) collectMaintenanceInfo(ch chan<- prometheus.Met
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get mobile gateway's maintenance info: ID=%d", resource.ID),
 			"err", err,
 		)

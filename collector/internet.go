@@ -82,7 +82,7 @@ func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
 	internets, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't list internets",
 			"err", err,
 		)
@@ -136,7 +136,7 @@ func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, in
 	values, err := c.client.MonitorTraffic(c.ctx, internet.ZoneName, internet.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get internet's traffic metrics: InternetID=%d", internet.ID),
 			"err", err,
 		)
