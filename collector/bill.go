@@ -64,7 +64,7 @@ func (c *BillCollector) Collect(ch chan<- prometheus.Metric) {
 	bill, err := c.client.Read(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("bill").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't get bill",
 			"err", err,
 		)

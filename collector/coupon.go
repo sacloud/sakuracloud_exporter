@@ -87,7 +87,7 @@ func (c *CouponCollector) Collect(ch chan<- prometheus.Metric) {
 	coupons, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("coupon").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't get coupon",
 			"err", err,
 		)

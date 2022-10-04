@@ -170,7 +170,7 @@ func (c *LoadBalancerCollector) Collect(ch chan<- prometheus.Metric) {
 	lbs, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't list loadbalancers",
 			"err", err,
 		)
@@ -353,7 +353,7 @@ func (c *LoadBalancerCollector) collectNICMetrics(ch chan<- prometheus.Metric, l
 	values, err := c.client.MonitorNIC(c.ctx, lb.ZoneName, lb.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get loadbalancer's NIC metrics: ID=%d", lb.ID),
 			"err", err,
 		)
@@ -410,7 +410,7 @@ func (c *LoadBalancerCollector) collectLBStatus(ch chan<- prometheus.Metric, lb 
 	status, err := c.client.Status(c.ctx, lb.ZoneName, lb.ID)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't fetch loadbalancer's status: ID: %d", lb.ID),
 			"err", err,
 		)
@@ -497,7 +497,7 @@ func (c *LoadBalancerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metr
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("loadbalancer").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", fmt.Sprintf("can't get lb's maintenance info: ID=%d", resource.ID),
 			"err", err,
 		)

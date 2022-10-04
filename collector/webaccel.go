@@ -113,7 +113,7 @@ func (c *WebAccelCollector) Collect(ch chan<- prometheus.Metric) {
 	sites, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("webaccel").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't get webAccel info",
 			"err", err,
 		)
@@ -149,7 +149,7 @@ func (c *WebAccelCollector) Collect(ch chan<- prometheus.Metric) {
 	usage, err := c.client.Usage(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("webaccel").Add(1)
-		level.Warn(c.logger).Log( // nolint
+		level.Warn(c.logger).Log( //nolint
 			"msg", "can't get webAccel monthly usage",
 			"err", err,
 		)
