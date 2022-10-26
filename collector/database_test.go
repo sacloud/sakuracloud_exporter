@@ -107,9 +107,9 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 				InstanceHostName: "sacXXXX",
 				PlanID:           types.DatabasePlans.DB10GB,
 				Conf: &iaas.DatabaseRemarkDBConfCommon{
-					DatabaseName:     types.RDBMSVersions[types.RDBMSTypesMariaDB].Name,
-					DatabaseVersion:  types.RDBMSVersions[types.RDBMSTypesMariaDB].Version,
-					DatabaseRevision: types.RDBMSVersions[types.RDBMSTypesMariaDB].Revision,
+					DatabaseName:     types.RDBMSTypesMariaDB.String(),
+					DatabaseVersion:  "1",
+					DatabaseRevision: "1",
 				},
 				Interfaces: []*iaas.InterfaceView{
 					{
@@ -136,9 +136,9 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 			"zone":                "is1a",
 			"plan":                "10GB",
 			"host":                "sacXXXX",
-			"database_type":       types.RDBMSVersions[types.RDBMSTypesMariaDB].Name,
-			"database_revision":   types.RDBMSVersions[types.RDBMSTypesMariaDB].Revision,
-			"database_version":    types.RDBMSVersions[types.RDBMSTypesMariaDB].Version,
+			"database_type":       types.RDBMSTypesMariaDB.String(),
+			"database_revision":   "1",
+			"database_version":    "1",
 			"web_ui":              "",
 			"replication_enabled": "0",
 			"replication_role":    "",
@@ -261,9 +261,9 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 
 							PlanID: types.DatabasePlans.DB10GB,
 							Conf: &iaas.DatabaseRemarkDBConfCommon{
-								DatabaseName:     types.RDBMSVersions[types.RDBMSTypesMariaDB].Name,
-								DatabaseVersion:  types.RDBMSVersions[types.RDBMSTypesMariaDB].Version,
-								DatabaseRevision: types.RDBMSVersions[types.RDBMSTypesMariaDB].Revision,
+								DatabaseName:     types.RDBMSTypesMariaDB.String(),
+								DatabaseVersion:  "1",
+								DatabaseRevision: "1",
 							},
 							Interfaces: []*iaas.InterfaceView{
 								{
