@@ -6,8 +6,8 @@ require (
 	github.com/prometheus/client_golang v1.13.0
 	github.com/prometheus/client_model v0.3.0
 	github.com/sacloud/api-client-go v0.2.3
-	github.com/sacloud/iaas-api-go v1.5.1
-	github.com/sacloud/iaas-service-go v1.3.2
+	github.com/sacloud/iaas-api-go v1.6.0
+	github.com/sacloud/iaas-service-go v1.4.0
 	github.com/sacloud/packages-go v0.0.6
 	github.com/sacloud/webaccel-api-go v1.1.4
 	github.com/stretchr/testify v1.8.1
@@ -20,7 +20,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/zclconf/go-cty v1.11.0 // indirect
 	go.uber.org/ratelimit v0.2.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/sys v0.0.0-20220908164124-27713097b956 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

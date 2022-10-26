@@ -120,11 +120,9 @@ func createDatabase(caller iaas.APICaller) {
 		NetworkMaskLen: 24,
 		DefaultRoute:   "192.168.0.1",
 		Conf: &iaas.DatabaseRemarkDBConfCommon{
-			DatabaseName:     types.RDBMSVersions[types.RDBMSTypesPostgreSQL].Name,
-			DatabaseVersion:  types.RDBMSVersions[types.RDBMSTypesPostgreSQL].Version,
-			DatabaseRevision: types.RDBMSVersions[types.RDBMSTypesPostgreSQL].Revision,
-			DefaultUser:      "user01",
-			UserPassword:     "dummy-password-01",
+			DatabaseName: types.RDBMSTypesPostgreSQL.String(),
+			DefaultUser:  "user01",
+			UserPassword: "dummy-password-01",
 		},
 		CommonSetting: &iaas.DatabaseSettingCommon{
 			ServicePort:   5432,
