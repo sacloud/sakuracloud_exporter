@@ -10,7 +10,7 @@ require (
 	github.com/sacloud/iaas-service-go v1.8.2
 	github.com/sacloud/packages-go v0.0.8
 	github.com/sacloud/webaccel-api-go v1.1.5
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 )
 
 require (
