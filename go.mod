@@ -5,12 +5,12 @@ require (
 	github.com/go-kit/kit v0.12.0
 	github.com/prometheus/client_golang v1.15.1
 	github.com/prometheus/client_model v0.4.0
-	github.com/sacloud/api-client-go v0.2.7
+	github.com/sacloud/api-client-go v0.2.8
 	github.com/sacloud/iaas-api-go v1.10.0
 	github.com/sacloud/iaas-service-go v1.8.2
 	github.com/sacloud/packages-go v0.0.8
 	github.com/sacloud/webaccel-api-go v1.1.5
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 )
 
 require (
@@ -39,7 +39,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
-	github.com/sacloud/go-http v0.1.5 // indirect
+	github.com/sacloud/go-http v0.1.6 // indirect
 	github.com/zclconf/go-cty v1.13.0 // indirect
 	go.uber.org/ratelimit v0.2.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
