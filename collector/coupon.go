@@ -17,10 +17,9 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
@@ -28,7 +27,7 @@ import (
 // CouponCollector collects metrics about the account.
 type CouponCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.CouponClient
 
@@ -39,7 +38,7 @@ type CouponCollector struct {
 }
 
 // NewCouponCollector returns a new CouponCollector.
-func NewCouponCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.CouponClient) *CouponCollector {
+func NewCouponCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.CouponClient) *CouponCollector {
 	errors.WithLabelValues("coupon").Add(0)
 
 	labels := []string{"id", "member_id", "contract_id"}
@@ -87,9 +86,9 @@ func (c *CouponCollector) Collect(ch chan<- prometheus.Metric) {
 	coupons, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("coupon").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't get coupon",
-			"err", err,
+		c.logger.Warn(
+			"can't get coupon",
+			slog.Any("err", err),
 		)
 		return
 	}

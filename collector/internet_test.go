@@ -71,7 +71,7 @@ func TestInternetCollector_Collect(t *testing.T) {
 			in: &dummyInternetClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list internets" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list internets" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},

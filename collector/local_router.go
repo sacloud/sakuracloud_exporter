@@ -17,12 +17,11 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
@@ -32,7 +31,7 @@ import (
 // LocalRouterCollector collects metrics about all localRouters.
 type LocalRouterCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.LocalRouterClient
 
@@ -49,7 +48,7 @@ type LocalRouterCollector struct {
 }
 
 // NewLocalRouterCollector returns a new LocalRouterCollector.
-func NewLocalRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.LocalRouterClient) *LocalRouterCollector {
+func NewLocalRouterCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.LocalRouterClient) *LocalRouterCollector {
 	errors.WithLabelValues("local_router").Add(0)
 
 	localRouterLabels := []string{"id", "name"}
@@ -132,9 +131,9 @@ func (c *LocalRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	localRouters, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list localRouters",
-			"err", err,
+		c.logger.Warn(
+			"can't list localRouters",
+			slog.Any("err", err),
 		)
 	}
 
@@ -251,9 +250,9 @@ func (c *LocalRouterCollector) collectPeerInfo(ch chan<- prometheus.Metric, loca
 	healthStatus, err := c.client.Health(c.ctx, localRouter.ID)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't read health status of the localRouter[%s]", localRouter.ID.String()),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't read health status of the localRouter[%s]", localRouter.ID.String()),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -320,9 +319,9 @@ func (c *LocalRouterCollector) collectLocalRouterMetrics(ch chan<- prometheus.Me
 	values, err := c.client.Monitor(c.ctx, localRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("local_router").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get localRouter's metrics: LocalRouterID=%d", localRouter.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get localRouter's metrics: LocalRouterID=%d", localRouter.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

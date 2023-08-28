@@ -17,12 +17,11 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sort"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
@@ -31,7 +30,7 @@ import (
 // AutoBackupCollector collects metrics about all auto_backups.
 type AutoBackupCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.AutoBackupClient
 
@@ -43,7 +42,7 @@ type AutoBackupCollector struct {
 }
 
 // NewAutoBackupCollector returns a new AutoBackupCollector.
-func NewAutoBackupCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.AutoBackupClient) *AutoBackupCollector {
+func NewAutoBackupCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.AutoBackupClient) *AutoBackupCollector {
 	errors.WithLabelValues("auto_backup").Add(0)
 
 	labels := []string{"id", "name", "disk_id"}
@@ -92,9 +91,9 @@ func (c *AutoBackupCollector) Collect(ch chan<- prometheus.Metric) {
 	autoBackups, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list autoBackups",
-			"err", err,
+		c.logger.Warn(
+			"can't list autoBackups",
+			slog.Any("err", err),
 		)
 	}
 
@@ -154,9 +153,9 @@ func (c *AutoBackupCollector) collectBackupMetrics(ch chan<- prometheus.Metric, 
 	archives, err := c.client.ListBackups(c.ctx, autoBackup.ZoneName, autoBackup.ID)
 	if err != nil {
 		c.errors.WithLabelValues("auto_backup").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list backed up archives",
-			"err", err,
+		c.logger.Warn(
+			"can't list backed up archives",
+			slog.Any("err", err),
 		)
 		return
 	}

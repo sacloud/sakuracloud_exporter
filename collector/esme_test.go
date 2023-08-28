@@ -68,7 +68,7 @@ func TestESMECollector_Collect(t *testing.T) {
 			in: &dummyESMEClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list ESME" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list ESME" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -101,7 +101,7 @@ func TestESMECollector_Collect(t *testing.T) {
 					}),
 				},
 			},
-			wantLogs:       []string{`level=warn msg="can't collect logs of the esme[101]" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't collect logs of the esme[101]" err=dummy`},
 			wantErrCounter: 1,
 		},
 	}

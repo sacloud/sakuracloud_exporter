@@ -146,7 +146,7 @@ func TestServerCollector_Collect(t *testing.T) {
 			in: &dummyServerClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list servers" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list servers" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -419,9 +419,9 @@ func TestServerCollector_Collect(t *testing.T) {
 			},
 			wantErrCounter: 3,
 			wantLogs: []string{
-				`level=warn msg="can't get disk's metrics: ServerID=101, DiskID=201" err=dummy2`,
-				`level=warn msg="can't get nic's metrics: ServerID=101,NICID=301" err=dummy3`,
-				`level=warn msg="can't get server's CPU-TIME: ID=101" err=dummy1`,
+				`level=WARN msg="can't get disk's metrics: ServerID=101, DiskID=201" err=dummy2`,
+				`level=WARN msg="can't get nic's metrics: ServerID=101,NICID=301" err=dummy3`,
+				`level=WARN msg="can't get server's CPU-TIME: ID=101" err=dummy1`,
 			},
 		},
 		{
@@ -601,7 +601,7 @@ func TestServerCollector_CollectMaintenanceOnly(t *testing.T) {
 			in: &dummyServerClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list servers" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list servers" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},

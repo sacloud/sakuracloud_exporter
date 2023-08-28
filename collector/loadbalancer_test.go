@@ -93,7 +93,7 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 			in: &dummyLoadBalancerClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list loadbalancers" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list loadbalancers" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -446,8 +446,8 @@ func TestLoadBalancerCollector_Collect(t *testing.T) {
 				},
 			},
 			wantLogs: []string{
-				`level=warn msg="can't fetch loadbalancer's status: ID: 101" err=dummy1`,
-				`level=warn msg="can't get loadbalancer's NIC metrics: ID=101" err=dummy2`,
+				`level=WARN msg="can't fetch loadbalancer's status: ID: 101" err=dummy1`,
+				`level=WARN msg="can't get loadbalancer's NIC metrics: ID=101" err=dummy2`,
 			},
 			wantErrCounter: 2,
 		},

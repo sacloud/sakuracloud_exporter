@@ -61,7 +61,7 @@ func TestBillCollector_Collect(t *testing.T) {
 			in: &dummyBillClient{
 				err: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't get bill" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't get bill" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},

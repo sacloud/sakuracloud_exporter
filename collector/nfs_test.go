@@ -89,7 +89,7 @@ func TestNFSCollector_Collect(t *testing.T) {
 			in: &dummyNFSClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list nfs" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list nfs" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -355,8 +355,8 @@ func TestNFSCollector_Collect(t *testing.T) {
 				},
 			},
 			wantLogs: []string{
-				`level=warn msg="can't get disk's free size: NFSID=101" err=dummy1`,
-				`level=warn msg="can't get nfs's NIC metrics: NFSID=101" err=dummy2`,
+				`level=WARN msg="can't get disk's free size: NFSID=101" err=dummy1`,
+				`level=WARN msg="can't get nfs's NIC metrics: NFSID=101" err=dummy2`,
 			},
 			wantErrCounter: 2,
 		},

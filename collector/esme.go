@@ -17,10 +17,9 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
@@ -29,7 +28,7 @@ import (
 // ESMECollector collects metrics about all esme.
 type ESMECollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.ESMEClient
 
@@ -38,7 +37,7 @@ type ESMECollector struct {
 }
 
 // NewESMECollector returns a new ESMECollector.
-func NewESMECollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ESMEClient) *ESMECollector {
+func NewESMECollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.ESMEClient) *ESMECollector {
 	errors.WithLabelValues("esme").Add(0)
 
 	labels := []string{"id", "name"}
@@ -75,9 +74,9 @@ func (c *ESMECollector) Collect(ch chan<- prometheus.Metric) {
 	searched, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("esme").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list ESME",
-			"err", err,
+		c.logger.Warn(
+			"can't list ESME",
+			slog.Any("err", err),
 		)
 	}
 
@@ -126,9 +125,9 @@ func (c *ESMECollector) collectLogs(ch chan<- prometheus.Metric, esme *iaas.ESME
 	logs, err := c.client.Logs(c.ctx, esme.ID)
 	if err != nil {
 		c.errors.WithLabelValues("esme").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't collect logs of the esme[%s]", esme.ID.String()),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't collect logs of the esme[%s]", esme.ID.String()),
+			slog.Any("err", err),
 		)
 		return
 	}

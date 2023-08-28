@@ -17,19 +17,19 @@ package collector
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 )
 
 var logbuf *bytes.Buffer
-var testLogger log.Logger
+var testLogger *slog.Logger
 var testErrors *prometheus.CounterVec
 
 func collectDescs(collector prometheus.Collector) []*prometheus.Desc {
@@ -95,7 +95,14 @@ func requireMetricsEqual(t *testing.T, m1, m2 []*collectedMetric) {
 
 func initLoggerAndErrors() {
 	logbuf = &bytes.Buffer{}
-	testLogger = log.NewLogfmtLogger(log.NewSyncWriter(logbuf))
+	testLogger = slog.New(slog.NewTextHandler(logbuf, &slog.HandlerOptions{
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		},
+	}))
 	testErrors = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "sakuracloud_exporter_errors_total",
 	}, []string{"collector"})

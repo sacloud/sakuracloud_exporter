@@ -99,7 +99,7 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 			in: &dummyVPCRouterClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list vpc routers" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list vpc routers" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -406,8 +406,8 @@ func TestVPCRouterCollector_Collect(t *testing.T) {
 				},
 			},
 			wantLogs: []string{
-				`level=warn msg="can't fetch vpc_router's status" err=dummy1`,
-				`level=warn msg="can't get vpc_router's receive bytes: ID=101, NICIndex=0" err=dummy2`,
+				`level=WARN msg="can't fetch vpc_router's status" err=dummy1`,
+				`level=WARN msg="can't get vpc_router's receive bytes: ID=101, NICIndex=0" err=dummy2`,
 			},
 			wantErrCounter: 2,
 		},

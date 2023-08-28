@@ -16,9 +16,8 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
@@ -26,7 +25,7 @@ import (
 // ZoneCollector collects metrics about the account.
 type ZoneCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.ZoneClient
 
@@ -34,7 +33,7 @@ type ZoneCollector struct {
 }
 
 // NewZoneCollector returns a new ZoneCollector.
-func NewZoneCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ZoneClient) *ZoneCollector {
+func NewZoneCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.ZoneClient) *ZoneCollector {
 	errors.WithLabelValues("zone").Add(0)
 
 	labels := []string{"id", "name", "description", "region_id", "region_name"}
@@ -63,9 +62,9 @@ func (c *ZoneCollector) Collect(ch chan<- prometheus.Metric) {
 	zones, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("zone").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't get zone info",
-			"err", err,
+		c.logger.Warn(
+			"can't get zone info",
+			slog.Any("err", err),
 		)
 		return
 	}
