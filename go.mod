@@ -2,7 +2,7 @@ module github.com/sacloud/sakuracloud_exporter
 
 require (
 	github.com/alexflint/go-arg v1.4.3
-	github.com/go-kit/kit v0.12.0
+	github.com/go-kit/kit v0.13.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
 	github.com/sacloud/api-client-go v0.2.8
