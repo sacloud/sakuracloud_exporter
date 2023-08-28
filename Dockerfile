@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM golang:1.20 AS builder
+FROM golang:1.21 AS builder
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
 
