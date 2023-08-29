@@ -17,11 +17,10 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/packages-go/newsfeed"
@@ -31,7 +30,7 @@ import (
 // ServerCollector collects metrics about all servers.
 type ServerCollector struct {
 	ctx       context.Context
-	logger    log.Logger
+	logger    *slog.Logger
 	errors    *prometheus.CounterVec
 	client    platform.ServerClient
 	maintOnly bool
@@ -58,7 +57,7 @@ type ServerCollector struct {
 }
 
 // NewServerCollector returns a new ServerCollector.
-func NewServerCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ServerClient, maintenanceOnly bool) *ServerCollector {
+func NewServerCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.ServerClient, maintenanceOnly bool) *ServerCollector {
 	errors.WithLabelValues("server").Add(0)
 
 	serverLabels := []string{"id", "name", "zone"}
@@ -187,9 +186,9 @@ func (c *ServerCollector) Collect(ch chan<- prometheus.Metric) {
 	servers, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list servers",
-			"err", err,
+		c.logger.Warn(
+			"can't list servers",
+			slog.Any("err", err),
 		)
 	}
 
@@ -379,9 +378,9 @@ func (c *ServerCollector) collectDiskInfo(ch chan<- prometheus.Metric, server *p
 	disk, err := c.client.ReadDisk(c.ctx, server.ZoneName, server.Disks[index].ID)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get server connected disk info: ID=%d, DiskID=%d", server.ID, server.Disks[index].ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get server connected disk info: ID=%d, DiskID=%d", server.ID, server.Disks[index].ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -453,9 +452,9 @@ func (c *ServerCollector) collectCPUTime(ch chan<- prometheus.Metric, server *pl
 	values, err := c.client.MonitorCPU(c.ctx, server.ZoneName, server.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get server's CPU-TIME: ID=%d", server.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get server's CPU-TIME: ID=%d", server.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -482,9 +481,9 @@ func (c *ServerCollector) collectDiskMetrics(ch chan<- prometheus.Metric, server
 	values, err := c.client.MonitorDisk(c.ctx, server.ZoneName, disk.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get disk's metrics: ServerID=%d, DiskID=%d", server.ID, disk.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get disk's metrics: ServerID=%d, DiskID=%d", server.ID, disk.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -526,9 +525,9 @@ func (c *ServerCollector) collectNICMetrics(ch chan<- prometheus.Metric, server 
 	values, err := c.client.MonitorNIC(c.ctx, server.ZoneName, nic.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get nic's metrics: ServerID=%d,NICID=%d", server.ID, nic.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get nic's metrics: ServerID=%d,NICID=%d", server.ID, nic.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -568,9 +567,9 @@ func (c *ServerCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, se
 	info, err := c.client.MaintenanceInfo(server.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get server's maintenance info: ServerID=%d", server.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get server's maintenance info: ServerID=%d", server.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

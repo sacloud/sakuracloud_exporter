@@ -18,13 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sacloud/sakuracloud_exporter/collector"
@@ -50,24 +49,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	filterOption := level.AllowInfo()
+	level := slog.LevelInfo
 	if c.Debug {
-		filterOption = level.AllowDebug()
+		level = slog.LevelDebug
 	}
 
-	logger := log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
-	logger = level.NewFilter(logger, filterOption)
-	logger = log.With(logger,
-		"ts", log.DefaultTimestampUTC,
-		"caller", log.DefaultCaller,
-	)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: level,
+	}))
 
-	level.Info(logger).Log( //nolint
-		"msg", "starting sakuracloud_exporter",
-		"rate-limit", c.RateLimit,
-		"version", Version,
-		"revision", Revision,
-		"goVersion", GoVersion,
+	logger.Info(
+		"starting sakuracloud_exporter",
+		slog.Int("rate-limit", c.RateLimit),
+		slog.String("version", Version),
+		slog.String("revision", Revision),
+		slog.String("goVersion", GoVersion),
 	)
 
 	client := platform.NewSakuraCloudClient(c, Version)
@@ -77,7 +73,7 @@ func main() {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}
 	if !c.NoCollectorWebAccel && !client.HasWebAccelPermission(ctx) {
-		logger.Log("warn", "API key doesn't have webaccel permission") //nolint
+		logger.Warn("API key doesn't have webaccel permission")
 	}
 
 	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -161,10 +157,10 @@ func main() {
 			</html>`))
 	})
 
-	level.Info(logger).Log("msg", "listening", "addr", c.WebAddr) //nolint
-	if err := http.ListenAndServe(c.WebAddr, nil); err != nil {   //nolint
+	logger.Info("listening", slog.String("addr", c.WebAddr))
+	if err := http.ListenAndServe(c.WebAddr, nil); err != nil { //nolint
 		cancel()
-		level.Error(logger).Log("msg", "http listenandserve error", "err", err) //nolint
+		logger.Error("http listenandserve error", slog.Any("err", err))
 		os.Exit(2)
 	}
 }

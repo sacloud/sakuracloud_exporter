@@ -65,7 +65,7 @@ func TestCouponCollector_Collect(t *testing.T) {
 			in: &dummyCouponClient{
 				err: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't get coupon" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't get coupon" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},

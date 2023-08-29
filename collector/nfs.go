@@ -17,11 +17,10 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
@@ -30,7 +29,7 @@ import (
 // NFSCollector collects metrics about all nfss.
 type NFSCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.NFSClient
 
@@ -50,7 +49,7 @@ type NFSCollector struct {
 }
 
 // NewNFSCollector returns a new NFSCollector.
-func NewNFSCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.NFSClient) *NFSCollector {
+func NewNFSCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.NFSClient) *NFSCollector {
 	errors.WithLabelValues("nfs").Add(0)
 
 	nfsLabels := []string{"id", "name", "zone"}
@@ -136,9 +135,9 @@ func (c *NFSCollector) Collect(ch chan<- prometheus.Metric) {
 	nfss, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list nfs",
-			"err", err,
+		c.logger.Warn(
+			"can't list nfs",
+			slog.Any("err", err),
 		)
 	}
 
@@ -276,9 +275,9 @@ func (c *NFSCollector) collectFreeDiskSize(ch chan<- prometheus.Metric, nfs *pla
 	values, err := c.client.MonitorFreeDiskSize(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get disk's free size: NFSID=%d", nfs.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get disk's free size: NFSID=%d", nfs.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -304,9 +303,9 @@ func (c *NFSCollector) collectNICMetrics(ch chan<- prometheus.Metric, nfs *platf
 	values, err := c.client.MonitorNIC(c.ctx, nfs.ZoneName, nfs.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get nfs's NIC metrics: NFSID=%d", nfs.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get nfs's NIC metrics: NFSID=%d", nfs.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -358,9 +357,9 @@ func (c *NFSCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, resou
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("nfs").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get nfs's maintenance info: ID=%d", resource.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get nfs's maintenance info: ID=%d", resource.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

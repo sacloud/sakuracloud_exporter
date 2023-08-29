@@ -71,7 +71,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 			in: &dummyAutoBackupClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list autoBackups" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list autoBackups" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -114,7 +114,7 @@ func TestAutoBackupCollector_Collect(t *testing.T) {
 					}),
 				},
 			},
-			wantLogs:       []string{`level=warn msg="can't list backed up archives" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list backed up archives" err=dummy`},
 			wantErrCounter: 1,
 		},
 		{

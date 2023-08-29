@@ -171,7 +171,7 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 			in: &dummyDatabaseClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list databases" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list databases" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -236,10 +236,10 @@ func TestDatabaseCollector_Collect(t *testing.T) {
 				},
 			},
 			wantLogs: []string{
-				`level=warn msg="can't get database's NIC metrics: DatabaseID=101" err=dummy`,
-				`level=warn msg="can't get database's cpu time: DatabaseID=101" err=dummy`,
-				`level=warn msg="can't get database's system metrics: DatabaseID=101" err=dummy`,
-				`level=warn msg="can't get disk's metrics: DatabaseID=101" err=dummy`,
+				`level=WARN msg="can't get database's NIC metrics: DatabaseID=101" err=dummy`,
+				`level=WARN msg="can't get database's cpu time: DatabaseID=101" err=dummy`,
+				`level=WARN msg="can't get database's system metrics: DatabaseID=101" err=dummy`,
+				`level=WARN msg="can't get disk's metrics: DatabaseID=101" err=dummy`,
 			},
 			wantErrCounter: 4,
 		},

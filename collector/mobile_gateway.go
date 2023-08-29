@@ -17,11 +17,10 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/packages-go/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
@@ -30,7 +29,7 @@ import (
 // MobileGatewayCollector collects metrics about all servers.
 type MobileGatewayCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.MobileGatewayClient
 
@@ -52,7 +51,7 @@ type MobileGatewayCollector struct {
 }
 
 // NewMobileGatewayCollector returns a new MobileGatewayCollector.
-func NewMobileGatewayCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.MobileGatewayClient) *MobileGatewayCollector {
+func NewMobileGatewayCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.MobileGatewayClient) *MobileGatewayCollector {
 	errors.WithLabelValues("mobile_gateway").Add(0)
 
 	mobileGatewayLabels := []string{"id", "name", "zone"}
@@ -151,9 +150,9 @@ func (c *MobileGatewayCollector) Collect(ch chan<- prometheus.Metric) {
 	mobileGateways, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list mobile_gateways",
-			"err", err,
+		c.logger.Warn(
+			"can't list mobile_gateways",
+			slog.Any("err", err),
 		)
 	}
 
@@ -284,9 +283,9 @@ func (c *MobileGatewayCollector) collectTrafficControlInfo(ch chan<- prometheus.
 	info, err := c.client.TrafficControl(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get mobile_gateway's traffic control config: ID=%d", mobileGateway.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get mobile_gateway's traffic control config: ID=%d", mobileGateway.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -332,9 +331,9 @@ func (c *MobileGatewayCollector) collectTrafficStatus(ch chan<- prometheus.Metri
 	status, err := c.client.TrafficStatus(c.ctx, mobileGateway.ZoneName, mobileGateway.ID)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get mobile_gateway's traffic status: ID=%d", mobileGateway.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get mobile_gateway's traffic status: ID=%d", mobileGateway.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -372,9 +371,9 @@ func (c *MobileGatewayCollector) collectNICMetrics(ch chan<- prometheus.Metric, 
 	values, err := c.client.MonitorNIC(c.ctx, mobileGateway.ZoneName, mobileGateway.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get mobile_gateway's receive bytes: ID=%d, NICIndex=%d", mobileGateway.ID, index),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get mobile_gateway's receive bytes: ID=%d, NICIndex=%d", mobileGateway.ID, index),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -426,9 +425,9 @@ func (c *MobileGatewayCollector) collectMaintenanceInfo(ch chan<- prometheus.Met
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("mobile_gateway").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get mobile gateway's maintenance info: ID=%d", resource.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get mobile gateway's maintenance info: ID=%d", resource.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

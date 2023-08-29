@@ -57,7 +57,7 @@ func TestZoneCollector_Collect(t *testing.T) {
 			in: &dummyZoneClient{
 				err: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't get zone info" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't get zone info" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},

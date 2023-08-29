@@ -19,11 +19,10 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
@@ -32,7 +31,7 @@ import (
 // ProxyLBCollector collects metrics about all proxyLBs.
 type ProxyLBCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.ProxyLBClient
 
@@ -51,7 +50,7 @@ type ProxyLBCollector struct {
 }
 
 // NewProxyLBCollector returns a new ProxyLBCollector.
-func NewProxyLBCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.ProxyLBClient) *ProxyLBCollector {
+func NewProxyLBCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.ProxyLBClient) *ProxyLBCollector {
 	errors.WithLabelValues("proxylb").Add(0)
 
 	proxyLBLabels := []string{"id", "name"}
@@ -129,9 +128,9 @@ func (c *ProxyLBCollector) Collect(ch chan<- prometheus.Metric) {
 	proxyLBs, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list proxyLBs",
-			"err", err,
+		c.logger.Warn(
+			"can't list proxyLBs",
+			slog.Any("err", err),
 		)
 	}
 
@@ -270,9 +269,9 @@ func (c *ProxyLBCollector) collectProxyLBCertInfo(ch chan<- prometheus.Metric, p
 	cert, err := c.client.GetCertificate(c.ctx, proxyLB.ID)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get certificate: proxyLB=%d", proxyLB.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get certificate: proxyLB=%d", proxyLB.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -347,9 +346,9 @@ func (c *ProxyLBCollector) collectProxyLBMetrics(ch chan<- prometheus.Metric, pr
 	values, err := c.client.Monitor(c.ctx, proxyLB.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("proxylb").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get proxyLB's metrics: ProxyLBID=%d", proxyLB.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get proxyLB's metrics: ProxyLBID=%d", proxyLB.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

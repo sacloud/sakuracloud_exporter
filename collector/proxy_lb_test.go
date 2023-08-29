@@ -82,7 +82,7 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 			in: &dummyProxyLBClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list proxyLBs" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list proxyLBs" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -324,8 +324,8 @@ func TestProxyLBCollector_Collect(t *testing.T) {
 			},
 			wantErrCounter: 2,
 			wantLogs: []string{
-				`level=warn msg="can't get certificate: proxyLB=101" err=dummy2`,
-				`level=warn msg="can't get proxyLB's metrics: ProxyLBID=101" err=dummy3`,
+				`level=WARN msg="can't get certificate: proxyLB=101" err=dummy2`,
+				`level=WARN msg="can't get proxyLB's metrics: ProxyLBID=101" err=dummy3`,
 			},
 		},
 	}

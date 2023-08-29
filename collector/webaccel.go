@@ -16,9 +16,8 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
@@ -26,7 +25,7 @@ import (
 // WebAccelCollector collects metrics about the webaccel's sites.
 type WebAccelCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.WebAccelClient
 
@@ -42,7 +41,7 @@ type WebAccelCollector struct {
 }
 
 // NewWebAccelCollector returns a new WebAccelCollector.
-func NewWebAccelCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.WebAccelClient) *WebAccelCollector {
+func NewWebAccelCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.WebAccelClient) *WebAccelCollector {
 	errors.WithLabelValues("webaccel").Add(0)
 
 	labels := []string{"id"}
@@ -113,9 +112,9 @@ func (c *WebAccelCollector) Collect(ch chan<- prometheus.Metric) {
 	sites, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("webaccel").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't get webAccel info",
-			"err", err,
+		c.logger.Warn(
+			"can't get webAccel info",
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -149,9 +148,9 @@ func (c *WebAccelCollector) Collect(ch chan<- prometheus.Metric) {
 	usage, err := c.client.Usage(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("webaccel").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't get webAccel monthly usage",
-			"err", err,
+		c.logger.Warn(
+			"can't get webAccel monthly usage",
+			slog.Any("err", err),
 		)
 		return
 	}

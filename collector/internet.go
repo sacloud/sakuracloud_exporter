@@ -17,11 +17,10 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
@@ -29,7 +28,7 @@ import (
 // InternetCollector collects metrics about all internets.
 type InternetCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.InternetClient
 
@@ -40,7 +39,7 @@ type InternetCollector struct {
 }
 
 // NewInternetCollector returns a new InternetCollector.
-func NewInternetCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.InternetClient) *InternetCollector {
+func NewInternetCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.InternetClient) *InternetCollector {
 	errors.WithLabelValues("internet").Add(0)
 
 	labels := []string{"id", "name", "zone", "switch_id"}
@@ -82,9 +81,9 @@ func (c *InternetCollector) Collect(ch chan<- prometheus.Metric) {
 	internets, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list internets",
-			"err", err,
+		c.logger.Warn(
+			"can't list internets",
+			slog.Any("err", err),
 		)
 	}
 
@@ -136,9 +135,9 @@ func (c *InternetCollector) collectRouterMetrics(ch chan<- prometheus.Metric, in
 	values, err := c.client.MonitorTraffic(c.ctx, internet.ZoneName, internet.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("internet").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get internet's traffic metrics: InternetID=%d", internet.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get internet's traffic metrics: InternetID=%d", internet.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

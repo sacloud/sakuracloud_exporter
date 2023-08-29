@@ -76,7 +76,7 @@ func TestSIMCollector_Collect(t *testing.T) {
 			in: &dummySIMClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list sims" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list sims" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -194,8 +194,8 @@ func TestSIMCollector_Collect(t *testing.T) {
 			},
 			wantErrCounter: 2,
 			wantLogs: []string{
-				`level=warn msg="can't get sim's metrics: SIMID=101" err=dummy2`,
-				`level=warn msg="can't get sim's network operator config: SIMID=101" err=dummy1`,
+				`level=WARN msg="can't get sim's metrics: SIMID=101" err=dummy2`,
+				`level=WARN msg="can't get sim's network operator config: SIMID=101" err=dummy1`,
 			},
 		},
 	}

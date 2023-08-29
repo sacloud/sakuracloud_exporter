@@ -17,12 +17,11 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/sakuracloud_exporter/platform"
@@ -31,7 +30,7 @@ import (
 // SIMCollector collects metrics about all sims.
 type SIMCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.SIMClient
 
@@ -43,7 +42,7 @@ type SIMCollector struct {
 }
 
 // NewSIMCollector returns a new SIMCollector.
-func NewSIMCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.SIMClient) *SIMCollector {
+func NewSIMCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.SIMClient) *SIMCollector {
 	errors.WithLabelValues("sim").Add(0)
 
 	simLabels := []string{"id", "name"}
@@ -94,9 +93,9 @@ func (c *SIMCollector) Collect(ch chan<- prometheus.Metric) {
 	sims, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list sims",
-			"err", err,
+		c.logger.Warn(
+			"can't list sims",
+			slog.Any("err", err),
 		)
 	}
 
@@ -152,9 +151,9 @@ func (c *SIMCollector) collectSIMInfo(ch chan<- prometheus.Metric, sim *iaas.SIM
 	simConfigs, err := c.client.GetNetworkOperatorConfig(c.ctx, sim.ID)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get sim's network operator config: SIMID=%d", sim.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get sim's network operator config: SIMID=%d", sim.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -207,9 +206,9 @@ func (c *SIMCollector) collectSIMMetrics(ch chan<- prometheus.Metric, sim *iaas.
 	values, err := c.client.MonitorTraffic(c.ctx, sim.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("sim").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get sim's metrics: SIMID=%d", sim.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get sim's metrics: SIMID=%d", sim.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

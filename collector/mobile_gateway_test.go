@@ -95,7 +95,7 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 			in: &dummyMobileGatewayClient{
 				findErr: errors.New("dummy"),
 			},
-			wantLogs:       []string{`level=warn msg="can't list mobile_gateways" err=dummy`},
+			wantLogs:       []string{`level=WARN msg="can't list mobile_gateways" err=dummy`},
 			wantErrCounter: 1,
 			wantMetrics:    nil,
 		},
@@ -470,10 +470,10 @@ func TestMobileGatewayCollector_Collect(t *testing.T) {
 				},
 			},
 			wantLogs: []string{
-				`level=warn msg="can't get mobile_gateway's receive bytes: ID=101, NICIndex=0" err=dummy3`,
-				`level=warn msg="can't get mobile_gateway's receive bytes: ID=101, NICIndex=1" err=dummy3`,
-				`level=warn msg="can't get mobile_gateway's traffic control config: ID=101" err=dummy1`,
-				`level=warn msg="can't get mobile_gateway's traffic status: ID=101" err=dummy2`,
+				`level=WARN msg="can't get mobile_gateway's receive bytes: ID=101, NICIndex=0" err=dummy3`,
+				`level=WARN msg="can't get mobile_gateway's receive bytes: ID=101, NICIndex=1" err=dummy3`,
+				`level=WARN msg="can't get mobile_gateway's traffic control config: ID=101" err=dummy1`,
+				`level=WARN msg="can't get mobile_gateway's traffic status: ID=101" err=dummy2`,
 			},
 			wantErrCounter: 4, // traffic control + traffic status + nic monitor*2
 		},

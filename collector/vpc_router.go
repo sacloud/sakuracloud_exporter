@@ -17,12 +17,11 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
@@ -33,7 +32,7 @@ import (
 // VPCRouterCollector collects metrics about all servers.
 type VPCRouterCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.VPCRouterClient
 
@@ -58,7 +57,7 @@ type VPCRouterCollector struct {
 }
 
 // NewVPCRouterCollector returns a new VPCRouterCollector.
-func NewVPCRouterCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.VPCRouterClient) *VPCRouterCollector {
+func NewVPCRouterCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.VPCRouterClient) *VPCRouterCollector {
 	errors.WithLabelValues("vpc_router").Add(0)
 
 	vpcRouterLabels := []string{"id", "name", "zone"}
@@ -176,9 +175,9 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 	vpcRouters, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list vpc routers",
-			"err", err,
+		c.logger.Warn(
+			"can't list vpc routers",
+			slog.Any("err", err),
 		)
 	}
 
@@ -225,9 +224,9 @@ func (c *VPCRouterCollector) Collect(ch chan<- prometheus.Metric) {
 						status, err := c.client.Status(c.ctx, vpcRouter.ZoneName, vpcRouter.ID)
 						if err != nil {
 							c.errors.WithLabelValues("vpc_router").Add(1)
-							level.Warn(c.logger).Log( //nolint
-								"msg", "can't fetch vpc_router's status",
-								"err", err,
+							c.logger.Warn(
+								"can't fetch vpc_router's status",
+								slog.Any("err", err),
 							)
 							return
 						}
@@ -447,9 +446,9 @@ func (c *VPCRouterCollector) collectNICMetrics(ch chan<- prometheus.Metric, vpcR
 	values, err := c.client.MonitorNIC(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, index, now)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get vpc_router's receive bytes: ID=%d, NICIndex=%d", vpcRouter.ID, index),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get vpc_router's receive bytes: ID=%d, NICIndex=%d", vpcRouter.ID, index),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -486,9 +485,9 @@ func (c *VPCRouterCollector) collectCPUTime(ch chan<- prometheus.Metric, vpcRout
 	values, err := c.client.MonitorCPU(c.ctx, vpcRouter.ZoneName, vpcRouter.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("server").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get server's CPU-TIME: ID=%d", vpcRouter.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get server's CPU-TIME: ID=%d", vpcRouter.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -525,9 +524,9 @@ func (c *VPCRouterCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric,
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("vpc_router").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get vpc router's maintenance info: ID=%d", resource.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get vpc router's maintenance info: ID=%d", resource.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

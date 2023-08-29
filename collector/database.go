@@ -17,11 +17,10 @@ package collector
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/iaas-api-go/types"
 	"github.com/sacloud/packages-go/newsfeed"
@@ -31,7 +30,7 @@ import (
 // DatabaseCollector collects metrics about all databases.
 type DatabaseCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.DatabaseClient
 
@@ -59,7 +58,7 @@ type DatabaseCollector struct {
 }
 
 // NewDatabaseCollector returns a new DatabaseCollector.
-func NewDatabaseCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.DatabaseClient) *DatabaseCollector {
+func NewDatabaseCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.DatabaseClient) *DatabaseCollector {
 	errors.WithLabelValues("database").Add(0)
 
 	databaseLabels := []string{"id", "name", "zone"}
@@ -209,9 +208,9 @@ func (c *DatabaseCollector) Collect(ch chan<- prometheus.Metric) {
 	databases, err := c.client.Find(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't list databases",
-			"err", err,
+		c.logger.Warn(
+			"can't list databases",
+			slog.Any("err", err),
 		)
 	}
 
@@ -386,9 +385,9 @@ func (c *DatabaseCollector) collectCPUTime(ch chan<- prometheus.Metric, database
 	values, err := c.client.MonitorCPU(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get database's cpu time: DatabaseID=%d", database.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get database's cpu time: DatabaseID=%d", database.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -410,9 +409,9 @@ func (c *DatabaseCollector) collectDiskMetrics(ch chan<- prometheus.Metric, data
 	values, err := c.client.MonitorDisk(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get disk's metrics: DatabaseID=%d", database.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get disk's metrics: DatabaseID=%d", database.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -440,9 +439,9 @@ func (c *DatabaseCollector) collectNICMetrics(ch chan<- prometheus.Metric, datab
 	values, err := c.client.MonitorNIC(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get database's NIC metrics: DatabaseID=%d", database.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get database's NIC metrics: DatabaseID=%d", database.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -471,9 +470,9 @@ func (c *DatabaseCollector) collectDatabaseMetrics(ch chan<- prometheus.Metric, 
 	values, err := c.client.MonitorDatabase(c.ctx, database.ZoneName, database.ID, now)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get database's system metrics: DatabaseID=%d", database.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get database's system metrics: DatabaseID=%d", database.ID),
+			slog.Any("err", err),
 		)
 		return
 	}
@@ -594,9 +593,9 @@ func (c *DatabaseCollector) collectMaintenanceInfo(ch chan<- prometheus.Metric, 
 	info, err := c.client.MaintenanceInfo(resource.InstanceHostInfoURL)
 	if err != nil {
 		c.errors.WithLabelValues("database").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", fmt.Sprintf("can't get database's maintenance info: ID=%d", resource.ID),
-			"err", err,
+		c.logger.Warn(
+			fmt.Sprintf("can't get database's maintenance info: ID=%d", resource.ID),
+			slog.Any("err", err),
 		)
 		return
 	}

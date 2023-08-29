@@ -16,9 +16,8 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
@@ -26,7 +25,7 @@ import (
 // BillCollector collects metrics about the account.
 type BillCollector struct {
 	ctx    context.Context
-	logger log.Logger
+	logger *slog.Logger
 	errors *prometheus.CounterVec
 	client platform.BillClient
 
@@ -34,7 +33,7 @@ type BillCollector struct {
 }
 
 // NewBillCollector returns a new BillCollector.
-func NewBillCollector(ctx context.Context, logger log.Logger, errors *prometheus.CounterVec, client platform.BillClient) *BillCollector {
+func NewBillCollector(ctx context.Context, logger *slog.Logger, errors *prometheus.CounterVec, client platform.BillClient) *BillCollector {
 	errors.WithLabelValues("bill").Add(0)
 
 	labels := []string{"member_id"}
@@ -64,9 +63,9 @@ func (c *BillCollector) Collect(ch chan<- prometheus.Metric) {
 	bill, err := c.client.Read(c.ctx)
 	if err != nil {
 		c.errors.WithLabelValues("bill").Add(1)
-		level.Warn(c.logger).Log( //nolint
-			"msg", "can't get bill",
-			"err", err,
+		c.logger.Warn(
+			"can't get bill",
+			slog.Any("err", err),
 		)
 		return
 	}

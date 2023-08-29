@@ -16,17 +16,16 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 // ExporterCollector collects metrics, mostly runtime, about this exporter in general.
 type ExporterCollector struct {
 	ctx       context.Context
-	logger    log.Logger
+	logger    *slog.Logger
 	version   string
 	revision  string
 	goVersion string
@@ -39,7 +38,7 @@ type ExporterCollector struct {
 // logger, Version, Revision, BuildDate, GoVersion, StartTime
 
 // NewExporterCollector returns a new ExporterCollector.
-func NewExporterCollector(ctx context.Context, logger log.Logger, version string, revision string, goVersion string, startTime time.Time) *ExporterCollector {
+func NewExporterCollector(ctx context.Context, logger *slog.Logger, version string, revision string, goVersion string, startTime time.Time) *ExporterCollector {
 	return &ExporterCollector{
 		ctx:    ctx,
 		logger: logger,
@@ -70,12 +69,13 @@ func (c *ExporterCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect is called by the Prometheus registry when collecting metrics.
 func (c *ExporterCollector) Collect(ch chan<- prometheus.Metric) {
-	level.Debug(c.logger).Log( //nolint
-		"starttime", c.startTime.Unix(),
-		"version", c.version,
-		"revision", c.revision,
-		"goVersion", c.goVersion,
-		"startTime", c.startTime,
+	c.logger.Debug(
+		"",
+		slog.Int64("starttime", c.startTime.Unix()),
+		slog.String("version", c.version),
+		slog.String("revision", c.revision),
+		slog.String("goVersion", c.goVersion),
+		slog.Time("startTime", c.startTime),
 	)
 
 	ch <- prometheus.MustNewConstMetric(
