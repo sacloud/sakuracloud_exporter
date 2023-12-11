@@ -4,7 +4,7 @@ require (
 	github.com/alexflint/go-arg v1.4.3
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/client_model v0.5.0
-	github.com/sacloud/api-client-go v0.2.9
+	github.com/sacloud/api-client-go v0.2.10
 	github.com/sacloud/iaas-api-go v1.11.1
 	github.com/sacloud/iaas-service-go v1.9.1
 	github.com/sacloud/packages-go v0.0.9
@@ -29,7 +29,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v0.16.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.4 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.5 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hc-install v0.5.2 // indirect
 	github.com/hashicorp/terraform-exec v0.18.1 // indirect
