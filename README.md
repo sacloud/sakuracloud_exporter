@@ -118,6 +118,9 @@ The exporter returns the following metrics:
 |--------------------------|-----------------------------|-------------|
 | sakuracloud_bill_amount  | Amount billed for the month | `member_id` |
 
+> [!IMPORTANT]
+> This value is updated only once per day. Please ensure the interval is not set too short to avoid unnecessary processing.
+
 #### Coupon
 
 | Metric                            | Description                                          | Labels                           |
@@ -126,6 +129,9 @@ The exporter returns the following metrics:
 | sakuracloud_coupon_remaining_days | The count of coupon's remaining days                 | `id`, `member_id`, `contract_id` |
 | sakuracloud_coupon_exp_date       | Coupon expiration date in seconds since epoch (1970) | `id`, `member_id`, `contract_id` |
 | sakuracloud_coupon_usable         | 1 if coupon is usable                                | `id`, `member_id`, `contract_id` |
+
+> [!IMPORTANT]
+> This value is updated only once per day. Please ensure the interval is not set too short to avoid unnecessary processing.
 
 #### Database
 
