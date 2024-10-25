@@ -19,9 +19,15 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+)
+
+var (
+	BillAPIUpdateHourJST   = 4
+	BillAPIUpdateMinuteJST = 30
 )
 
 // BillClient calls SakuraCloud bill API
@@ -30,16 +36,25 @@ type BillClient interface {
 }
 
 func getBillClient(caller iaas.APICaller) BillClient {
-	return &billClient{caller: caller}
+	return &billClient{
+		caller: caller,
+		cache:  newCache(30 * time.Minute),
+	}
 }
 
 type billClient struct {
 	caller    iaas.APICaller
 	accountID types.ID
 	once      sync.Once
+	cache     *cache
 }
 
 func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
+	ca := c.cache.get()
+	if ca != nil {
+		return ca.(*iaas.Bill), nil
+	}
+
 	var err error
 	c.once.Do(func() {
 		var auth *iaas.AuthStatus
@@ -74,5 +89,36 @@ func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
 			bill = b
 		}
 	}
+
+	n, err := nextCacheExpiresAt()
+	if err != nil {
+		return nil, err
+	}
+	err = c.cache.set(bill, n)
+	if err != nil {
+		return nil, err
+	}
+
 	return bill, nil
+}
+
+// キャッシュの有効期限を算出する
+//
+// Billing APIは1日1回 AM4:30 (JST) にデータが更新される。
+// このため、現在時刻がAM4:30 (JST) よりも早ければ当日のAM4:30 (JST)、
+// 現在時刻がAM4:30 (JST) よりも遅ければ翌日のAM4:30 (JST) を有効期限として扱う。
+func nextCacheExpiresAt() (time.Time, error) {
+	jst, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// 実行環境のタイムゾーンは不定のためJSTを基準にする
+	now := time.Now().In(jst)
+	expiresAt := time.Date(now.Year(), now.Month(), now.Day(), BillAPIUpdateHourJST, BillAPIUpdateMinuteJST, 0, 0, jst)
+	if now.Equal(expiresAt) || now.After(expiresAt) {
+		expiresAt = expiresAt.Add(24 * time.Hour)
+	}
+
+	return expiresAt, nil
 }
