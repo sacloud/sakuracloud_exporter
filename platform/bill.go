@@ -90,7 +90,7 @@ func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
 		}
 	}
 
-	n, err := nextCacheExpiresAt()
+	n, err := c.nextCacheExpiresAt()
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
 // Billing APIは1日1回 AM4:30 (JST) にデータが更新される。
 // このため、現在時刻がAM4:30 (JST) よりも早ければ当日のAM4:30 (JST)、
 // 現在時刻がAM4:30 (JST) よりも遅ければ翌日のAM4:30 (JST) を有効期限として扱う。
-func nextCacheExpiresAt() (time.Time, error) {
+func (c *billClient) nextCacheExpiresAt() (time.Time, error) {
 	jst, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
 		return time.Time{}, err
