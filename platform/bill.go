@@ -94,7 +94,10 @@ func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.cache.set(bill, n)
+	err = c.cache.set(bill, n)
+	if err != nil {
+		return nil, err
+	}
 
 	return bill, nil
 }
