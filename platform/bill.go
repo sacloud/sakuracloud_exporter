@@ -38,7 +38,7 @@ type BillClient interface {
 func getBillClient(caller iaas.APICaller) BillClient {
 	return &billClient{
 		caller: caller,
-		cache:  *newCache(30 * time.Minute),
+		cache:  newCache(30 * time.Minute),
 	}
 }
 
@@ -46,7 +46,7 @@ type billClient struct {
 	caller    iaas.APICaller
 	accountID types.ID
 	once      sync.Once
-	cache     cache
+	cache     *cache
 }
 
 func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
