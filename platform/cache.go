@@ -17,7 +17,6 @@ func newCache(cleanupInterval time.Duration) *cache {
 	c := &cache{
 		cleanupInterval: cleanupInterval,
 	}
-	go c.cleanup()
 
 	return c
 }
@@ -48,19 +47,4 @@ func (c *cache) get() any {
 	}
 
 	return c.item
-}
-
-func (c *cache) cleanup() {
-	t := time.NewTicker(c.cleanupInterval)
-	defer t.Stop()
-
-	for {
-		<-t.C
-		c.mu.Lock()
-		if !c.expiresAt.IsZero() && time.Now().After(c.expiresAt) {
-			c.item = nil
-			c.expiresAt = time.Time{}
-		}
-		c.mu.Unlock()
-	}
 }

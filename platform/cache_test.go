@@ -66,7 +66,4 @@ func TestCache_Get_ItemExpired(t *testing.T) {
 	if cachedItem != nil {
 		t.Errorf("cached item not cleared, got %v", cachedItem)
 	}
-	if !cache.expiresAt.IsZero() {
-		t.Errorf("expiresAt not cleared, got %v", cache.expiresAt)
-	}
 }
