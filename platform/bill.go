@@ -26,8 +26,8 @@ import (
 )
 
 var (
-	BILL_API_UPDATE_HOUR_JST   = 4
-	BILL_API_UPDATE_MINUTE_JST = 30
+	BillAPIUpdateHourJST   = 4
+	BillAPIUpdateMinuteJST = 30
 )
 
 // BillClient calls SakuraCloud bill API
@@ -115,7 +115,7 @@ func nextCacheExpiresAt() (time.Time, error) {
 
 	// 実行環境のタイムゾーンは不定のためJSTを基準にする
 	now := time.Now().In(jst)
-	expiresAt := time.Date(now.Year(), now.Month(), now.Day(), BILL_API_UPDATE_HOUR_JST, BILL_API_UPDATE_MINUTE_JST, 0, 0, jst)
+	expiresAt := time.Date(now.Year(), now.Month(), now.Day(), BillAPIUpdateHourJST, BillAPIUpdateMinuteJST, 0, 0, jst)
 	if now.Equal(expiresAt) || now.After(expiresAt) {
 		expiresAt = expiresAt.Add(24 * time.Hour)
 	}
