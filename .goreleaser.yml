@@ -42,4 +42,4 @@ signs:
 #   for debug
 #   draft: true
 changelog:
-  disable: true
+  disable: false
