@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -20,12 +22,12 @@ builds:
         goarch: arm64
       - goos: windows
         goarch: arm64
-    binary: '{{ .ProjectName }}'
+    binary: "{{ .ProjectName }}"
 archives:
   - format: zip
-    name_template: '{{ .ProjectName }}_{{ .Os }}-{{ .Arch }}'
+    name_template: "{{ .ProjectName }}_{{ .Os }}-{{ .Arch }}"
 checksum:
-  name_template: '{{ .ProjectName }}_SHA256SUMS'
+  name_template: "{{ .ProjectName }}_SHA256SUMS"
   algorithm: sha256
 signs:
   - artifacts: checksum
@@ -36,8 +38,8 @@ signs:
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
-release:
-  # for debug
-  # draft: true
+# release:
+#   for debug
+#   draft: true
 changelog:
-  skip: false
+  disable: true
