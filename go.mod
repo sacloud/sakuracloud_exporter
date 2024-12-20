@@ -5,7 +5,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prometheus/client_model v0.6.1
 	github.com/sacloud/api-client-go v0.2.10
-	github.com/sacloud/iaas-api-go v1.11.2
+	github.com/sacloud/iaas-api-go v1.14.0
 	github.com/sacloud/iaas-service-go v1.9.2
 	github.com/sacloud/packages-go v0.0.10
 	github.com/sacloud/webaccel-api-go v1.2.0
@@ -22,7 +22,7 @@ require (
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
@@ -36,7 +36,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
-	github.com/sacloud/go-http v0.1.7 // indirect
+	github.com/sacloud/go-http v0.1.8 // indirect
 	github.com/zclconf/go-cty v1.14.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/ratelimit v0.3.0 // indirect
