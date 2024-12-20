@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sacloud/sakuracloud_exporter/collector"
 	"github.com/sacloud/sakuracloud_exporter/config"
@@ -82,14 +83,14 @@ func main() {
 	}, []string{"collector"})
 
 	r := prometheus.NewRegistry()
-	r.MustRegister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
+	r.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{
 		PidFn: func() (int, error) { return os.Getpid(), nil },
 	}))
 
 	ctx, cancel := context.WithCancel(ctx)
 
 	// collector info
-	r.MustRegister(prometheus.NewGoCollector())
+	r.MustRegister(collectors.NewGoCollector())
 	r.MustRegister(collector.NewExporterCollector(ctx, logger, Version, Revision, GoVersion, StartTime))
 	r.MustRegister(errs)
 
