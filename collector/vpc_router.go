@@ -414,10 +414,6 @@ func getInterfaceByIndex(interfaces []*iaas.VPCRouterInterfaceSetting, index int
 }
 
 func (c *VPCRouterCollector) nicLabels(vpcRouter *platform.VPCRouter, index int) []string {
-	if len(vpcRouter.Interfaces) <= index {
-		return nil
-	}
-
 	var vip, ipaddress1, ipaddress2 string
 	nwMaskLen := ""
 
