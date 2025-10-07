@@ -33,7 +33,7 @@ RUN ["make", "build"]
 FROM alpine:3.22
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
-RUN apk add --update ca-certificates
+RUN apk add --update ca-certificates tzdata
 
 COPY --from=builder /go/src/github.com/sacloud/sakuracloud_exporter/sakuracloud_exporter /usr/bin/
 
