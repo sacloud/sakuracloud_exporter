@@ -151,7 +151,6 @@ func createDatabase(caller iaas.APICaller) {
 	if _, err := waiter.WaitForState(context.Background()); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func createInternet(caller iaas.APICaller) {

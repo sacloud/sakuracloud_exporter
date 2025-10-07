@@ -27,7 +27,7 @@ var testCaller *iaas.Client
 
 func TestMain(m *testing.M) {
 	// this is for to use fake driver on iaas-api-go
-	os.Setenv("TESTACC", "")
+	os.Setenv("TESTACC", "") //nolint:errcheck,gosec
 
 	testZone = testutil.TestZone()
 	testCaller = testutil.SingletonAPICaller().(*iaas.Client)
