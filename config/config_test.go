@@ -52,7 +52,7 @@ func TestInitConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Args = append([]string{os.Args[0]}, tt.args...)
 			for k, v := range tt.envs {
-				os.Setenv(k, v)
+				os.Setenv(k, v) //nolint:errcheck,gosec
 			}
 
 			got, err := InitConfig()
@@ -77,6 +77,6 @@ func initEnvVars() {
 		"SAKURACLOUD_RATE_LIMIT",
 	}
 	for _, key := range keys {
-		os.Unsetenv(key)
+		os.Unsetenv(key) //nolint:errcheck
 	}
 }
