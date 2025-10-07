@@ -18,6 +18,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sacloud/iaas-api-go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +42,7 @@ func TestInitConfig(t *testing.T) {
 				// 以下はデフォルト値
 				WebPath:   "/metrics",
 				WebAddr:   ":9542",
-				Zones:     []string{"is1a", "is1b", "tk1a", "tk1b", "tk1v"},
+				Zones:     iaas.SakuraCloudZones,
 				RateLimit: defaultRateLimit,
 			},
 			wantErr: false,

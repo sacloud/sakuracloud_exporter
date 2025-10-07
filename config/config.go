@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/alexflint/go-arg"
+	"github.com/sacloud/iaas-api-go"
 )
 
 const (
@@ -61,7 +62,7 @@ func InitConfig() (Config, error) {
 	c := Config{
 		WebPath:   "/metrics",
 		WebAddr:   ":9542",
-		Zones:     []string{"is1a", "is1b", "tk1a", "tk1b", "tk1v"},
+		Zones:     iaas.SakuraCloudZones,
 		RateLimit: defaultRateLimit,
 	}
 	arg.MustParse(&c)
