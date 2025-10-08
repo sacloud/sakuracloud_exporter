@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM golang:1.21 AS builder
+FROM golang:1.25 AS builder
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
 
@@ -30,10 +30,10 @@ RUN ["make", "build"]
 
 #----------
 
-FROM alpine:3.15
+FROM alpine:3.22
 MAINTAINER Kazumichi Yamamoto <yamamoto.febc@gmail.com>
 LABEL MAINTAINER 'Kazumichi Yamamoto <yamamoto.febc@gmail.com>'
-RUN apk add --update ca-certificates
+RUN apk add --update ca-certificates tzdata
 
 COPY --from=builder /go/src/github.com/sacloud/sakuracloud_exporter/sakuracloud_exporter /usr/bin/
 
