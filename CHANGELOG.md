@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.19.1](https://github.com/sacloud/sakuracloud_exporter/compare/0.19.0...0.19.1) - 2025-10-08
+- Push Docker image with both latest and release tag by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/239
+
 ## [0.19.0](https://github.com/sacloud/sakuracloud_exporter/compare/0.18.6...0.19.0) - 2025-10-08
 - go: bump github.com/stretchr/testify from 1.9.0 to 1.10.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/210
 - deprecated funcの対応 by @hekki in https://github.com/sacloud/sakuracloud_exporter/pull/214
