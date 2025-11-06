@@ -78,7 +78,7 @@ func createAutoBackup(caller iaas.APICaller) {
 		SizeMB:      40 * 1024,
 		Description: "desc",
 		Tags:        types.Tags{"example", "auto-backup"},
-	}, nil)
+	}, nil, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
