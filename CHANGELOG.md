@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.19.2](https://github.com/sacloud/sakuracloud_exporter/compare/0.19.1...0.19.2) - 2025-11-06
+- iaas-api-go v1.18.1 by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/251
+
 ## [0.19.1](https://github.com/sacloud/sakuracloud_exporter/compare/0.19.0...0.19.1) - 2025-10-08
 - Push Docker image with both latest and release tag by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/239
 
