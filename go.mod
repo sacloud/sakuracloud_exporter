@@ -4,10 +4,10 @@ require (
 	github.com/alexflint/go-arg v1.6.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/sacloud/api-client-go v0.3.3
+	github.com/sacloud/api-client-go v0.3.4
 	github.com/sacloud/iaas-api-go v1.21.1
 	github.com/sacloud/iaas-service-go v1.18.1
-	github.com/sacloud/packages-go v0.0.11
+	github.com/sacloud/packages-go v0.0.12
 	github.com/sacloud/webaccel-api-go v1.3.0
 	github.com/stretchr/testify v1.11.1
 )
@@ -50,4 +50,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-go 1.24.0
+go 1.25
