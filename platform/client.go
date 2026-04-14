@@ -23,6 +23,7 @@ import (
 	client "github.com/sacloud/api-client-go"
 	"github.com/sacloud/iaas-api-go/fake"
 	"github.com/sacloud/iaas-api-go/helper/api"
+	"github.com/sacloud/saclient-go"
 	"github.com/sacloud/sakuracloud_exporter/config"
 	"github.com/sacloud/webaccel-api-go"
 )
@@ -48,21 +49,32 @@ type Client struct {
 	WebAccel WebAccelClient
 }
 
-func NewSakuraCloudClient(c config.Config, version string) *Client {
+func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 	fakeStorePath := c.FakeMode
 	if stat, err := os.Stat(fakeStorePath); err == nil {
 		if stat.IsDir() {
 			fakeStorePath = filepath.Join(fakeStorePath, "fake-store.json")
 		}
 	}
+
+	saClient := &saclient.Client{}
+	if err := saClient.SetEnviron(os.Environ()); err != nil {
+		return nil, fmt.Errorf("failed to set environment variables to saclient-go: %w", err)
+	}
+
+	callerOptions := &client.Options{
+		AccessToken:          c.Token,
+		AccessTokenSecret:    c.Secret,
+		HttpRequestRateLimit: c.RateLimit,
+		UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
+		Trace:                c.Trace,
+	}
+	if err := saClient.CompatSettingsFromAPIClientOptions(callerOptions); err != nil {
+		return nil, fmt.Errorf("failed to apply compatible settings: %w", err)
+	}
+
 	caller := api.NewCallerWithOptions(&api.CallerOptions{
-		Options: &client.Options{
-			AccessToken:          c.Token,
-			AccessTokenSecret:    c.Secret,
-			HttpRequestRateLimit: c.RateLimit,
-			UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
-			Trace:                c.Trace,
-		},
+		Options:       callerOptions,
 		TraceAPI:      c.Debug,
 		FakeMode:      c.FakeMode != "",
 		FakeStorePath: fakeStorePath,
@@ -71,14 +83,8 @@ func NewSakuraCloudClient(c config.Config, version string) *Client {
 		fake.InitDataStore()
 	}
 
-	webaccelCaller := &webaccel.Client{
-		Options: &client.Options{
-			AccessToken:          c.Token,
-			AccessTokenSecret:    c.Secret,
-			HttpRequestRateLimit: c.RateLimit,
-			UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
-			Trace:                c.Trace,
-		},
+	webaccelClient := &webaccel.Client{
+		Saclient: saClient,
 	}
 
 	return &Client{
@@ -99,13 +105,11 @@ func NewSakuraCloudClient(c config.Config, version string) *Client {
 		VPCRouter:     getVPCRouterClient(caller, c.Zones),
 		Zone:          getZoneClient(caller),
 
-		WebAccel: getWebAccelClient(webaccelCaller),
-	}
+		WebAccel: getWebAccelClient(webaccelClient),
+	}, nil
 }
 
 func (c *Client) HasValidAPIKeys(ctx context.Context) bool {
 	res, err := c.authStatus.Read(ctx)
 	return res != nil && err == nil
 }
-
-

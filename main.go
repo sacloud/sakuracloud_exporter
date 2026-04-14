@@ -67,7 +67,10 @@ func main() {
 		slog.String("goVersion", GoVersion),
 	)
 
-	client := platform.NewSakuraCloudClient(c, Version)
+	client, err := platform.NewSakuraCloudClient(c, Version)
+	if err != nil {
+		panic(fmt.Errorf("failed to create SakuraCloud client: %w", err))
+	}
 	ctx := context.Background()
 
 	if !client.HasValidAPIKeys(ctx) {
