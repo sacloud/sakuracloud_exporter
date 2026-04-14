@@ -108,11 +108,4 @@ func (c *Client) HasValidAPIKeys(ctx context.Context) bool {
 	return res != nil && err == nil
 }
 
-func (c *Client) HasWebAccelPermission(ctx context.Context) bool {
-	res, err := c.authStatus.Read(ctx)
-	if res == nil || err != nil {
-		return false
-	}
 
-	return res.ExternalPermission.PermittedWebAccel()
-}

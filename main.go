@@ -73,10 +73,6 @@ func main() {
 	if !client.HasValidAPIKeys(ctx) {
 		panic(errors.New("unauthorized: invalid API key is applied"))
 	}
-	if !c.NoCollectorWebAccel && !client.HasWebAccelPermission(ctx) {
-		logger.Warn("API key doesn't have webaccel permission")
-	}
-
 	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "sakuracloud_exporter_errors_total",
 		Help: "The total number of errors per collector",
