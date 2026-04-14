@@ -1,5 +1,7 @@
 module github.com/sacloud/sakuracloud_exporter
 
+go 1.26.2
+
 require (
 	github.com/alexflint/go-arg v1.6.0
 	github.com/prometheus/client_golang v1.23.2
@@ -50,4 +52,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-go 1.24.0
