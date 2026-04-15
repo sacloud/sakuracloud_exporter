@@ -15,7 +15,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/alexflint/go-arg"
@@ -32,8 +31,8 @@ type Config struct {
 	Trace     bool     `arg:"env:TRACE" help:"Enable output of trace log of Sakura cloud API call"`
 	Debug     bool     `arg:"env:DEBUG" help:"Enable output of debug level log"`
 	FakeMode  string   `arg:"--fake-mode,env:FAKE_MODE" help:"File path to fetch/store fake data. If this flag is specified, enable fake-mode"`
-	Token     string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN" help:"Token for using the SakuraCloud API"`
-	Secret    string   `arg:"required,env:SAKURACLOUD_ACCESS_TOKEN_SECRET" help:"Secret for using the SakuraCloud API"`
+	Token     string   `arg:"env:SAKURACLOUD_ACCESS_TOKEN" help:"Token for using the SakuraCloud API"`
+	Secret    string   `arg:"env:SAKURACLOUD_ACCESS_TOKEN_SECRET" help:"Secret for using the SakuraCloud API"`
 	Zones     []string `arg:"-"` // TODO zones parameter is not implements.
 	WebAddr   string   `arg:"env:WEB_ADDR"`
 	WebPath   string   `arg:"env:WEB_PATH"`
@@ -67,12 +66,6 @@ func InitConfig() (Config, error) {
 	}
 	arg.MustParse(&c)
 
-	if c.Token == "" {
-		return c, errors.New("SakuraCloud API Token is required")
-	}
-	if c.Secret == "" {
-		return c, errors.New("SakuraCloud API Secret is required")
-	}
 	if c.RateLimit <= 0 {
 		c.RateLimit = defaultRateLimit
 	}
