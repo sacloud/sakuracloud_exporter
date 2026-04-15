@@ -29,7 +29,7 @@ import (
 )
 
 type Client struct {
-	authStatus    authStatusClient
+	authContext   authContextClient
 	AutoBackup    AutoBackupClient
 	Bill          BillClient
 	Coupon        CouponClient
@@ -87,11 +87,16 @@ func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 		Saclient: saClient,
 	}
 
+	authClient, err := getAuthContextClient(saClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AuthContext client: %w", err)
+	}
+
 	return &Client{
-		authStatus:    getAuthStatusClient(caller),
+		authContext:   authClient,
 		AutoBackup:    getAutoBackupClient(caller, c.Zones),
-		Bill:          getBillClient(caller),
-		Coupon:        getCouponClient(caller),
+		Bill:          getBillClient(caller, authClient),
+		Coupon:        getCouponClient(caller, authClient),
 		Database:      getDatabaseClient(caller, c.Zones),
 		ESME:          getESMEClient(caller),
 		Internet:      getInternetClient(caller, c.Zones),
@@ -109,7 +114,7 @@ func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) HasValidAPIKeys(ctx context.Context) bool {
-	res, err := c.authStatus.Read(ctx)
+func (c *Client) HasValidCredentials(ctx context.Context) bool {
+	res, err := c.authContext.ReadAuthContext(ctx)
 	return res != nil && err == nil
 }
