@@ -17,12 +17,12 @@ package platform
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	v1 "github.com/sacloud/iam-api-go/apis/v1"
 )
 
 var (
@@ -35,18 +35,20 @@ type BillClient interface {
 	Read(context.Context) (*iaas.Bill, error)
 }
 
-func getBillClient(caller iaas.APICaller) BillClient {
+func getBillClient(caller iaas.APICaller, authClient authContextClient) BillClient {
 	return &billClient{
-		caller: caller,
-		cache:  newCache(30 * time.Minute),
+		caller:     caller,
+		authClient: authClient,
+		cache:      newCache(30 * time.Minute),
 	}
 }
 
 type billClient struct {
-	caller    iaas.APICaller
-	accountID types.ID
-	once      sync.Once
-	cache     *cache
+	caller     iaas.APICaller
+	authClient authContextClient
+	accountID  types.ID
+	once       sync.Once
+	cache      *cache
 }
 
 func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
@@ -57,17 +59,13 @@ func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
 
 	var err error
 	c.once.Do(func() {
-		var auth *iaas.AuthStatus
+		var auth *v1.GetAuthContextOK
 
-		authStatusOp := iaas.NewAuthStatusOp(c.caller)
-		auth, err = authStatusOp.Read(ctx)
-		if err != nil {
+		auth, err = c.authClient.ReadAuthContext(ctx)
+		if err != nil || auth.LimitedToProjectID.IsNull() {
 			return
 		}
-		if !auth.ExternalPermission.PermittedBill() {
-			err = fmt.Errorf("account doesn't have permissions to use the Billing API")
-		}
-		c.accountID = auth.AccountID
+		c.accountID = types.ID(auth.LimitedToProjectID.Value)
 	})
 	if err != nil {
 		return nil, err

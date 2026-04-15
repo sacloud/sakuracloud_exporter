@@ -22,6 +22,7 @@ import (
 
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/types"
+	v1 "github.com/sacloud/iam-api-go/apis/v1"
 )
 
 // CouponClient calls SakuraCloud coupon API
@@ -29,18 +30,20 @@ type CouponClient interface {
 	Find(context.Context) ([]*iaas.Coupon, error)
 }
 
-func getCouponClient(caller iaas.APICaller) CouponClient {
+func getCouponClient(caller iaas.APICaller, authClient authContextClient) CouponClient {
 	return &couponClient{
-		caller: caller,
-		cache:  *newCache(30 * time.Minute),
+		caller:     caller,
+		authClient: authClient,
+		cache:      *newCache(30 * time.Minute),
 	}
 }
 
 type couponClient struct {
-	caller    iaas.APICaller
-	accountID types.ID
-	once      sync.Once
-	cache     cache
+	caller     iaas.APICaller
+	authClient authContextClient
+	accountID  types.ID
+	once       sync.Once
+	cache      cache
 }
 
 func (c *couponClient) Find(ctx context.Context) ([]*iaas.Coupon, error) {
@@ -51,14 +54,13 @@ func (c *couponClient) Find(ctx context.Context) ([]*iaas.Coupon, error) {
 
 	var err error
 	c.once.Do(func() {
-		var auth *iaas.AuthStatus
+		var auth *v1.GetAuthContextOK
 
-		authStatusOp := iaas.NewAuthStatusOp(c.caller)
-		auth, err = authStatusOp.Read(ctx)
-		if err != nil {
+		auth, err = c.authClient.ReadAuthContext(ctx)
+		if err != nil || auth.LimitedToProjectID.IsNull() {
 			return
 		}
-		c.accountID = auth.AccountID
+		c.accountID = types.ID(auth.LimitedToProjectID.Value)
 	})
 	if err != nil {
 		return nil, err

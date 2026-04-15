@@ -73,8 +73,8 @@ func main() {
 	}
 	ctx := context.Background()
 
-	if !client.HasValidAPIKeys(ctx) {
-		panic(errors.New("unauthorized: invalid API key is applied"))
+	if !client.HasValidCredentials(ctx) {
+		panic(errors.New("unauthorized: invalid credentials"))
 	}
 	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "sakuracloud_exporter_errors_total",
