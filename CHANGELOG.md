@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.20.0](https://github.com/sacloud/sakuracloud_exporter/compare/0.19.2...0.20.0) - 2026-04-16
+- introduce sacloud/saclient-go by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/263
+- feat: use iam-api-go ReadAuthContext API by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/265
+- go: bump github.com/sacloud/iaas-api-go from 1.21.1 to 1.26.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/261
+- go: bump github.com/sacloud/iaas-service-go from 1.18.1 to 1.22.3 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/260
+- ci: bump actions/checkout from 5 to 6 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/256
+- go: bump github.com/cloudflare/circl from 1.6.1 to 1.6.3 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/266
+- go: bump github.com/alexflint/go-arg from 1.6.0 to 1.6.1 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/267
+- ci: bump docker/login-action from 3 to 4 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/268
+- ci: bump docker/setup-buildx-action from 3 to 4 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/269
+- ci: bump goreleaser/goreleaser-action from 6 to 7 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/270
+- ci: bump docker/build-push-action from 6 to 7 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/272
+- ci: bump docker/setup-qemu-action from 3 to 4 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/271
+
 ## [0.19.2](https://github.com/sacloud/sakuracloud_exporter/compare/0.19.1...0.19.2) - 2025-11-06
 - iaas-api-go v1.18.1 by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/251
 
