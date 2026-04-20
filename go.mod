@@ -11,7 +11,7 @@ require (
 	github.com/sacloud/iaas-service-go v1.22.3
 	github.com/sacloud/iam-api-go v0.3.0
 	github.com/sacloud/packages-go v0.0.12
-	github.com/sacloud/saclient-go v0.3.6
+	github.com/sacloud/saclient-go v0.3.7
 	github.com/sacloud/webaccel-api-go v1.5.0
 	github.com/stretchr/testify v1.11.1
 )
