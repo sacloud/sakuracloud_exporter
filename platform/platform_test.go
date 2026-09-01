@@ -18,8 +18,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/testutil"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/testutil"
 )
 
 var testZone string

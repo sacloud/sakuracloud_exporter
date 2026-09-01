@@ -20,12 +20,13 @@ import (
 	"os"
 	"path/filepath"
 
-	client "github.com/sacloud/api-client-go"
-	"github.com/sacloud/iaas-api-go/fake"
-	"github.com/sacloud/iaas-api-go/helper/api"
-	"github.com/sacloud/saclient-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/fake"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/api"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/trace"
+	"github.com/sacloud/sacloud-sdk-go/api/webaccel"
+	"github.com/sacloud/sacloud-sdk-go/common/saclient"
 	"github.com/sacloud/sakuracloud_exporter/config"
-	"github.com/sacloud/webaccel-api-go"
 )
 
 type Client struct {
@@ -58,29 +59,32 @@ func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 	}
 
 	saClient := &saclient.Client{}
-	if err := saClient.SetEnviron(os.Environ()); err != nil {
-		return nil, fmt.Errorf("failed to set environment variables to saclient-go: %w", err)
+	clientEnviron := append(os.Environ(),
+		fmt.Sprintf("SAKURACLOUD_ACCESS_TOKEN=%s", c.Token),
+		fmt.Sprintf("SAKURACLOUD_ACCESS_TOKEN_SECRET=%s", c.Secret),
+		fmt.Sprintf("SAKURACLOUD_RATE_LIMIT=%d", c.RateLimit),
+	)
+	if c.Trace {
+		clientEnviron = append(clientEnviron, "SAKURACLOUD_TRACE=all")
+	}
+	if err := saClient.SetEnviron(clientEnviron); err != nil {
+		return nil, fmt.Errorf("failed to set environment variables to saclient: %w", err)
+	}
+	if err := saClient.SetWith(saclient.WithUserAgent(fmt.Sprintf("sakuracloud_exporter/%s", version))); err != nil {
+		return nil, fmt.Errorf("failed to set saclient options: %w", err)
 	}
 
-	callerOptions := &client.Options{
-		AccessToken:          c.Token,
-		AccessTokenSecret:    c.Secret,
-		HttpRequestRateLimit: c.RateLimit,
-		UserAgent:            fmt.Sprintf("sakuracloud_exporter/%s", version),
-		Trace:                c.Trace,
+	caller := iaas.NewClientFromSaclient(saClient)
+	if c.Debug {
+		trace.AddClientFactoryHooks()
 	}
-	if err := saClient.CompatSettingsFromAPIClientOptions(callerOptions); err != nil {
-		return nil, fmt.Errorf("failed to apply compatible settings: %w", err)
-	}
-
-	caller := api.NewCallerWithOptions(&api.CallerOptions{
-		Options:       callerOptions,
-		TraceAPI:      c.Debug,
-		FakeMode:      c.FakeMode != "",
-		FakeStorePath: fakeStorePath,
-	})
 	if c.FakeMode != "" {
+		if fakeStorePath != "" {
+			fake.DataStore = fake.NewJSONFileStore(fakeStorePath)
+		}
 		fake.InitDataStore()
+		fake.SwitchFactoryFuncToFake()
+		api.SetupFakeDefaults()
 	}
 
 	webaccelClient := &webaccel.Client{

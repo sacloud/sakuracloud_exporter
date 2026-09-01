@@ -18,10 +18,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/query"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/newsfeed"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/query"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/newsfeed"
 )
 
 type NFS struct {
@@ -61,7 +61,7 @@ func (c *nfsClient) find(ctx context.Context, zone string) ([]interface{}, error
 		return results, err
 	}
 	for _, v := range res.NFS {
-		planInfo, err := query.GetNFSPlanInfo(ctx, c.noteOp, v.PlanID)
+		planInfo, err := query.GetNFSPlanInfo(ctx, c.noteOp, zone, v.PlanID)
 		if err != nil {
 			return nil, err
 		}

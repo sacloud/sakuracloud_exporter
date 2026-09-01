@@ -18,7 +18,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 )
 
 func monitorCondition(end time.Time) *iaas.MonitorCondition {

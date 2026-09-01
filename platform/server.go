@@ -18,9 +18,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/newsfeed"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/newsfeed"
 )
 
 type ServerClient interface {
