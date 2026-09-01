@@ -21,13 +21,13 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/fake"
-	"github.com/sacloud/iaas-api-go/helper/query"
-	"github.com/sacloud/iaas-api-go/ostype"
-	"github.com/sacloud/iaas-api-go/types"
-	diskBuilders "github.com/sacloud/iaas-service-go/disk/builder"
-	serverBuilders "github.com/sacloud/iaas-service-go/server/builder"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/fake"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/query"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/ostype"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	diskBuilders "github.com/sacloud/sacloud-sdk-go/service/iaas/disk/builder"
+	serverBuilders "github.com/sacloud/sacloud-sdk-go/service/iaas/server/builder"
 )
 
 const fakeStoreFileName = "example-fake-store.json"
@@ -316,7 +316,7 @@ func createNFS(caller iaas.APICaller) {
 	}
 
 	nfsOp := iaas.NewNFSOp(caller)
-	planID, err := query.FindNFSPlanID(context.Background(), iaas.NewNoteOp(caller), types.NFSPlans.HDD, types.NFSHDDSizes.Size100GB)
+	planID, err := query.FindNFSPlanID(context.Background(), iaas.NewNoteOp(caller), "is1a", types.NFSPlans.HDD, types.NFSHDDSizes.Size100GB)
 	if err != nil {
 		log.Fatal(err)
 	}

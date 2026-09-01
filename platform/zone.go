@@ -17,7 +17,7 @@ package platform
 import (
 	"context"
 
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 )
 
 // ZoneClient calls SakuraCloud zone API

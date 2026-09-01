@@ -17,7 +17,7 @@ package platform
 import (
 	"context"
 
-	"github.com/sacloud/webaccel-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/webaccel"
 )
 
 // WebAccelClient calls SakuraCloud webAccel API

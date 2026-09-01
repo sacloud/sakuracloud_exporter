@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/iaas-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 

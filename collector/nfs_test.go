@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/iaas-api-go"
-	"github.com/sacloud/iaas-api-go/helper/query"
-	"github.com/sacloud/iaas-api-go/types"
-	"github.com/sacloud/packages-go/newsfeed"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/helper/query"
+	"github.com/sacloud/sacloud-sdk-go/api/iaas/types"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 	"github.com/stretchr/testify/require"
 )

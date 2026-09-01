@@ -18,7 +18,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sacloud/webaccel-api-go"
+	"github.com/sacloud/sacloud-sdk-go/api/webaccel"
 	"github.com/stretchr/testify/require"
 )
 

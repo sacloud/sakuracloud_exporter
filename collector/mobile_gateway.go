@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sacloud/packages-go/newsfeed"
+	"github.com/sacloud/sacloud-sdk-go/common/packages/newsfeed"
 	"github.com/sacloud/sakuracloud_exporter/platform"
 )
 
