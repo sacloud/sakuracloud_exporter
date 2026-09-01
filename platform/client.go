@@ -59,19 +59,24 @@ func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 	}
 
 	saClient := &saclient.Client{}
-	clientEnviron := append(os.Environ(),
-		fmt.Sprintf("SAKURACLOUD_ACCESS_TOKEN=%s", c.Token),
-		fmt.Sprintf("SAKURACLOUD_ACCESS_TOKEN_SECRET=%s", c.Secret),
-		fmt.Sprintf("SAKURACLOUD_RATE_LIMIT=%d", c.RateLimit),
-	)
-	if c.Trace {
-		clientEnviron = append(clientEnviron, "SAKURACLOUD_TRACE=all")
-	}
-	if err := saClient.SetEnviron(clientEnviron); err != nil {
+	if err := saClient.SetEnviron(os.Environ()); err != nil {
 		return nil, fmt.Errorf("failed to set environment variables to saclient: %w", err)
 	}
-	if err := saClient.SetWith(saclient.WithUserAgent(fmt.Sprintf("sakuracloud_exporter/%s", version))); err != nil {
+	if err := saClient.SetWith(
+		saclient.WithUserAgent(fmt.Sprintf("sakuracloud_exporter/%s", version)),
+		saclient.WithAPIRequestRateLimit(uint16(c.RateLimit)),
+	); err != nil {
 		return nil, fmt.Errorf("failed to set saclient options: %w", err)
+	}
+	if c.Token != "" && c.Secret != "" {
+		if err := saClient.SetWith(saclient.WithBasicAuth(c.Token, c.Secret)); err != nil {
+			return nil, fmt.Errorf("failed to set saclient authentication: %w", err)
+		}
+	}
+	if c.Trace {
+		if err := saClient.SetWith(saclient.WithTraceMode("all")); err != nil {
+			return nil, fmt.Errorf("failed to set saclient trace mode: %w", err)
+		}
 	}
 
 	caller := iaas.NewClientFromSaclient(saClient)
