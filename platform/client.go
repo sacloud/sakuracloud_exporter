@@ -50,6 +50,13 @@ type Client struct {
 	WebAccel WebAccelClient
 }
 
+func apiRequestRateLimit(rateLimit int) (uint16, error) {
+	if rateLimit < 0 || rateLimit > 1<<16-1 {
+		return 0, fmt.Errorf("API request rate limit must be between 0 and %d", 1<<16-1)
+	}
+	return uint16(rateLimit), nil
+}
+
 func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 	fakeStorePath := c.FakeMode
 	if stat, err := os.Stat(fakeStorePath); err == nil {
@@ -58,13 +65,18 @@ func NewSakuraCloudClient(c config.Config, version string) (*Client, error) {
 		}
 	}
 
+	rateLimit, err := apiRequestRateLimit(c.RateLimit)
+	if err != nil {
+		return nil, err
+	}
+
 	saClient := &saclient.Client{}
 	if err := saClient.SetEnviron(os.Environ()); err != nil {
 		return nil, fmt.Errorf("failed to set environment variables to saclient: %w", err)
 	}
 	if err := saClient.SetWith(
 		saclient.WithUserAgent(fmt.Sprintf("sakuracloud_exporter/%s", version)),
-		saclient.WithAPIRequestRateLimit(uint16(c.RateLimit)),
+		saclient.WithAPIRequestRateLimit(rateLimit),
 	); err != nil {
 		return nil, fmt.Errorf("failed to set saclient options: %w", err)
 	}
