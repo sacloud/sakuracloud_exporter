@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.20.1](https://github.com/sacloud/sakuracloud_exporter/compare/0.20.0...0.20.1) - 2026-09-02
+
+### 🚀 Changes
+- ghcr.io now accepts GITHUB_TOKEN by @shyouhei in https://github.com/sacloud/sakuracloud_exporter/pull/291
+- pin actions by @tokuhirom in https://github.com/sacloud/sakuracloud_exporter/pull/293
+- chore: Release notes を見やすくします by @tokuhirom in https://github.com/sacloud/sakuracloud_exporter/pull/294
+- chore: migrate to sacloud-sdk-go by @tokuhirom in https://github.com/sacloud/sakuracloud_exporter/pull/295
+- Restrict test workflow permissions by @tokuhirom in https://github.com/sacloud/sakuracloud_exporter/pull/296
+### 📦 Dependency Updates
+- ci: bump actions/checkout from 6.1.0 to 7.0.1 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/288
+- ci: bump docker/metadata-action from 5.10.0 to 6.2.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/274
+- ci: bump crazy-max/ghaction-import-gpg from 6.3.0 to 7.0.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/273
+- ci: bump Songmu/tagpr from 1.20.1 to 1.20.2 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/300
+- ci: bump docker/setup-buildx-action from 4.2.0 to 4.3.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/299
+- ci: bump actions/setup-go from 6.5.0 to 7.0.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/297
+- go: bump github.com/prometheus/client_golang from 1.23.2 to 1.24.1 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/298
+
 ## [0.20.0](https://github.com/sacloud/sakuracloud_exporter/compare/0.19.2...0.20.0) - 2026-04-16
 - introduce sacloud/saclient-go by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/263
 - feat: use iam-api-go ReadAuthContext API by @yamamoto-febc in https://github.com/sacloud/sakuracloud_exporter/pull/265
