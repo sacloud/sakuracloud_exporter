@@ -23,7 +23,7 @@ import (
 )
 
 type authContextClient interface {
-	ReadAuthContext(ctx context.Context) (*v1.GetAuthContextOK, error)
+	ReadAuthContext(ctx context.Context) (*v1.ReadAuthContextOK, error)
 }
 
 func getAuthContextClient(client saclient.ClientAPI) (authContextClient, error) {
