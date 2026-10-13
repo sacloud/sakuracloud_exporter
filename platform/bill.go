@@ -59,7 +59,7 @@ func (c *billClient) Read(ctx context.Context) (*iaas.Bill, error) {
 
 	var err error
 	c.once.Do(func() {
-		var auth *v1.GetAuthContextOK
+		var auth *v1.ReadAuthContextOK
 
 		auth, err = c.authClient.ReadAuthContext(ctx)
 		if err != nil || auth.LimitedToProjectID.IsNull() {

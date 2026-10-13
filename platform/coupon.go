@@ -54,7 +54,7 @@ func (c *couponClient) Find(ctx context.Context) ([]*iaas.Coupon, error) {
 
 	var err error
 	c.once.Do(func() {
-		var auth *v1.GetAuthContextOK
+		var auth *v1.ReadAuthContextOK
 
 		auth, err = c.authClient.ReadAuthContext(ctx)
 		if err != nil || auth.LimitedToProjectID.IsNull() {
