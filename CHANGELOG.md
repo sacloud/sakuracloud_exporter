@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.20.2](https://github.com/sacloud/sakuracloud_exporter/compare/0.20.1...0.20.2) - 2026-10-13
+
+### 🚀 Changes
+- Potential fix for code scanning alert no. 3: Workflow does not contain permissions by @tokuhirom in https://github.com/sacloud/sakuracloud_exporter/pull/315
+- Upgrade sacloud-sdk-go to v0.3.0 by @tokuhirom in https://github.com/sacloud/sakuracloud_exporter/pull/316
+### 📦 Dependency Updates
+- ci: bump Songmu/tagpr from 1.20.2 to 1.21.2 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/313
+- ci: bump docker/setup-buildx-action from 4.3.0 to 4.4.1 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/308
+- go: bump github.com/prometheus/client_golang from 1.24.1 to 1.25.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/312
+- ci: bump docker/build-push-action from 7.3.0 to 7.4.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/307
+- ci: bump docker/setup-qemu-action from 4.2.0 to 4.4.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/306
+
 ## [0.20.1](https://github.com/sacloud/sakuracloud_exporter/compare/0.20.0...0.20.1) - 2026-09-02
 
 ### 🚀 Changes
