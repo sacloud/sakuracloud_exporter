@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.20.3](https://github.com/sacloud/sakuracloud_exporter/compare/0.20.2...0.20.3) - 2026-10-15
+
+### 📦 Dependency Updates
+- ci: bump goreleaser/goreleaser-action from 7.2.3 to 7.3.0 by @dependabot[bot] in https://github.com/sacloud/sakuracloud_exporter/pull/317
+
 ## [0.20.2](https://github.com/sacloud/sakuracloud_exporter/compare/0.20.1...0.20.2) - 2026-10-13
 
 ### 🚀 Changes
